@@ -57,7 +57,6 @@ export class RoomBuilder {
 
             case TileType.PlayerSpawn:
                 this.drawFloor(x, y, size);
-                this.drawPlayerSpawn(x, y, size);
                 break;
 
             case TileType.RobotSpawn:
@@ -99,21 +98,6 @@ export class RoomBuilder {
             size,
             size,
             0x777777
-        );
-    }
-
-    private drawPlayerSpawn(
-        x: number,
-        y: number,
-        size: number
-    ): void {
-
-        this.scene.add.rectangle(
-            x,
-            y,
-            size * 0.55,
-            size * 0.55,
-            0x00aaff
         );
     }
 

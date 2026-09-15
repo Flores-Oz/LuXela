@@ -1,4 +1,10 @@
-import type {RoomMatrix} from "../types/RoomTypes";
+import type { RoomMatrix, TileType } from "../types/RoomTypes";
+
+export type TilePosition = {
+    row: number;
+    column: number;
+};
+
 export class Room {
 
     public readonly matrix: RoomMatrix;
@@ -28,4 +34,21 @@ export class Room {
         return this.height * this.tileSize;
     }
 
+    findTile(tileType: TileType): TilePosition | null {
+
+        for (let row = 0; row < this.height; row++) {
+
+            for (let column = 0; column < this.width; column++) {
+
+                if (this.matrix[row][column] === tileType) {
+                    return {
+                        row,
+                        column
+                    };
+                }
+            }
+        }
+
+        return null;
+    }
 }
