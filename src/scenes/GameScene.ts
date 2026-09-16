@@ -5,10 +5,14 @@ import { RoomBuilder } from "../world/RoomBuilder";
 import { testRoom } from "../data/rooms/testRoom";
 import { TileType } from "../types/RoomTypes";
 import { Player } from "../entities/Player";
+import { Projectile } from "../entities/Projectile";
 
 export class GameScene extends Phaser.Scene {
 
     private player: Player | null = null;
+
+    private walls: 
+        Phaser.Physics.Arcade.StaticGroup | null = null;
 
     constructor() {
         super("GameScene");
@@ -37,6 +41,8 @@ export class GameScene extends Phaser.Scene {
 
         this.createPlayerAnimations();
 
+        this.walls = builder.getWalls();
+
         const spawn =
             room.findTile(TileType.PlayerSpawn);
 
@@ -62,7 +68,7 @@ export class GameScene extends Phaser.Scene {
 
         this.physics.add.collider(
             this.player.physicsSprite,
-            builder.getWalls()
+            this.walls
         );
 
         this.cameras.main.setBackgroundColor(
@@ -78,7 +84,22 @@ export class GameScene extends Phaser.Scene {
     update(
     ): void {
 
-        this.player?.update();
+         if (!this.player) {
+            return;
+        }
+
+        this.player.update();
+
+        const shootDirection =
+            this.player.consumeShootRequest();
+
+        if (!shootDirection) {
+            return;
+        }
+
+        this.createProjectile(
+            shootDirection
+        );
     }
 
     private createPlayerAnimations(): void {
@@ -121,5 +142,39 @@ export class GameScene extends Phaser.Scene {
             frameRate: 10,
             repeat: -1
         });
+    }
+
+    private createProjectile(
+        direction: Phaser.Math.Vector2
+    ): void {
+
+        if (!this.player) {
+            return;
+        }
+
+        const spawn = 
+            this.player.getProjectileSpawn(
+                direction
+            );
+
+        const projectile =
+            new Projectile(
+                this,
+                spawn.x,
+                spawn.y,
+                direction
+            );
+
+        if (!this.walls) {
+            return;
+        }
+
+        this.physics.add.collider(
+            projectile.physicsBody,
+            this.walls,
+            () => {
+                projectile.destroy();
+            }
+        );
     }
 }

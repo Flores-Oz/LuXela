@@ -13,17 +13,34 @@ type PlayerDirection =
     | "left"
     | "right";
 
+type ShootingKeys = {
+    UP: Phaser.Input.Keyboard.Key;
+    DOWN: Phaser.Input.Keyboard.Key;
+    LEFT: Phaser.Input.Keyboard.Key;
+    RIGHT: Phaser.Input.Keyboard.Key;
+};
+
 export class Player {
 
     private readonly sprite: 
         Phaser.Physics.Arcade.Sprite;
 
-    private readonly cursors:
-        Phaser.Types.Input.Keyboard.CursorKeys;
+    private readonly shootingKeys:
+        ShootingKeys;
+
+    private shootRequested:
+        Phaser.Math.Vector2 | null = null;
 
     private readonly wasd: MovementKeys;
 
+    private readonly scene:
+        Phaser.Scene;
+
     private readonly speed = 220;
+
+    private readonly shootCooldown = 250;
+
+    private lastShotTime = -Infinity;
 
     private direction:
         PlayerDirection = "down";
@@ -33,6 +50,8 @@ export class Player {
         x: number,
         y: number
     ) {
+
+        this.scene = scene;
 
         this.sprite = scene.physics.add.sprite(
             x,
@@ -59,9 +78,6 @@ export class Player {
             );
         }
 
-        this.cursors =
-            scene.input.keyboard.createCursorKeys();
-
         this.wasd =
             scene.input.keyboard.addKeys({
                 W: Phaser.Input.Keyboard.KeyCodes.W,
@@ -69,9 +85,29 @@ export class Player {
                 S: Phaser.Input.Keyboard.KeyCodes.S,
                 D: Phaser.Input.Keyboard.KeyCodes.D
             }) as MovementKeys;
+        
+        this.shootingKeys = {
+            UP: scene.input.keyboard.addKey(
+                Phaser.Input.Keyboard.KeyCodes.UP
+            ),
+
+            DOWN: scene.input.keyboard.addKey(
+                Phaser.Input.Keyboard.KeyCodes.DOWN
+            ),
+
+            LEFT: scene.input.keyboard.addKey(
+                Phaser.Input.Keyboard.KeyCodes.LEFT
+            ),
+
+            RIGHT: scene.input.keyboard.addKey(
+                Phaser.Input.Keyboard.KeyCodes.RIGHT
+            )
+        };
     }
 
     update(): void {
+
+        this.updateShooting();
 
         this.sprite.setVelocity(0);
 
@@ -79,28 +115,24 @@ export class Player {
         let y = 0;
 
         if (
-            this.cursors.left.isDown ||
             this.wasd.A.isDown
         ) {
             x -= 1;
         }
 
         if (
-            this.cursors.right.isDown ||
             this.wasd.D.isDown
         ) {
             x += 1;
         }
 
         if (
-            this.cursors.up.isDown ||
             this.wasd.W.isDown
         ) {
             y -= 1;
         }
 
         if (
-            this.cursors.down.isDown ||
             this.wasd.S.isDown
         ) {
             y += 1;
@@ -125,6 +157,47 @@ export class Player {
 
         this.playMovementAnimation();
     }
+
+    private updateShooting(): void {
+
+        let x = 0;
+        let y = 0;
+
+       if (this.shootingKeys.LEFT.isDown) {
+            x -= 1;
+        }
+
+        if (this.shootingKeys.RIGHT.isDown) {
+            x += 1;
+        }
+
+        if (this.shootingKeys.UP.isDown) {
+            y -= 1;
+        }
+
+        if (this.shootingKeys.DOWN.isDown) {
+            y += 1;
+        }
+
+        if (x === 0 && y === 0) {
+            return;
+        }
+
+        const currentTime =
+            this.scene.time.now;
+
+        if (
+            currentTime - this.lastShotTime <
+            this.shootCooldown
+        ) {
+            return;
+        }
+
+        this.lastShotTime = currentTime;
+
+        this.shootRequested =
+            new Phaser.Math.Vector2(x, y);
+        }
 
     //Constructores
     private updateDirection(
@@ -165,5 +238,55 @@ export class Player {
     get physicsSprite():
         Phaser.Physics.Arcade.Sprite {
         return this.sprite;
+    }
+
+    consumeShootRequest():
+        Phaser.Math.Vector2 | null {
+
+        const request = this.shootRequested;
+        this.shootRequested = null;
+        return request;
+    }
+
+    get x(): number {
+        return this.sprite.x;
+    }
+
+    get y(): number {
+        return this.sprite.y;
+    }
+
+    getProjectileSpawn(
+        direction: Phaser.Math.Vector2
+    ): Phaser.Math.Vector2 {
+
+        const x = this.sprite.x;
+        const y = this.sprite.y;
+
+        if (direction.x > 0) {
+            return new Phaser.Math.Vector2(
+                x + 58,
+                y - 9
+            );
+        }
+
+        if (direction.x < 0) {
+            return new Phaser.Math.Vector2(
+                x - 58,
+                y - 9
+            );
+        }
+
+        if (direction.y < 0) {
+            return new Phaser.Math.Vector2(
+                x,
+                y - 58
+            );
+        }
+
+        return new Phaser.Math.Vector2(
+            x,
+            y + 58
+        );
     }
 }
