@@ -17,7 +17,7 @@ export class GameScene extends Phaser.Scene {
     preload(): void {
         this.load.spritesheet(
             "player-walk",
-            "assets/sprites/player/alex-walk.png",
+            "assets/sprites/player/lua-walk.png",
             { frameWidth: 256, frameHeight: 256 }
         );
     }
@@ -60,6 +60,11 @@ export class GameScene extends Phaser.Scene {
             playerY
         );
 
+        this.physics.add.collider(
+            this.player.physicsSprite,
+            builder.getWalls()
+        );
+
         this.cameras.main.setBackgroundColor(
             "#000000"
         );
@@ -71,11 +76,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     update(
-        _time: number,
-        delta: number
     ): void {
 
-        this.player?.update(delta);
+        this.player?.update();
     }
 
     private createPlayerAnimations(): void {
@@ -83,9 +86,9 @@ export class GameScene extends Phaser.Scene {
             key: "player-walk-down",
             frames: this.anims.generateFrameNumbers(
                 'player-walk',
-                { start:0, end:5}
+                { start:0, end:7}
             ),
-            frameRate: 8,
+            frameRate: 10,
             repeat: -1
         });
 
@@ -93,9 +96,9 @@ export class GameScene extends Phaser.Scene {
             key: "player-walk-up",
             frames: this.anims.generateFrameNumbers(
                 'player-walk',
-                { start:6, end:11}
+                { start:8, end:15}
             ),
-            frameRate: 8,
+            frameRate: 10,
             repeat: -1
         });
 
@@ -103,9 +106,9 @@ export class GameScene extends Phaser.Scene {
             key: "player-walk-left",
             frames: this.anims.generateFrameNumbers(
                 'player-walk',
-                { start:12, end:17}
+                { start:16, end:23}
             ),
-            frameRate: 8,
+            frameRate: 10,
             repeat: -1
         });
 
@@ -113,9 +116,9 @@ export class GameScene extends Phaser.Scene {
             key: "player-walk-right",
             frames: this.anims.generateFrameNumbers(
                 'player-walk',
-                { start:18, end:23}
+                { start:24, end:31}
             ),
-            frameRate: 8,
+            frameRate: 10,
             repeat: -1
         });
     }

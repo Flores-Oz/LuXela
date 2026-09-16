@@ -6,10 +6,16 @@ export class RoomBuilder {
 
     private readonly scene: Phaser.Scene;
 
+    private readonly walls:
+        Phaser.Physics.Arcade.StaticGroup;
+
     constructor(
         scene: Phaser.Scene
     ) {
         this.scene = scene;
+
+        this.walls = 
+            scene.physics.add.staticGroup();
     }
 
     build(room: Room): void {
@@ -37,6 +43,11 @@ export class RoomBuilder {
             }
         }
     }
+
+    getWalls():
+        Phaser.Physics.Arcade.StaticGroup {
+            return this.walls;
+        }
 
     private drawTile(
         tile: TileType,
@@ -88,13 +99,21 @@ export class RoomBuilder {
         size: number
     ): void {
 
-        this.scene.add.rectangle(
-            x,
-            y,
-            size,
-            size,
-            0x777777
+        const wall =
+            this.scene.add.rectangle(
+                x,
+                y,
+                size,
+                size,
+                0x777777
+            )
+        
+        this.scene.physics.add.existing(
+            wall,
+            true
         );
+
+        this.walls.add(wall);
     }
 
     private drawRobotSpawn(

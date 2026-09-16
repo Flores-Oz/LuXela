@@ -16,7 +16,7 @@ type PlayerDirection =
 export class Player {
 
     private readonly sprite: 
-        Phaser.GameObjects.Sprite;
+        Phaser.Physics.Arcade.Sprite;
 
     private readonly cursors:
         Phaser.Types.Input.Keyboard.CursorKeys;
@@ -34,13 +34,24 @@ export class Player {
         y: number
     ) {
 
-        this.sprite = scene.add.sprite(
+        this.sprite = scene.physics.add.sprite(
             x,
             y,
             "player-walk",
             0
         );
         this.sprite.setScale(0.35);
+
+                
+        this.sprite.body?.setSize(
+            70,
+            70
+        );
+
+        this.sprite.body?.setOffset(
+            93,
+            150
+        );
 
         if (!scene.input.keyboard) {
             throw new Error(
@@ -60,7 +71,9 @@ export class Player {
             }) as MovementKeys;
     }
 
-    update(delta: number): void {
+    update(): void {
+
+        this.sprite.setVelocity(0);
 
         let x = 0;
         let y = 0;
@@ -103,21 +116,14 @@ export class Player {
 
         direction.normalize();
 
+        this.sprite.setVelocity(
+            direction.x * this.speed,
+            direction.y * this.speed
+        )
+
         this.updateDirection(x,y);
 
         this.playMovementAnimation();
-
-        const deltaSeconds = delta / 1000;
-
-        this.sprite.x +=
-            direction.x *
-            this.speed *
-            deltaSeconds;
-
-        this.sprite.y +=
-            direction.y *
-            this.speed *
-            deltaSeconds;
     }
 
     //Constructores
@@ -154,5 +160,10 @@ export class Player {
 
     private stopMovementAnimation(): void {
         this.sprite.stop();
+    }
+
+    get physicsSprite():
+        Phaser.Physics.Arcade.Sprite {
+        return this.sprite;
     }
 }
