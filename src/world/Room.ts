@@ -14,6 +14,31 @@ export class Room {
         matrix: RoomMatrix,
         tileSize: number
     ) {
+       if (matrix.length === 0) {
+            throw new Error(
+                "Room matrix cannot be empty."
+            );
+        }
+
+        if (matrix[0].length === 0) {
+            throw new Error(
+                "Room rows cannot be empty."
+            );
+        }
+
+        const width = matrix[0].length;
+
+        const hasInvalidRow =
+            matrix.some(
+                row => row.length !== width
+            );
+
+        if (hasInvalidRow) {
+            throw new Error(
+                "All Room rows must have the same width."
+            );
+        }
+
         this.matrix = matrix;
         this.tileSize = tileSize;
     }
@@ -50,5 +75,21 @@ export class Room {
         }
 
         return null;
+    }
+
+    countTiles(
+        tileType: TileType
+    ): number {
+        let count = 0;
+        for (const row of this.matrix) {
+
+            for (const tile of row) {
+
+                if (tile === tileType) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 }

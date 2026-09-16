@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { GameSettings } from "./GameSettings";
 import { GameScene } from "../scenes/GameScene";
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
@@ -21,7 +22,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
                 y: 0
             },
 
-            debug: true
+            debug: GameSettings.physicsDebug
         }
     },
 

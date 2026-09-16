@@ -103,6 +103,8 @@ export class Player {
                 Phaser.Input.Keyboard.KeyCodes.RIGHT
             )
         };
+
+        this.sprite.setCollideWorldBounds(true);
     }
 
     update(): void {

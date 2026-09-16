@@ -6,6 +6,8 @@ export class Projectile {
 
     private readonly speed = 500;
 
+    private readonly lifetime = 2000;
+
     constructor(
         scene: Phaser.Scene,
         x: number,
@@ -42,6 +44,13 @@ export class Projectile {
             normalizedDirection.x * this.speed,
             normalizedDirection.y * this.speed
         );
+
+        scene.time.delayedCall(
+            this.lifetime,
+            () => {
+                this.destroy();
+            }
+        );
     }
 
     get physicsBody():
@@ -51,6 +60,9 @@ export class Projectile {
     }
 
     destroy(): void {
+        if (!this.body.active) {
+            return;
+        }
         this.body.destroy();
     }
 }

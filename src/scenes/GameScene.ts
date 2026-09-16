@@ -84,6 +84,13 @@ export class GameScene extends Phaser.Scene {
             this.walls
         );
 
+        this.physics.world.setBounds(
+            0,
+            0,
+            room.widthInPixels,
+            room.heightInPixels
+        );
+
         this.cameras.main.setBackgroundColor(
             "#000000"
         );
@@ -103,6 +110,17 @@ export class GameScene extends Phaser.Scene {
                 this.changeRoom();
             }
         );
+
+        const playerSpawnCount =
+            room.countTiles(
+                TileType.PlayerSpawn
+            );
+
+        if (playerSpawnCount !== 1) {
+            throw new Error(
+                `Room must contain exactly one PlayerSpawn. Found: ${playerSpawnCount}`
+            );
+        }
     }
 
     update(
