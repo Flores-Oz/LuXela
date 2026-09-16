@@ -2,14 +2,24 @@ import Phaser from "phaser";
 
 import { Room } from "../world/Room";
 import { RoomBuilder } from "../world/RoomBuilder";
-import { testRoom } from "../data/rooms/testRoom";
 import { TileType } from "../types/RoomTypes";
 import { Player } from "../entities/Player";
 import { Projectile } from "../entities/Projectile";
+import { testRoom } from "../data/rooms/testRoom";
+import { testRoom2 } from "../data/rooms/testRoom2";
 
 export class GameScene extends Phaser.Scene {
 
     private player: Player | null = null;
+
+    private roomIndex = 0;
+
+    private isChangingRoom = false;
+
+    private readonly rooms = [
+        testRoom,
+        testRoom2
+    ];
 
     private walls: 
         Phaser.Physics.Arcade.StaticGroup | null = null;
@@ -30,8 +40,11 @@ export class GameScene extends Phaser.Scene {
 
         const tileSize = 64;
 
+        const roomMatrix =
+            this.rooms[this.roomIndex];
+
         const room = new Room(
-            testRoom,
+            roomMatrix,
             tileSize
         );
 
@@ -78,6 +91,17 @@ export class GameScene extends Phaser.Scene {
         this.cameras.main.centerOn(
             room.widthInPixels / 2,
             room.heightInPixels / 2
+        );
+
+        const exits =
+            builder.getExits();
+
+        this.physics.add.overlap(
+            this.player.physicsSprite,
+            exits,
+            () => {
+                this.changeRoom();
+            }
         );
     }
 
@@ -176,5 +200,28 @@ export class GameScene extends Phaser.Scene {
                 projectile.destroy();
             }
         );
+    }
+
+    private changeRoom(): void {
+          if (this.isChangingRoom) {
+            return;
+        }
+
+        this.isChangingRoom = true;
+
+        const nextRoomIndex =
+            (this.roomIndex + 1) %
+            this.rooms.length;
+
+        this.scene.restart({
+            roomIndex: nextRoomIndex
+        });
+    }
+
+    init(data: { roomIndex?: number }): void {
+        this.roomIndex =
+            data.roomIndex ?? 0;
+
+        this.isChangingRoom = false;
     }
 }

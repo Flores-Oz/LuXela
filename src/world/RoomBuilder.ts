@@ -9,10 +9,16 @@ export class RoomBuilder {
     private readonly walls:
         Phaser.Physics.Arcade.StaticGroup;
 
+    private readonly exits:
+        Phaser.Physics.Arcade.StaticGroup;
+
     constructor(
         scene: Phaser.Scene
     ) {
         this.scene = scene;
+
+        this.exits =
+            scene.physics.add.staticGroup();
 
         this.walls = 
             scene.physics.add.staticGroup();
@@ -48,6 +54,11 @@ export class RoomBuilder {
         Phaser.Physics.Arcade.StaticGroup {
             return this.walls;
         }
+
+    getExits():
+        Phaser.Physics.Arcade.StaticGroup {
+        return this.exits;
+    }
 
     private drawTile(
         tile: TileType,
@@ -132,17 +143,25 @@ export class RoomBuilder {
     }
 
     private drawExit(
-        x: number,
+         x: number,
         y: number,
         size: number
     ): void {
 
-        this.scene.add.rectangle(
-            x,
-            y,
-            size * 0.65,
-            size * 0.65,
-            0x33ff66
+        const exit =
+            this.scene.add.rectangle(
+                x,
+                y,
+                size * 0.65,
+                size * 0.65,
+                0x33ff66
+            );
+
+        this.scene.physics.add.existing(
+            exit,
+            true
         );
+
+        this.exits.add(exit);
     }
 }
