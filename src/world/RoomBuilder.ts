@@ -55,10 +55,6 @@ export class RoomBuilder {
                 this.drawWall(x, y, size);
                 break;
 
-            case TileType.PlayerSpawn:
-                this.drawFloor(x, y, size);
-                break;
-
             case TileType.RobotSpawn:
                 this.drawFloor(x, y, size);
                 this.drawRobotSpawn(x, y, size);

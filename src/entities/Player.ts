@@ -7,9 +7,16 @@ type MovementKeys = {
     D: Phaser.Input.Keyboard.Key;
 };
 
+type PlayerDirection =
+    | "down"
+    | "up"
+    | "left"
+    | "right";
+
 export class Player {
 
-    private readonly body: Phaser.GameObjects.Sprite;
+    private readonly sprite: 
+        Phaser.GameObjects.Sprite;
 
     private readonly cursors:
         Phaser.Types.Input.Keyboard.CursorKeys;
@@ -18,19 +25,22 @@ export class Player {
 
     private readonly speed = 220;
 
+    private direction:
+        PlayerDirection = "down";
+
     constructor(
         scene: Phaser.Scene,
         x: number,
         y: number
     ) {
 
-        this.body = scene.add.sprite(
+        this.sprite = scene.add.sprite(
             x,
             y,
             "player-walk",
             0
         );
-        this.body.setScale(0.35);
+        this.sprite.setScale(0.35);
 
         if (!scene.input.keyboard) {
             throw new Error(
@@ -87,21 +97,62 @@ export class Player {
             new Phaser.Math.Vector2(x, y);
 
         if (direction.lengthSq() === 0) {
+            this.stopMovementAnimation();
             return;
         }
 
         direction.normalize();
 
+        this.updateDirection(x,y);
+
+        this.playMovementAnimation();
+
         const deltaSeconds = delta / 1000;
 
-        this.body.x +=
+        this.sprite.x +=
             direction.x *
             this.speed *
             deltaSeconds;
 
-        this.body.y +=
+        this.sprite.y +=
             direction.y *
             this.speed *
             deltaSeconds;
+    }
+
+    //Constructores
+    private updateDirection(
+        x: number,
+        y: number
+    ): void{
+        if (y > 0){
+            this.direction = "down";
+            return;
+        }
+
+        if (y < 0){
+            this.direction = "up";
+            return;
+        }
+
+        if (x < 0){
+            this.direction = "left";
+            return;
+        }
+
+        if (x > 0){
+            this.direction = "right";
+            return;
+        }
+    }
+
+    private playMovementAnimation(): void{
+        this.sprite.play(
+            `player-walk-${this.direction}`, true
+        );
+    }
+
+    private stopMovementAnimation(): void {
+        this.sprite.stop();
     }
 }

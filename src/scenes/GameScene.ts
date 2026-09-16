@@ -17,7 +17,7 @@ export class GameScene extends Phaser.Scene {
     preload(): void {
         this.load.spritesheet(
             "player-walk",
-            "assets/sprites/player/lua-walk.png",
+            "assets/sprites/player/alex-walk.png",
             { frameWidth: 256, frameHeight: 256 }
         );
     }
@@ -35,14 +35,7 @@ export class GameScene extends Phaser.Scene {
 
         builder.build(room);
 
-        const testSprite = this.add.sprite(
-            400,
-            300,
-            "player-walk",
-            0
-        );
-
-        testSprite.setScale(0.35);
+        this.createPlayerAnimations();
 
         const spawn =
             room.findTile(TileType.PlayerSpawn);
@@ -75,21 +68,6 @@ export class GameScene extends Phaser.Scene {
             room.widthInPixels / 2,
             room.heightInPixels / 2
         );
-
-        this.anims.create({
-        key: "test-walk",
-        frames: this.anims.generateFrameNumbers(
-            "player-walk",
-            {
-                start: 0,
-                end: 5
-            }
-        ),
-        frameRate: 8,
-        repeat: -1
-    });
-
-    testSprite.play("test-walk");
     }
 
     update(
@@ -98,5 +76,47 @@ export class GameScene extends Phaser.Scene {
     ): void {
 
         this.player?.update(delta);
+    }
+
+    private createPlayerAnimations(): void {
+        this.anims.create({
+            key: "player-walk-down",
+            frames: this.anims.generateFrameNumbers(
+                'player-walk',
+                { start:0, end:5}
+            ),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: "player-walk-up",
+            frames: this.anims.generateFrameNumbers(
+                'player-walk',
+                { start:6, end:11}
+            ),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: "player-walk-left",
+            frames: this.anims.generateFrameNumbers(
+                'player-walk',
+                { start:12, end:17}
+            ),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: "player-walk-right",
+            frames: this.anims.generateFrameNumbers(
+                'player-walk',
+                { start:18, end:23}
+            ),
+            frameRate: 8,
+            repeat: -1
+        });
     }
 }
