@@ -7,6 +7,8 @@ import { Player } from "../entities/Player";
 import { Projectile } from "../entities/Projectile";
 import { testRoom } from "../data/rooms/testRoom";
 import { testRoom2 } from "../data/rooms/testRoom2";
+import { Enemy } from "../entities/enemies/Enemy";
+
 
 export class GameScene extends Phaser.Scene {
 
@@ -15,6 +17,8 @@ export class GameScene extends Phaser.Scene {
     private roomIndex = 0;
 
     private isChangingRoom = false;
+
+    private enemy: Enemy | null = null;
 
     private readonly rooms = [
         testRoom,
@@ -33,6 +37,12 @@ export class GameScene extends Phaser.Scene {
             "player-walk",
             "assets/sprites/player/lua-walk.png",
             { frameWidth: 256, frameHeight: 256 }
+        );
+
+        this.load.spritesheet(
+            "robot-red",
+            "assets/sprites/enemies/RobotRed.png",
+            { frameWidth: 64, frameHeight: 64}
         );
     }
 
@@ -121,6 +131,16 @@ export class GameScene extends Phaser.Scene {
                 `Room must contain exactly one PlayerSpawn. Found: ${playerSpawnCount}`
             );
         }
+
+        this.enemy = new Enemy(
+            this,
+            500,
+            300,
+            "robot-red"
+        );
+
+        this.enemy.setFrame(0);
+
     }
 
     update(
