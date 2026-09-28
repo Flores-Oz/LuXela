@@ -18,6 +18,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.setCollideWorldBounds(true);
     }
 
+    public playIdle(): void {
+        if (this.dead) {
+            return;
+        }
+
+        this.play("robot-idle", true);
+    }
+
     public die(): void {
 
         if (this.dead) {

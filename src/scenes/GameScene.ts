@@ -41,8 +41,12 @@ export class GameScene extends Phaser.Scene {
 
         this.load.spritesheet(
             "robot-red",
-            "assets/sprites/enemies/RobotRed.png",
-            { frameWidth: 64, frameHeight: 64}
+            "assets/sprites/enemies/RobotRed-fixed.png",
+            {
+                frameWidth: 64,
+                frameHeight: 64,
+                endFrame: 65
+            }
         );
     }
 
@@ -63,6 +67,7 @@ export class GameScene extends Phaser.Scene {
         builder.build(room);
 
         this.createPlayerAnimations();
+        this.createEnemyAnimations();
 
         this.walls = builder.getWalls();
 
@@ -139,7 +144,10 @@ export class GameScene extends Phaser.Scene {
             "robot-red"
         );
 
-        this.enemy.setFrame(0);
+      /*  this.enemy.play("robot-walk-up");
+        this.enemy.play("robot-walk-down");*/
+        /*this.enemy.play("robot-walk-left");*/
+        this.enemy.play("robot-walk-right");
 
     }
 
@@ -203,6 +211,119 @@ export class GameScene extends Phaser.Scene {
             ),
             frameRate: 10,
             repeat: -1
+        });
+    }
+
+    private createEnemyAnimations(): void {
+
+        this.anims.create({
+            key: "robot-idle",
+            frames: this.anims.generateFrameNumbers(
+                "robot-red",
+                { start: 0, end: 3 }
+            ),
+            frameRate: 4,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: "robot-walk-up",
+            frames: this.anims.generateFrameNumbers(
+                "robot-red",
+                { start: 6, end: 11 }
+            ),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: "robot-walk-down",
+            frames: this.anims.generateFrameNumbers(
+                "robot-red",
+                { start: 12, end: 17 }
+            ),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: "robot-walk-right",
+            frames: this.anims.generateFrameNumbers(
+                "robot-red",
+                { start: 18, end: 23 }
+            ),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: "robot-walk-left",
+            frames: this.anims.generateFrameNumbers(
+                "robot-red",
+                { start: 24, end: 29 }
+            ),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: "robot-special-a1",
+            frames: this.anims.generateFrameNumbers(
+                "robot-red",
+                { start: 30, end: 33 }
+            ),
+            frameRate: 8,
+            repeat: 0
+        });
+
+        this.anims.create({
+            key: "robot-special-a2",
+            frames: this.anims.generateFrameNumbers(
+                "robot-red",
+                { start: 36, end: 39 }
+            ),
+            frameRate: 8,
+            repeat: 0
+        });
+
+        this.anims.create({
+            key: "robot-special-b1",
+            frames: this.anims.generateFrameNumbers(
+                "robot-red",
+                { start: 42, end: 45 }
+            ),
+            frameRate: 8,
+            repeat: 0
+        });
+
+        this.anims.create({
+            key: "robot-special-b2",
+            frames: this.anims.generateFrameNumbers(
+                "robot-red",
+                { start: 48, end: 51 }
+            ),
+            frameRate: 8,
+            repeat: 0
+        });
+
+        this.anims.create({
+            key: "robot-hit",
+            frames: this.anims.generateFrameNumbers(
+                "robot-red",
+                { start: 54, end: 56 }
+            ),
+            frameRate: 10,
+            repeat: 0
+        });
+
+        this.anims.create({
+            key: "robot-death",
+            frames: this.anims.generateFrameNumbers(
+                "robot-red",
+                { start: 60, end: 65 }
+            ),
+            frameRate: 10,
+            repeat: 0
         });
     }
 
