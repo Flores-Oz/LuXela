@@ -139,15 +139,19 @@ export class GameScene extends Phaser.Scene {
 
         this.enemy = new Enemy(
             this,
-            500,
+            450,
             300,
             "robot-red"
         );
 
-      /*  this.enemy.play("robot-walk-up");
-        this.enemy.play("robot-walk-down");*/
-        /*this.enemy.play("robot-walk-left");*/
-        this.enemy.play("robot-walk-right");
+        this.enemy.playIdle();
+
+        if (this.walls) {
+            this.physics.add.collider(
+                this.enemy,
+                this.walls
+            );
+        }
 
     }
 
