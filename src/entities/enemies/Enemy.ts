@@ -6,6 +6,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     private readonly moveSpeed = 80;
 
+    private readonly detectionRange = 200;
+
+    private playerDetected = false;
+
     constructor(
         scene: Phaser.Scene,
         x: number,
@@ -64,13 +68,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         this.play("robot-walk-right", true);
     }
 
-    public stop(): void {
+    public stop(): this {
         if (this.dead) {
-            return;
+            return this;
         }
 
         this.setVelocity(0, 0);
         this.playIdle();
+
+        return this;
     }
 
     public die(): void {
@@ -88,5 +94,31 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     public isDead(): boolean {
         return this.dead;
+    }
+
+    public detectPlayer(
+        player: Phaser.GameObjects.Components.Transform
+    ): boolean {
+
+        if (this.dead || !this.active) {
+            this.playerDetected = false;
+            return false;
+        }
+
+        const distance = Phaser.Math.Distance.Between(
+            this.x,
+            this.y,
+            player.x,
+            player.y
+        );
+
+        this.playerDetected =
+            distance <= this.detectionRange;
+
+        return this.playerDetected;
+    }
+
+    public hasDetectedPlayer(): boolean {
+        return this.playerDetected;
     }
 }

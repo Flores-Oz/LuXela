@@ -8,6 +8,7 @@ import { Projectile } from "../entities/Projectile";
 import { testRoom } from "../data/rooms/testRoom";
 import { testRoom2 } from "../data/rooms/testRoom2";
 import { Enemy } from "../entities/enemies/Enemy";
+import { LineOfSight } from "../systems/LineOfSight";
 
 
 export class GameScene extends Phaser.Scene {
@@ -19,6 +20,12 @@ export class GameScene extends Phaser.Scene {
     private isChangingRoom = false;
 
     private enemy: Enemy | null = null;
+
+    private wasPlayerDetected = false;
+
+    private wasPlayerVisible = false;
+
+    private lineOfSight: LineOfSight | null = null;
 
     private readonly rooms = [
         testRoom,
@@ -70,6 +77,7 @@ export class GameScene extends Phaser.Scene {
         this.createEnemyAnimations();
 
         this.walls = builder.getWalls();
+        this.lineOfSight = new LineOfSight(this.walls);
 
         const spawn =
             room.findTile(TileType.PlayerSpawn);
@@ -163,6 +171,32 @@ export class GameScene extends Phaser.Scene {
         }
 
         this.player.update();
+
+        if (this.enemy) {
+
+            const detected = this.enemy.detectPlayer(
+                this.player.physicsSprite
+            );
+
+            const canSeePlayer = detected && (this.lineOfSight?.hasLineOfSight(
+                this.enemy,
+                this.player.physicsSprite
+            ) ?? false);
+
+            if (detected !== this.wasPlayerDetected || canSeePlayer !== this.wasPlayerVisible) {
+
+                if (!detected) {
+                    console.log("Player ha salido del rango");
+                } else if (canSeePlayer) {
+                    console.log("Player dentro de rango y visible (línea de visión despejada)");
+                } else {
+                    console.log("Player dentro de rango pero bloqueado por pared");
+                }
+
+                this.wasPlayerDetected = detected;
+                this.wasPlayerVisible = canSeePlayer;
+            }
+        }
 
         const shootDirection =
             this.player.consumeShootRequest();
@@ -386,5 +420,7 @@ export class GameScene extends Phaser.Scene {
             data.roomIndex ?? 0;
 
         this.isChangingRoom = false;
+        this.wasPlayerDetected = false;
+        this.wasPlayerVisible = false;
     }
 }
