@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { EnemyState } from "./EnemyState";
 import type { Player } from "../Player";
 import type { LineOfSight } from "../../systems/LineOfSight";
+import { CombatEvents } from "../../systems/CombatEvents";
 
 export type EnemyConfig = {
     moveSpeed?: number;
@@ -115,7 +116,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     public die(): void {
 
-        if (this.dead) {
+        if (this.dead || !this.active || !this.body) {
             return;
         }
 
@@ -130,6 +131,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
             () => this.destroy()
         );
         this.play(`${this.animationPrefix}-death`);
+        this.emit(CombatEvents.ENEMY_DIED, this);
     }
 
     public isDead(): boolean {

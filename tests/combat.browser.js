@@ -3,6 +3,8 @@ import { gameConfig } from '../src/config/gameConfig';
 import { Projectile } from '../src/entities/Projectile';
 import { Enemy } from '../src/entities/enemies/Enemy';
 import { EnemyState } from '../src/entities/enemies/EnemyState';
+import { CombatEvents } from '../src/systems/CombatEvents';
+import { characters } from '../src/config/characters';
 
 // Real Arcade bodies, colliders, animations, input and room lifecycle in Canvas.
 const results = [];
@@ -12,6 +14,8 @@ const check = (name, condition) => {
 };
 window.combatResults = { status: 'running' };
 const game = new Phaser.Game({ ...gameConfig, type: Phaser.CANVAS });
+// Test-page only: permits native keyboard/pointer smoke checks via CDP.
+window.combatGame = game;
 let now = 1000;
 const tick = (count = 1) => {
     for (let i = 0; i < count; i++) game.scene.update(now += 1000 / 60, 1000 / 60);
@@ -156,6 +160,13 @@ async function run() {
     scene.createProjectile(new Phaser.Math.Vector2(1, 0));
     check('Muzzle no permite disparar a través de pared', scene.playerProjectiles.getLength() === shotsBeforeMuzzle);
 
+    let deathEvents = 0;
+    let defeatEvents = 0;
+    let shutdownClears = 0;
+    const onShutdownClear = () => shutdownClears++;
+    scene.events.on(CombatEvents.ROOM_CLEARED, onShutdownClear);
+    player.physicsSprite.on(CombatEvents.PLAYER_DIED, () => deathEvents++);
+    player.physicsSprite.on(CombatEvents.PLAYER_DEFEAT_COMPLETE, () => defeatEvents++);
     reset(player.physicsSprite, 160, 160);
     tick(2);
     const center = player.physicsSprite.body.center;
@@ -163,6 +174,12 @@ async function run() {
     new Projectile(scene, center.x, center.y, new Phaser.Math.Vector2(1, 0), 'enemy', scene.enemyProjectiles);
     tick(3);
     check('Un impacto mata jugador y deshabilita cuerpo', player.isDead() && !player.physicsSprite.body.enable);
+    check('Derrota visible y sin bucle antes de Game Over', player.physicsSprite.visible && player.physicsSprite.active &&
+        player.physicsSprite.anims.currentAnim.key.startsWith('lua-defeat-') && player.physicsSprite.anims.currentAnim.repeat === 0 &&
+        !game.scene.isActive('GameOverScene'));
+    check('Combate detenido y proyectiles limpiados', scene.combatState === 'defeat' && scene.physics.world.isPaused &&
+        scene.enemyProjectiles.getLength() === 0 && scene.playerProjectiles.getLength() === 0 &&
+        scene.enemies.getChildren().every(e => e.body.velocity.lengthSq() === 0));
     player.die();
     player.wasd.D.isDown = true;
     player.shootingKeys.RIGHT.isDown = true;
@@ -172,27 +189,117 @@ async function run() {
     check('Robot no ataca jugador muerto', survivor.updateBehavior(player, scene.lineOfSight, now + 9999) === null);
     scene.changeRoom();
     check('Jugador muerto no activa salida', !scene.isChangingRoom);
-    game.loop.wake();
-    await new Promise(r => setTimeout(r, 600));
-    game.loop.sleep();
-    check('Efecto de muerte desactiva jugador', !player.physicsSprite.active);
+    tick(70);
+    check('T-02 y T-06: una muerte, un fin de derrota y Game Over', deathEvents === 1 && defeatEvents === 1 &&
+        !player.physicsSprite.active && game.scene.isActive('GameOverScene') && !game.scene.isActive('GameScene'));
+    check('Cerrar escena no emite habitación despejada por destruir supervivientes', shutdownClears === 0);
+    scene.events.off(CombatEvents.ROOM_CLEARED, onShutdownClear);
+    let gameOver = game.scene.getScene('GameOverScene');
+    check('Game Over muestra texto y reinicio', gameOver.children.list.some(c => c.text === 'GAME OVER') &&
+        gameOver.children.list.some(c => c.text === '[ REINTENTAR ]' && c.input.enabled));
+    check('Un listener por atajo de reinicio', gameOver.input.keyboard.listenerCount('keydown-ENTER') === 1 &&
+        gameOver.input.keyboard.listenerCount('keydown-R') === 1);
+    gameOver.input.keyboard.emit('keydown-ENTER');
+    gameOver.input.keyboard.emit('keydown-ENTER');
+    tick(4);
+    scene = game.scene.getScene('GameScene');
+    scene.sys.sceneUpdate = () => {};
+    check('T-07: reinicio por Enter restaura habitación', game.scene.isActive('GameScene') && scene.roomIndex === 0 &&
+        !scene.player.isDead() && scene.player.physicsSprite.body.enable && !scene.physics.world.isPaused &&
+        scene.enemies.getLength() === 2 && scene.enemyProjectiles.getLength() === 0 && scene.combatState === 'playing');
+    check('Game Over libera listeners al salir', gameOver.input.keyboard.listenerCount('keydown-ENTER') === 0 &&
+        gameOver.input.keyboard.listenerCount('keydown-R') === 0);
+    scene.player.wasd.D.isDown = true;
+    scene.player.update();
+    check('Reinicio recupera controles de movimiento', scene.player.physicsSprite.body.velocity.x === 220);
+    scene.player.wasd.D.isDown = false;
+    scene.player.physicsSprite.setVelocity(0);
+    const animationCount = scene.anims.anims.size;
+    const updateListeners = scene.events.listenerCount('update');
+
+    for (const [index, character] of ['alex', 'lua', 'alex'].entries()) {
+        scene.scene.restart({ roomIndex: 0, character });
+        tick(4);
+        scene.sys.sceneUpdate = () => {};
+        const currentPlayer = scene.player;
+        currentPlayer.direction = index === 0 ? 'down' : index === 1 ? 'right' : 'left';
+        reset(currentPlayer.physicsSprite, 160, 160);
+        tick(2);
+        const position = currentPlayer.physicsSprite.body.center;
+        new Projectile(scene, position.x, position.y, new Phaser.Math.Vector2(1, 0), 'enemy', scene.enemyProjectiles);
+        tick(3);
+        const expected = `${character}-defeat-${index === 0 ? 'front' : 'side'}`;
+        check(`Derrota ${character} ${index}: arte, frames y escala`, currentPlayer.physicsSprite.anims.currentAnim.key === expected &&
+            currentPlayer.physicsSprite.anims.currentAnim.frames.length === characters[character][index === 0 ? 'front' : 'side'].length &&
+            currentPlayer.physicsSprite.scaleX === 0.35 && currentPlayer.physicsSprite.frame.realWidth === 256);
+        tick(70);
+        gameOver = game.scene.getScene('GameOverScene');
+        check(`Reinicio ${index}: Game Over único`, game.scene.isActive('GameOverScene') &&
+            gameOver.input.keyboard.listenerCount('keydown-ENTER') === 1);
+        if (index === 1) {
+            const button = gameOver.children.list.find(c => c.text === '[ REINTENTAR ]');
+            button.emit('pointerdown'); button.emit('pointerdown');
+        } else {
+            gameOver.input.keyboard.emit(index === 0 ? 'keydown-R' : 'keydown-ENTER');
+        }
+        tick(4);
+        scene.sys.sceneUpdate = () => {};
+        check(`T-08 reinicio ${index}: sin acumulación y personaje conservado`, scene.character === character &&
+            !scene.player.isDead() && scene.enemies.getLength() === 2 && scene.enemyManager.aliveCount === 2 &&
+            scene.physics.world.colliders.getActive().length === colliderCount &&
+            scene.events.listenerCount('update') === updateListeners && scene.anims.anims.size === animationCount);
+    }
+
+    let clearedEvents = 0;
+    scene.events.on(CombatEvents.ROOM_CLEARED, () => clearedEvents++);
+    const robots = scene.enemies.getChildren().slice();
+    robots.forEach(robot => { robot.stop(); reset(robot, 608, 160); });
+    new Projectile(scene, 608, 160, new Phaser.Math.Vector2(1, 0), 'player', scene.playerProjectiles);
+    tick(3);
+    check('Una bala no mata dos robots solapados', robots.filter(e => e.isDead()).length === 1 &&
+        scene.enemyManager.aliveCount === 1 && !scene.enemyManager.isCleared && clearedEvents === 0);
+    const lastRobot = robots.find(e => !e.isDead());
+    new Projectile(scene, lastRobot.x, lastRobot.y, new Phaser.Math.Vector2(1, 0), 'player', scene.playerProjectiles);
+    tick(3);
+    check('T-09: despejada al impacto del último robot, durante animación', scene.enemyManager.aliveCount === 0 &&
+        scene.enemyManager.isCleared && clearedEvents === 1 && lastRobot.active);
+    lastRobot.die();
+    tick(45);
+    check('Habitación despejada emite una sola vez', clearedEvents === 1 && scene.enemies.getLength() === 0);
+    scene.events.removeAllListeners(CombatEvents.ROOM_CLEARED);
 
     // Restart to exercise actual exit overlap with a living player.
-    scene.scene.restart({ roomIndex: 0 });
+    scene.scene.restart({ roomIndex: 0, character: 'alex' });
     tick(3);
     scene = game.scene.getScene('GameScene');
     scene.sys.sceneUpdate = () => {};
     const oldEnemies = scene.enemies.getChildren().slice();
+    const oldWalls = scene.walls;
+    let emptyRoomClears = 0;
+    const onEmptyClear = () => { if (scene.roomIndex === 1) emptyRoomClears++; };
+    scene.events.on(CombatEvents.ROOM_CLEARED, onEmptyClear);
     const oldShot = new Projectile(scene, 352, 352, new Phaser.Math.Vector2(0, 0), 'enemy', scene.enemyProjectiles);
     reset(scene.player.physicsSprite, 672, 480);
     tick(4);
     check('Salida cambia a segunda habitación', scene.roomIndex === 1);
     check('Cambio limpia robots, balas y referencias', oldEnemies.every(e => !e.active) && !oldShot.physicsBody.active &&
         scene.enemies.getLength() === 0 && scene.enemyProjectiles.getLength() === 0);
+    check('T-14: paredes y visión se actualizan tras combate', scene.walls !== oldWalls &&
+        scene.lineOfSight.obstacles === scene.walls &&
+        !scene.lineOfSight.hasLineOfSight({ x: 160, y: 160 }, { x: 352, y: 160 }));
+    check('Habitación sin robots emite despejada una vez al iniciar', emptyRoomClears === 1);
+    scene.player.die();
+    tick(70);
+    gameOver.input.keyboard.emit('keydown-ENTER');
+    tick(4);
+    check('Reintento conserva segunda habitación y personaje', scene.roomIndex === 1 && scene.character === 'alex' &&
+        !scene.player.isDead() && scene.enemyManager.isCleared && emptyRoomClears === 2);
+    scene.events.off(CombatEvents.ROOM_CLEARED, onEmptyClear);
     scene.sys.sceneUpdate = () => {};
     reset(scene.player.physicsSprite, 544, 96);
     tick(4);
     check('Regreso reconstruye primera habitación', scene.roomIndex === 0 && scene.enemies.getLength() === 2);
+    check('Personaje se conserva entre habitaciones', scene.character === 'alex' && scene.player.physicsSprite.texture.key === 'alex-walk');
     check('Colliders estables tras cambios', scene.physics.world.colliders.getActive().length === colliderCount);
     scene.sys.sceneUpdate = normalUpdate;
     game.loop.wake();

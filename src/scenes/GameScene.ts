@@ -10,6 +10,10 @@ import { testRoom2 } from "../data/rooms/testRoom2";
 import { Enemy } from "../entities/enemies/Enemy";
 import { LineOfSight } from "../systems/LineOfSight";
 import { GameSettings } from "../config/GameSettings";
+import type { PlayerCharacter } from "../config/characters";
+import { loadPlayerAssets, createPlayerAnimations } from "../systems/PlayerAnimations";
+import { CombatEvents } from "../systems/CombatEvents";
+import { EnemyManager } from "../systems/EnemyManager";
 
 
 
@@ -18,6 +22,12 @@ export class GameScene extends Phaser.Scene {
     private player: Player | null = null;
 
     private roomIndex = 0;
+
+    private character: PlayerCharacter = GameSettings.playerCharacter;
+
+    private combatState: "playing" | "defeat" | "game-over" = "playing";
+
+    private enemyManager: EnemyManager | null = null;
 
     private isChangingRoom = false;
 
@@ -42,11 +52,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     preload(): void {
-        this.load.spritesheet(
-            "player-walk",
-            "assets/sprites/player/lua-walk.png",
-            { frameWidth: 256, frameHeight: 256 }
-        );
+        loadPlayerAssets(this);
 
         this.load.spritesheet(
             "robot-red",
@@ -61,12 +67,17 @@ export class GameScene extends Phaser.Scene {
 
     create(): void {
 
+        this.input.keyboard?.resetKeys();
+        this.physics.resume();
         this.enemies = this.physics.add.group({ collideWorldBounds: true });
+        this.enemyManager = new EnemyManager(this, this.enemies);
         this.playerProjectiles = this.physics.add.group();
         this.enemyProjectiles = this.physics.add.group();
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             // Arcade and the display list destroy bodies/groups on shutdown.
             // Group shutdown listeners run first; do not clear destroyed groups.
+            this.enemyManager?.destroy();
+            this.enemyManager = null;
             this.player = null;
             this.walls = null;
             this.lineOfSight = null;
@@ -86,7 +97,7 @@ export class GameScene extends Phaser.Scene {
 
         builder.build(room);
 
-        this.createPlayerAnimations();
+        createPlayerAnimations(this);
         this.createEnemyAnimations();
 
         this.walls = builder.getWalls();
@@ -112,8 +123,12 @@ export class GameScene extends Phaser.Scene {
         this.player = new Player(
             this,
             playerX,
-            playerY
+            playerY,
+            this.character
         );
+
+        this.player.physicsSprite.once(CombatEvents.PLAYER_DIED, this.beginDefeat, this);
+        this.player.physicsSprite.once(CombatEvents.PLAYER_DEFEAT_COMPLETE, this.showGameOver, this);
 
         this.physics.add.collider(
             this.player.physicsSprite,
@@ -166,7 +181,7 @@ export class GameScene extends Phaser.Scene {
                     column * tileSize + tileSize / 2,
                     row * tileSize + tileSize / 2, "robot-red",
                     { patrol: GameSettings.enemyPatrol });
-                this.enemies.add(enemy);
+                this.enemyManager.add(enemy);
                 enemy.playIdle();
             }
         }
@@ -181,20 +196,21 @@ export class GameScene extends Phaser.Scene {
         this.physics.add.overlap(this.playerProjectiles, this.enemies, (shot, target) => {
             const enemy = target as Enemy;
             const projectile = shot as Phaser.Physics.Arcade.Image;
-            if (!projectile.active || enemy.isDead()) return;
+            if (this.combatState !== "playing" || this.isChangingRoom || !projectile.active || enemy.isDead()) return;
             projectile.getData("projectile")?.destroy();
             enemy.die();
         });
         this.physics.add.overlap(this.enemyProjectiles, this.player.physicsSprite, (shot) => {
             const projectile = shot as Phaser.Physics.Arcade.Image;
-            if (!projectile.active || !this.player || this.player.isDead()) return;
+            if (this.combatState !== "playing" || this.isChangingRoom || !projectile.active || !this.player || this.player.isDead()) return;
             projectile.getData("projectile")?.destroy();
             this.player.die();
         });
+        this.enemyManager.start();
     }
 
     update(time: number): void {
-        if (!this.player || !this.lineOfSight || this.isChangingRoom) return;
+        if (this.combatState !== "playing" || !this.player || !this.lineOfSight || this.isChangingRoom) return;
         this.player.update();
 
         for (const child of this.enemies.getChildren()) {
@@ -210,46 +226,20 @@ export class GameScene extends Phaser.Scene {
         if (direction) this.createProjectile(direction);
     }
 
-    private createPlayerAnimations(): void {
-        if (!this.anims.exists("player-walk-down")) this.anims.create({
-            key: "player-walk-down",
-            frames: this.anims.generateFrameNumbers(
-                'player-walk',
-                { start:0, end:7}
-            ),
-            frameRate: 10,
-            repeat: -1
-        });
+    private beginDefeat(): void {
+        if (this.combatState !== "playing") return;
+        this.combatState = "defeat";
+        // Pause only physics. Animation updates must continue until defeat ends.
+        this.physics.pause();
+        for (const child of this.enemies.getChildren()) (child as Enemy).stop();
+        this.playerProjectiles.clear(true, true);
+        this.enemyProjectiles.clear(true, true);
+    }
 
-        if (!this.anims.exists("player-walk-up")) this.anims.create({
-            key: "player-walk-up",
-            frames: this.anims.generateFrameNumbers(
-                'player-walk',
-                { start:8, end:15}
-            ),
-            frameRate: 10,
-            repeat: -1
-        });
-
-        if (!this.anims.exists("player-walk-left")) this.anims.create({
-            key: "player-walk-left",
-            frames: this.anims.generateFrameNumbers(
-                'player-walk',
-                { start:16, end:23}
-            ),
-            frameRate: 10,
-            repeat: -1
-        });
-
-        if (!this.anims.exists("player-walk-right")) this.anims.create({
-            key: "player-walk-right",
-            frames: this.anims.generateFrameNumbers(
-                'player-walk',
-                { start:24, end:31}
-            ),
-            frameRate: 10,
-            repeat: -1
-        });
+    private showGameOver(): void {
+        if (this.combatState !== "defeat") return;
+        this.combatState = "game-over";
+        this.scene.start("GameOverScene", { roomIndex: this.roomIndex, character: this.character });
     }
 
     private createEnemyAnimations(): void {
@@ -369,7 +359,7 @@ export class GameScene extends Phaser.Scene {
         direction: Phaser.Math.Vector2
     ): void {
 
-        if (!this.player) {
+        if (this.combatState !== "playing" || this.isChangingRoom || !this.player || this.player.isDead()) {
             return;
         }
 
@@ -384,7 +374,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     private changeRoom(): void {
-          if (this.isChangingRoom || !this.player || this.player.isDead()) {
+          if (this.combatState !== "playing" || this.isChangingRoom || !this.player || this.player.isDead()) {
             return;
         }
 
@@ -395,14 +385,18 @@ export class GameScene extends Phaser.Scene {
             this.rooms.length;
 
         this.scene.restart({
-            roomIndex: nextRoomIndex
+            roomIndex: nextRoomIndex,
+            character: this.character
         });
     }
 
-    init(data: { roomIndex?: number }): void {
+    init(data: { roomIndex?: number; character?: PlayerCharacter } = {}): void {
         this.roomIndex =
             data.roomIndex ?? 0;
 
+        this.character = data.character === "alex" || data.character === "lua"
+            ? data.character : GameSettings.playerCharacter;
+        this.combatState = "playing";
         this.isChangingRoom = false;
     }
 }

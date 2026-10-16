@@ -1,4 +1,6 @@
 import Phaser from "phaser";
+import { characters, type PlayerCharacter } from "../config/characters";
+import { CombatEvents } from "../systems/CombatEvents";
 
 type MovementKeys = {
     W: Phaser.Input.Keyboard.Key;
@@ -35,8 +37,7 @@ export class Player {
 
     private readonly wasd: MovementKeys;
 
-    private readonly scene:
-        Phaser.Scene;
+    private readonly character: PlayerCharacter;
 
     private readonly speed = 220;
 
@@ -50,15 +51,16 @@ export class Player {
     constructor(
         scene: Phaser.Scene,
         x: number,
-        y: number
+        y: number,
+        character: PlayerCharacter = "lua"
     ) {
 
-        this.scene = scene;
+        this.character = character;
 
         this.sprite = scene.physics.add.sprite(
             x,
             y,
-            "player-walk",
+            `${character}-walk`,
             0
         );
         this.sprite.setScale(0.35);
@@ -111,7 +113,7 @@ export class Player {
 
     update(): void {
 
-        if (this.dead) {
+        if (this.dead || !this.sprite.active || !this.sprite.body) {
             return;
         }
 
@@ -192,7 +194,7 @@ export class Player {
         }
 
         const currentTime =
-            this.scene.time.now;
+            this.sprite.scene.time.now;
 
         if (
             currentTime - this.lastShotTime <
@@ -235,7 +237,7 @@ export class Player {
 
     private playMovementAnimation(): void{
         this.sprite.play(
-            `player-walk-${this.direction}`, true
+            `${this.character}-walk-${this.direction}`, true
         );
     }
 
@@ -265,7 +267,7 @@ export class Player {
     }
 
     die(): void {
-        if (this.dead) {
+        if (this.dead || !this.sprite.active || !this.sprite.body) {
             return;
         }
 
@@ -274,15 +276,16 @@ export class Player {
         this.sprite.setVelocity(0, 0);
         this.sprite.stop();
         this.sprite.disableBody(false, false);
-        // The player sheet only contains walking frames. Use a death effect
-        // instead of inventing a sprite animation.
-        this.sprite.setTint(0xff5533);
-        this.scene.tweens.add({
-            targets: this.sprite,
-            alpha: 0,
-            duration: 350,
-            onComplete: () => this.sprite.setActive(false).setVisible(false)
+        const side = this.direction === "left" || this.direction === "right";
+        const pose = side && characters[this.character].side.length ? "side" : "front";
+        const animation = `${this.character}-defeat-${pose}`;
+        this.sprite.setFlipX(this.direction === "left");
+        this.sprite.once(`${Phaser.Animations.Events.ANIMATION_COMPLETE_KEY}${animation}`, () => {
+            this.sprite.setActive(false);
+            this.sprite.emit(CombatEvents.PLAYER_DEFEAT_COMPLETE);
         });
+        this.sprite.play(animation);
+        this.sprite.emit(CombatEvents.PLAYER_DIED);
     }
 
     get x(): number {

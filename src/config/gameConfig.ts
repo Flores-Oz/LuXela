@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { GameSettings } from "./GameSettings";
 import { GameScene } from "../scenes/GameScene";
+import { GameOverScene } from "../scenes/GameOverScene";
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
 
@@ -12,6 +13,8 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     backgroundColor: "#000000",
 
     parent: "game-container",
+
+    pixelArt: true,
 
     physics: {
         default: "arcade",
@@ -27,6 +30,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     },
 
     scene: [
-        GameScene
+        GameScene,
+        GameOverScene
     ]
 };
