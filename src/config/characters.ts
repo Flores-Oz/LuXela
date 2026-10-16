@@ -6,6 +6,10 @@ type Crop = readonly [x: number, y: number, width: number, height: number];
 // Atlas metadata only: images are never resized or rewritten.
 export const characters = {
     lua: {
+        name: "Lua",
+        selectorPath: "assets/sprites/player/lua-selector.png",
+        accent: "#ffda55",
+        abilityName: "Descarga eléctrica",
         walkPath: "assets/sprites/player/lua-walk.png",
         defeatPath: "assets/sprites/player/lua-derrota.png",
         defeatFrameRate: 8,
@@ -19,6 +23,10 @@ export const characters = {
         ] as readonly Crop[]
     },
     alex: {
+        name: "Alex",
+        selectorPath: "assets/sprites/player/alex-selector.png",
+        accent: "#8aff92",
+        abilityName: "Fuego de supresión",
         walkPath: "assets/sprites/player/alex-walk.png",
         defeatPath: "assets/sprites/player/alex-derrota.png",
         defeatFrameRate: 8,

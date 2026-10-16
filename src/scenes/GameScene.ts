@@ -14,6 +14,7 @@ import type { PlayerCharacter } from "../config/characters";
 import { loadPlayerAssets, createPlayerAnimations } from "../systems/PlayerAnimations";
 import { CombatEvents } from "../systems/CombatEvents";
 import { EnemyManager } from "../systems/EnemyManager";
+import { getCharacterUnlocks } from "../systems/CharacterUnlockService";
 
 
 
@@ -23,7 +24,9 @@ export class GameScene extends Phaser.Scene {
 
     private roomIndex = 0;
 
-    private character: PlayerCharacter = GameSettings.playerCharacter;
+    private character: PlayerCharacter = "lua";
+
+    private selectionValid = false;
 
     private combatState: "playing" | "defeat" | "game-over" = "playing";
 
@@ -66,6 +69,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     create(): void {
+
+        if (!this.selectionValid || !getCharacterUnlocks(this.game).isUnlocked(this.character)) {
+            this.scene.start("CharacterSelectScene");
+            return;
+        }
 
         this.input.keyboard?.resetKeys();
         this.physics.resume();
@@ -394,8 +402,10 @@ export class GameScene extends Phaser.Scene {
         this.roomIndex =
             data.roomIndex ?? 0;
 
-        this.character = data.character === "alex" || data.character === "lua"
-            ? data.character : GameSettings.playerCharacter;
+        this.selectionValid = getCharacterUnlocks(this.game).isUnlocked(data.character);
+        if (this.selectionValid && (data.character === "alex" || data.character === "lua")) {
+            this.character = data.character;
+        }
         this.combatState = "playing";
         this.isChangingRoom = false;
     }

@@ -5,6 +5,8 @@ import { Enemy } from '../src/entities/enemies/Enemy';
 import { EnemyState } from '../src/entities/enemies/EnemyState';
 import { CombatEvents } from '../src/systems/CombatEvents';
 import { characters } from '../src/config/characters';
+import { CharacterUnlockService } from '../src/systems/CharacterUnlockService';
+import { CHARACTER_CODES } from '../src/config/CharacterUnlockConfig';
 
 // Real Arcade bodies, colliders, animations, input and room lifecycle in Canvas.
 const results = [];
@@ -13,7 +15,17 @@ const check = (name, condition) => {
     results.push(name);
 };
 window.combatResults = { status: 'running' };
-const game = new Phaser.Game({ ...gameConfig, type: Phaser.CANVAS });
+const game = new Phaser.Game({ ...gameConfig, type: Phaser.CANVAS,
+    scale: { mode: Phaser.Scale.NONE },
+    // Authorized characters in isolated memory: regression never changes real progress.
+    scene: [{ key: 'CombatTestBoot', create() {
+        const service = new CharacterUnlockService(() => ({ getItem: () => null, setItem: () => {} }));
+        service.redeem(CHARACTER_CODES.alex);
+        service.redeem(CHARACTER_CODES.lua);
+        this.game.registry.set('character-unlock-service', service);
+        this.scene.start('GameScene', { character: 'lua' });
+    } }, ...gameConfig.scene]
+});
 // Test-page only: permits native keyboard/pointer smoke checks via CDP.
 window.combatGame = game;
 let now = 1000;

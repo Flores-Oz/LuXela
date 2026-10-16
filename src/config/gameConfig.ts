@@ -2,6 +2,8 @@ import Phaser from "phaser";
 import { GameSettings } from "./GameSettings";
 import { GameScene } from "../scenes/GameScene";
 import { GameOverScene } from "../scenes/GameOverScene";
+import { CharacterSelectScene } from "../scenes/CharacterSelectScene";
+import { IntroScene } from "../scenes/IntroScene";
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
 
@@ -15,6 +17,13 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     parent: "game-container",
 
     pixelArt: true,
+
+    dom: { createContainer: true },
+
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    },
 
     physics: {
         default: "arcade",
@@ -30,6 +39,8 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     },
 
     scene: [
+        CharacterSelectScene,
+        IntroScene,
         GameScene,
         GameOverScene
     ]

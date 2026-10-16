@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { PlayerCharacter } from "../config/characters";
+import { getCharacterUnlocks } from "../systems/CharacterUnlockService";
 
 export type RetryData = { roomIndex: number; character: PlayerCharacter };
 
@@ -15,6 +16,10 @@ export class GameOverScene extends Phaser.Scene {
     }
 
     create(): void {
+        if (!getCharacterUnlocks(this.game).isUnlocked(this.retryData.character)) {
+            this.scene.start("CharacterSelectScene");
+            return;
+        }
         const { width, height } = this.scale;
         this.cameras.main.setBackgroundColor("#101018");
         this.add.text(width / 2, height / 2 - 80, "GAME OVER", {
@@ -31,6 +36,14 @@ export class GameOverScene extends Phaser.Scene {
         retry.on("pointerdown", this.restart, this);
         this.input.keyboard?.on("keydown-ENTER", this.restart, this);
         this.input.keyboard?.on("keydown-R", this.restart, this);
+        this.add.text(width / 2, height / 2 + 155, "CAMBIAR PERSONAJE", {
+            fontFamily: "monospace", fontSize: "18px", color: "#ccccdd"
+        }).setOrigin(0.5).setPadding(12).setInteractive({ useHandCursor: true })
+            .on("pointerdown", () => {
+                if (this.restarting) return;
+                this.restarting = true;
+                this.scene.start("CharacterSelectScene");
+            });
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             this.input.keyboard?.off("keydown-ENTER", this.restart, this);
             this.input.keyboard?.off("keydown-R", this.restart, this);
@@ -40,6 +53,10 @@ export class GameOverScene extends Phaser.Scene {
     private restart(): void {
         if (this.restarting) return;
         this.restarting = true;
+        if (!getCharacterUnlocks(this.game).isUnlocked(this.retryData.character)) {
+            this.scene.start("CharacterSelectScene");
+            return;
+        }
         this.scene.start("GameScene", this.retryData);
     }
 }

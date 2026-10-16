@@ -1,0 +1,41 @@
+.intro-screen {
+    width: 1024px; height: 768px; padding: 28px 48px; box-sizing: border-box;
+    display: flex; flex-direction: column; color: #e7eee9; font: 15px "Courier New", monospace;
+    background: radial-gradient(ellipse at 70% 35%, #20352988, transparent 65%), #0b1014;
+    animation: intro-arrive .2s ease-out;
+}
+.intro-screen *, .intro-screen *::before, .intro-screen *::after { box-sizing: border-box; }
+.intro-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #2d3d3e; }
+.intro-header > span:first-child { font-size: 26px; letter-spacing: 5px; font-weight: bold; }
+.intro-underscore, .intro-eyebrow, .intro-online { color: var(--intro-accent); }
+.intro-draft { color: #9aa99e; font-size: 11px; letter-spacing: 2px; }
+.intro-stage { height: 388px; display: flex; justify-content: space-between; align-items: center; position: relative; }
+.intro-transmission { padding-left: 28px; }
+.intro-eyebrow { font-size: 11px; letter-spacing: 2px; margin: 0 0 18px; }
+.intro-transmission h1 { font-size: 58px; letter-spacing: -2px; line-height: 1.05; margin: 0; }
+.intro-stage-caption { font-size: 16px; color: #a2b9ac; line-height: 1.5; margin: 22px 0; }
+.intro-online { font-size: 10px; letter-spacing: 1px; }
+.intro-character { height: 350px; width: 370px; position: relative; border-left: 1px solid #2d3d3e; border-right: 1px solid #2d3d3e; background: #14201a77; margin-right: 28px; }
+.intro-character > img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+.intro-character > span { position: absolute; left: 12px; bottom: 12px; padding: 12px; background: #0b1014e8; color: var(--intro-accent); font-size: 21px; }
+.intro-character small { display: block; font-size: 8px; letter-spacing: 1px; margin-top: 5px; color: #b2bdb5; }
+.intro-dialogue { display: flex; gap: 24px; min-height: 184px; padding: 24px; border: 1px solid #4c6558; border-left: 3px solid var(--intro-accent); background: #101d1ae8; }
+.intro-portrait { display: grid; place-items: center; flex: 0 0 74px; background: #0b1412; color: var(--intro-accent); border: 1px solid #2c4538; }
+.intro-portrait > span { font-size: 24px; letter-spacing: 4px; }
+.intro-portrait img { width: 74px; height: 108px; object-fit: contain; image-rendering: pixelated; }
+.intro-portrait [hidden] { display: none; }
+.intro-content { flex: 1; }
+.intro-line-header { display: flex; justify-content: space-between; align-items: center; }
+.intro-speaker { color: var(--intro-accent); text-transform: uppercase; font-size: 13px; letter-spacing: 2px; }
+.intro-progress { font-size: 11px; color: #97ab9d; }
+.intro-text { font-size: 19px; line-height: 1.65; margin: 18px 0 0; }
+.intro-footer { display: flex; gap: 14px; align-items: center; margin-top: auto; padding-top: 22px; }
+.intro-footer > div { flex: 1; font-size: 10px; color: #91a599; line-height: 1.8; }
+.intro-footer > div span { display: block; }
+.intro-footer button { font: bold 13px "Courier New", monospace; height: 48px; padding: 0 22px; cursor: pointer; }
+.intro-skip { border: 1px solid #4b6058; background: transparent; color: #c3d4c7; }
+.intro-next { border: 1px solid var(--intro-accent); background: var(--intro-accent); color: #0e2115; min-width: 190px; }
+.intro-footer button:hover { filter: brightness(1.15); }
+.intro-footer button:focus-visible { outline: 2px solid #edf8ee; outline-offset: 4px; }
+@keyframes intro-arrive { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .intro-screen { animation: none; } }
