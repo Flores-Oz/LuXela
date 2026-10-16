@@ -22,6 +22,8 @@ type ShootingKeys = {
 
 export class Player {
 
+    private dead = false;
+
     private readonly sprite: 
         Phaser.Physics.Arcade.Sprite;
 
@@ -108,6 +110,10 @@ export class Player {
     }
 
     update(): void {
+
+        if (this.dead) {
+            return;
+        }
 
         this.updateShooting();
 
@@ -245,9 +251,38 @@ export class Player {
     consumeShootRequest():
         Phaser.Math.Vector2 | null {
 
+        if (this.dead) {
+            return null;
+        }
+
         const request = this.shootRequested;
         this.shootRequested = null;
         return request;
+    }
+
+    isDead(): boolean {
+        return this.dead;
+    }
+
+    die(): void {
+        if (this.dead) {
+            return;
+        }
+
+        this.dead = true;
+        this.shootRequested = null;
+        this.sprite.setVelocity(0, 0);
+        this.sprite.stop();
+        this.sprite.disableBody(false, false);
+        // The player sheet only contains walking frames. Use a death effect
+        // instead of inventing a sprite animation.
+        this.sprite.setTint(0xff5533);
+        this.scene.tweens.add({
+            targets: this.sprite,
+            alpha: 0,
+            duration: 350,
+            onComplete: () => this.sprite.setActive(false).setVisible(false)
+        });
     }
 
     get x(): number {

@@ -1,4 +1,4 @@
-import { TileType, type RoomMatrix} from "../../types/RoomTypes";
+import type { RoomMatrix } from "../../types/RoomTypes";
 
 export const testRoom2: RoomMatrix = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],

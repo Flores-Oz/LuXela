@@ -9,6 +9,8 @@ import { testRoom } from "../data/rooms/testRoom";
 import { testRoom2 } from "../data/rooms/testRoom2";
 import { Enemy } from "../entities/enemies/Enemy";
 import { LineOfSight } from "../systems/LineOfSight";
+import { GameSettings } from "../config/GameSettings";
+
 
 
 export class GameScene extends Phaser.Scene {
@@ -19,11 +21,11 @@ export class GameScene extends Phaser.Scene {
 
     private isChangingRoom = false;
 
-    private enemy: Enemy | null = null;
+    private enemies!: Phaser.Physics.Arcade.Group;
 
-    private wasPlayerDetected = false;
+    private playerProjectiles!: Phaser.Physics.Arcade.Group;
 
-    private wasPlayerVisible = false;
+    private enemyProjectiles!: Phaser.Physics.Arcade.Group;
 
     private lineOfSight: LineOfSight | null = null;
 
@@ -58,6 +60,17 @@ export class GameScene extends Phaser.Scene {
     }
 
     create(): void {
+
+        this.enemies = this.physics.add.group({ collideWorldBounds: true });
+        this.playerProjectiles = this.physics.add.group();
+        this.enemyProjectiles = this.physics.add.group();
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            // Arcade and the display list destroy bodies/groups on shutdown.
+            // Group shutdown listeners run first; do not clear destroyed groups.
+            this.player = null;
+            this.walls = null;
+            this.lineOfSight = null;
+        });
 
         const tileSize = 64;
 
@@ -145,73 +158,60 @@ export class GameScene extends Phaser.Scene {
             );
         }
 
-        this.enemy = new Enemy(
-            this,
-            450,
-            300,
-            "robot-red"
-        );
-
-        this.enemy.playIdle();
-
-        if (this.walls) {
-            this.physics.add.collider(
-                this.enemy,
-                this.walls
-            );
-        }
-
-    }
-
-    update(
-    ): void {
-
-         if (!this.player) {
-            return;
-        }
-
-        this.player.update();
-
-        if (this.enemy) {
-
-            const detected = this.enemy.detectPlayer(
-                this.player.physicsSprite
-            );
-
-            const canSeePlayer = detected && (this.lineOfSight?.hasLineOfSight(
-                this.enemy,
-                this.player.physicsSprite
-            ) ?? false);
-
-            if (detected !== this.wasPlayerDetected || canSeePlayer !== this.wasPlayerVisible) {
-
-                if (!detected) {
-                    console.log("Player ha salido del rango");
-                } else if (canSeePlayer) {
-                    console.log("Player dentro de rango y visible (línea de visión despejada)");
-                } else {
-                    console.log("Player dentro de rango pero bloqueado por pared");
-                }
-
-                this.wasPlayerDetected = detected;
-                this.wasPlayerVisible = canSeePlayer;
+        // Spawn only at RobotSpawn tiles; no hard-coded world coordinates.
+        for (let row = 0; row < room.height; row++) {
+            for (let column = 0; column < room.width; column++) {
+                if (room.matrix[row][column] !== TileType.RobotSpawn) continue;
+                const enemy = new Enemy(this,
+                    column * tileSize + tileSize / 2,
+                    row * tileSize + tileSize / 2, "robot-red",
+                    { patrol: GameSettings.enemyPatrol });
+                this.enemies.add(enemy);
+                enemy.playIdle();
             }
         }
 
-        const shootDirection =
-            this.player.consumeShootRequest();
+        this.physics.add.collider(this.enemies, this.walls);
+        // Register once per group, rather than leaving one collider per shot.
+        for (const projectiles of [this.playerProjectiles, this.enemyProjectiles]) {
+            this.physics.add.collider(projectiles, this.walls, (shot) => {
+                (shot as Phaser.Physics.Arcade.Image).getData("projectile")?.destroy();
+            });
+        }
+        this.physics.add.overlap(this.playerProjectiles, this.enemies, (shot, target) => {
+            const enemy = target as Enemy;
+            const projectile = shot as Phaser.Physics.Arcade.Image;
+            if (!projectile.active || enemy.isDead()) return;
+            projectile.getData("projectile")?.destroy();
+            enemy.die();
+        });
+        this.physics.add.overlap(this.enemyProjectiles, this.player.physicsSprite, (shot) => {
+            const projectile = shot as Phaser.Physics.Arcade.Image;
+            if (!projectile.active || !this.player || this.player.isDead()) return;
+            projectile.getData("projectile")?.destroy();
+            this.player.die();
+        });
+    }
 
-        if (!shootDirection) {
-            return;
+    update(time: number): void {
+        if (!this.player || !this.lineOfSight || this.isChangingRoom) return;
+        this.player.update();
+
+        for (const child of this.enemies.getChildren()) {
+            const enemy = child as Enemy;
+            const direction = enemy.updateBehavior(this.player, this.lineOfSight, time);
+            if (direction) {
+                // Spawn at the robot center so a muzzle offset cannot jump a wall.
+                new Projectile(this, enemy.x, enemy.y, direction, "enemy", this.enemyProjectiles);
+            }
         }
 
-        this.createProjectile(
-            shootDirection
-        );
+        const direction = this.player.consumeShootRequest();
+        if (direction) this.createProjectile(direction);
     }
 
     private createPlayerAnimations(): void {
-        this.anims.create({
+        if (!this.anims.exists("player-walk-down")) this.anims.create({
             key: "player-walk-down",
             frames: this.anims.generateFrameNumbers(
                 'player-walk',
@@ -221,7 +221,7 @@ export class GameScene extends Phaser.Scene {
             repeat: -1
         });
 
-        this.anims.create({
+        if (!this.anims.exists("player-walk-up")) this.anims.create({
             key: "player-walk-up",
             frames: this.anims.generateFrameNumbers(
                 'player-walk',
@@ -231,7 +231,7 @@ export class GameScene extends Phaser.Scene {
             repeat: -1
         });
 
-        this.anims.create({
+        if (!this.anims.exists("player-walk-left")) this.anims.create({
             key: "player-walk-left",
             frames: this.anims.generateFrameNumbers(
                 'player-walk',
@@ -241,7 +241,7 @@ export class GameScene extends Phaser.Scene {
             repeat: -1
         });
 
-        this.anims.create({
+        if (!this.anims.exists("player-walk-right")) this.anims.create({
             key: "player-walk-right",
             frames: this.anims.generateFrameNumbers(
                 'player-walk',
@@ -254,7 +254,7 @@ export class GameScene extends Phaser.Scene {
 
     private createEnemyAnimations(): void {
 
-        this.anims.create({
+        if (!this.anims.exists("robot-idle")) this.anims.create({
             key: "robot-idle",
             frames: this.anims.generateFrameNumbers(
                 "robot-red",
@@ -264,7 +264,7 @@ export class GameScene extends Phaser.Scene {
             repeat: -1
         });
 
-        this.anims.create({
+        if (!this.anims.exists("robot-walk-up")) this.anims.create({
             key: "robot-walk-up",
             frames: this.anims.generateFrameNumbers(
                 "robot-red",
@@ -274,7 +274,7 @@ export class GameScene extends Phaser.Scene {
             repeat: -1
         });
 
-        this.anims.create({
+        if (!this.anims.exists("robot-walk-down")) this.anims.create({
             key: "robot-walk-down",
             frames: this.anims.generateFrameNumbers(
                 "robot-red",
@@ -284,7 +284,7 @@ export class GameScene extends Phaser.Scene {
             repeat: -1
         });
 
-        this.anims.create({
+        if (!this.anims.exists("robot-walk-right")) this.anims.create({
             key: "robot-walk-right",
             frames: this.anims.generateFrameNumbers(
                 "robot-red",
@@ -294,7 +294,7 @@ export class GameScene extends Phaser.Scene {
             repeat: -1
         });
 
-        this.anims.create({
+        if (!this.anims.exists("robot-walk-left")) this.anims.create({
             key: "robot-walk-left",
             frames: this.anims.generateFrameNumbers(
                 "robot-red",
@@ -304,7 +304,7 @@ export class GameScene extends Phaser.Scene {
             repeat: -1
         });
 
-        this.anims.create({
+        if (!this.anims.exists("robot-special-a1")) this.anims.create({
             key: "robot-special-a1",
             frames: this.anims.generateFrameNumbers(
                 "robot-red",
@@ -314,7 +314,7 @@ export class GameScene extends Phaser.Scene {
             repeat: 0
         });
 
-        this.anims.create({
+        if (!this.anims.exists("robot-special-a2")) this.anims.create({
             key: "robot-special-a2",
             frames: this.anims.generateFrameNumbers(
                 "robot-red",
@@ -324,7 +324,7 @@ export class GameScene extends Phaser.Scene {
             repeat: 0
         });
 
-        this.anims.create({
+        if (!this.anims.exists("robot-special-b1")) this.anims.create({
             key: "robot-special-b1",
             frames: this.anims.generateFrameNumbers(
                 "robot-red",
@@ -334,7 +334,7 @@ export class GameScene extends Phaser.Scene {
             repeat: 0
         });
 
-        this.anims.create({
+        if (!this.anims.exists("robot-special-b2")) this.anims.create({
             key: "robot-special-b2",
             frames: this.anims.generateFrameNumbers(
                 "robot-red",
@@ -344,7 +344,7 @@ export class GameScene extends Phaser.Scene {
             repeat: 0
         });
 
-        this.anims.create({
+        if (!this.anims.exists("robot-hit")) this.anims.create({
             key: "robot-hit",
             frames: this.anims.generateFrameNumbers(
                 "robot-red",
@@ -354,7 +354,7 @@ export class GameScene extends Phaser.Scene {
             repeat: 0
         });
 
-        this.anims.create({
+        if (!this.anims.exists("robot-death")) this.anims.create({
             key: "robot-death",
             frames: this.anims.generateFrameNumbers(
                 "robot-red",
@@ -378,29 +378,13 @@ export class GameScene extends Phaser.Scene {
                 direction
             );
 
-        const projectile =
-            new Projectile(
-                this,
-                spawn.x,
-                spawn.y,
-                direction
-            );
-
-        if (!this.walls) {
-            return;
-        }
-
-        this.physics.add.collider(
-            projectile.physicsBody,
-            this.walls,
-            () => {
-                projectile.destroy();
-            }
-        );
+        // Existing muzzle offsets can cross a nearby wall. Reject that shot.
+        if (!this.lineOfSight?.hasLineOfSight(this.player, spawn)) return;
+        new Projectile(this, spawn.x, spawn.y, direction, "player", this.playerProjectiles);
     }
 
     private changeRoom(): void {
-          if (this.isChangingRoom) {
+          if (this.isChangingRoom || !this.player || this.player.isDead()) {
             return;
         }
 
@@ -420,7 +404,5 @@ export class GameScene extends Phaser.Scene {
             data.roomIndex ?? 0;
 
         this.isChangingRoom = false;
-        this.wasPlayerDetected = false;
-        this.wasPlayerVisible = false;
     }
 }

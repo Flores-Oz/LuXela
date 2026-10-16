@@ -1,3 +1,4 @@
 export const GameSettings = {
-    physicsDebug: true
+    physicsDebug: true,
+    enemyPatrol: true
 } as const;

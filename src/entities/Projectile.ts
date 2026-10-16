@@ -1,4 +1,6 @@
-import Phaser, { Textures } from "phaser";
+import Phaser from "phaser";
+
+export type ProjectileOwner = "player" | "enemy";
 
 export class Projectile {
     private readonly body:
@@ -8,18 +10,25 @@ export class Projectile {
 
     private readonly lifetime = 2000;
 
+    private readonly expiration: Phaser.Time.TimerEvent;
+
+    public readonly owner: ProjectileOwner;
+
     constructor(
         scene: Phaser.Scene,
         x: number,
         y: number,
-        direction: Phaser.Math.Vector2
+        direction: Phaser.Math.Vector2,
+        owner: ProjectileOwner = "player",
+        group?: Phaser.Physics.Arcade.Group
     ){
-        const textureKey = 'player-projectile';
+        this.owner = owner;
+        const textureKey = `${owner}-projectile`;
 
         if (!scene.textures.exists(textureKey)){
             const graphics = scene.add.graphics();
 
-            graphics.fillStyle(0x66ff33);
+            graphics.fillStyle(owner === "player" ? 0x66ff33 : 0xff5533);
             graphics.fillCircle(8, 8, 8);
 
             graphics.generateTexture(
@@ -37,6 +46,11 @@ export class Projectile {
             textureKey
         );
 
+        // Add before setting velocity: Arcade groups apply their defaults on add.
+        group?.add(this.body);
+        this.body.setData("projectile", this);
+        this.body.setCircle(8);
+
         const normalizedDirection =
             direction.clone().normalize();
 
@@ -45,12 +59,15 @@ export class Projectile {
             normalizedDirection.y * this.speed
         );
 
-        scene.time.delayedCall(
+        this.expiration = scene.time.delayedCall(
             this.lifetime,
             () => {
                 this.destroy();
             }
         );
+        this.body.once(Phaser.GameObjects.Events.DESTROY, () => {
+            this.expiration.remove(false);
+        });
     }
 
     get physicsBody():
