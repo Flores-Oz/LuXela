@@ -3,7 +3,7 @@ import { GameSettings } from "./GameSettings";
 import { GameScene } from "../scenes/GameScene";
 import { GameOverScene } from "../scenes/GameOverScene";
 import { CharacterSelectScene } from "../scenes/CharacterSelectScene";
-import { IntroScene } from "../scenes/IntroScene";
+import { VisualNovelScene } from "../scenes/VisualNovelScene";
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
 
@@ -40,7 +40,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
 
     scene: [
         CharacterSelectScene,
-        IntroScene,
+        VisualNovelScene,
         GameScene,
         GameOverScene
     ]

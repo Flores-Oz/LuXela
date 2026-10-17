@@ -28,6 +28,13 @@ export class EnemyManager {
     }
 
     get aliveCount(): number { return this.living.size; }
+    getLivingEnemies(): readonly Enemy[] { return [...this.living]; }
+    defeatLivingEnemies(): void {
+        // die() updates the living set synchronously, so iterate over a snapshot.
+        for (const enemy of this.getLivingEnemies()) {
+            if (enemy.active && !enemy.isDead()) enemy.die();
+        }
+    }
     get isCleared(): boolean { return this.cleared; }
 
     private remove(enemy: Enemy): void {

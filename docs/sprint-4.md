@@ -1,8 +1,8 @@
 # Sprint 4 — Selección, desbloqueos, narrativa y habilidades
 
-## Entrega actual: Fases 2 y 3
+## Entrega final: Fase 5 completada
 
-Se implementaron y validaron selección/desbloqueos (S4-01 a S4-07) e introducción/diálogos (S4-08 a S4-10), autorizados por separado. El flujo actual es selección → introducción narrativa → combate, conservando personaje y permisos. Las habilidades de la Fase 4 aún no están implementadas.
+Se implementaron y validaron selección/desbloqueos (S4-01 a S4-07), narrativa (S4-08 a S4-10) y habilidades especiales (S4-11 a S4-14). La introducción se amplió al motor Visual Novel por datos descrito en [sprint-4-visual-novel.md](sprint-4-visual-novel.md): typewriter, fondos, retratos/expresiones, audio opcional y progreso independiente por ruta. El flujo actual es selección → Visual Novel → combate, conservando personaje y permisos. Q activa la habilidad del personaje elegido.
 
 Se conserva Phaser 4.2.1, TypeScript, Arcade, el combate de un impacto, la patrulla, las dos habitaciones y el flujo de derrota/Game Over del Sprint 3. No se añadieron dependencias, ni se modificaron spritesheets o mapas.
 
@@ -20,14 +20,14 @@ Se conserva Phaser 4.2.1, TypeScript, Arcade, el combate de un impacto, la patru
 | S4-08 | Introducción narrativa | Completada y validada; contenido provisional identificado |
 | S4-09 | Sistema modular de diálogos | Completada y validada |
 | S4-10 | Selección → introducción → gameplay | Completada y validada |
-| S4-11 | Infraestructura de habilidades | Pendiente |
-| S4-12 | Descarga eléctrica de Lua | Pendiente |
-| S4-13 | Metralleta de Alex | Pendiente |
-| S4-14 | Animaciones y efectos especiales | Pendiente; hojas originales identificadas |
-| S4-15 | Integración y regresión | Parcial: Fases 2 y 3 validadas; habilidades pendientes |
-| S4-16 | Documentación | Parcial: actualizada hasta Fase 3 |
+| S4-11 | Infraestructura de habilidades | Completada y validada |
+| S4-12 | Descarga eléctrica de Lua | Completada y validada |
+| S4-13 | Metralleta de Alex | Completada y validada |
+| S4-14 | Animaciones y efectos especiales | Completada con hojas originales, rayos y destellos |
+| S4-15 | Integración y regresión | Completada: 303 verificaciones, recorrido integral y 12 reinicios en Canvas |
+| S4-16 | Documentación | Completada: arquitectura, configuración, reproducción, informe y límites de validación |
 
-El Sprint 4 completo todavía no está terminado.
+El alcance técnico del Sprint 4 está completado (S4-01 a S4-16) con las adaptaciones solicitadas para Alex: eliminación de habitación, animación de metralleta e impactos verdes sobre enemigos, sin proyectiles especiales. El cierre y la matriz de aceptación se detallan en [sprint-4-cierre.md](sprint-4-cierre.md). Esto no declara terminados los contenidos narrativos, expresiones o audio definitivos ni certifica plataformas no probadas.
 
 ## Arquitectura y archivos
 
@@ -35,11 +35,13 @@ Nuevos:
 
 - `src/config/CharacterUnlockConfig.ts`: códigos provisionales y clave de almacenamiento.
 - `src/systems/CharacterUnlockService.ts`: lectura/validación/persistencia de desbloqueos, canje de códigos y estado de almacenamiento. Una instancia por juego en el registro nativo de Phaser; sin singleton global.
-- `src/scenes/CharacterSelectScene.ts`: coordina interfaz, selección y transición única hacia IntroScene.
-- `src/scenes/IntroScene.ts`: valida selección, presenta la conversación y coordina una única entrada a GameScene al finalizar u omitir.
+- `src/scenes/CharacterSelectScene.ts`: coordina interfaz, selección y transición única hacia VisualNovelScene.
+- `src/scenes/VisualNovelScene.ts`: sustituye IntroScene y coordina guiones, presentación, checkpoints y entrada a GameScene.
 - `src/dialogue/DialogueManager.ts`: modelo y cursor reutilizable de diálogo, independiente de Phaser, interfaz y controles.
-- `src/dialogue/introDialogue.ts`: secuencias provisionales editables de Alex y Lua.
-- `src/ui/IntroView.ts`, `src/ui/intro.css`: presentación narrativa con retratos originales, interlocutor, progreso y botones/atajos.
+- `src/narrative/routes/alex/testSequence.ts`, `src/narrative/routes/lua/testSequence.ts`: muestras provisionales alex_test y lua_test; sustituyen introDialogue.ts.
+- `src/ui/VisualNovelView.ts`, `src/ui/visual-novel.css`: sustituyen IntroView y su CSS con presentación VN.
+- `src/narrative/`: intérprete, validación, rutas, guardado independiente, fondos, retratos, audio y puente de escenas.
+- `src/config/NarrativeConfig.ts`: recursos y parámetros narrativos.
 - `src/ui/mountSceneView.ts`: wrapper DOM y restauración de captura de teclado compartidos por selector e introducción.
 - `src/ui/CharacterSelectView.ts`: formulario y tarjetas HTML semánticas dentro de un DOMElement de Phaser; actualizaciones visuales y limpieza de callbacks.
 - `src/ui/character-select.css`: presentación del selector, estados, foco, colores y tipografía.
@@ -47,11 +49,19 @@ Nuevos:
 - `tests/browser-session.mjs`: cliente CDP compartido por ambos runners, sin dependencias adicionales.
 - `tests/run-selection.mjs`: entradas nativas, recarga real y comprobaciones de escalado.
 - `docs/sprint-4.md`: este documento.
+- `src/config/SpecialAbilityConfig.ts`: tecla, duraciones, cooldowns y tamaño/duración de impactos verdes.
+- `src/abilities/SpecialAbility.ts`: fases, activación, cancelación y ciclo de vida compartidos.
+- `src/abilities/AlexSpecial.ts`, `LuaSpecial.ts`: eliminación de enemigos de habitación mediante EnemyManager; Alex muestra impactos verdes sobre sus objetivos.
+- `src/abilities/SpecialAbilityManager.ts`: entrada, asociación de personaje, atlas originales, poses, electricidad y HUD.
+- `tests/abilities.html`, `abilities.browser.js`, `run-abilities.mjs`: integración y tecla nativa en navegador.
+- `tests/sprint-4.html`, `sprint-4.browser.js`, `run-sprint-4.mjs`: recorrido integral con ambos personajes y estabilidad durante 12 reinicios.
+- `tests/run-all.mjs` y script `test:sprint4`: ejecutan las cuatro suites en secuencia y generan `docs/test-results/sprint-4.json`.
+- `docs/sprint-4-cierre.md`, `docs/test-results/`: aceptación final, resultados de pruebas y comprobación de arranque de producción.
 
 Modificados:
 
 - `src/config/characters.ts`: reutiliza PlayerCharacter y agrega nombre, retrato de selección, color y nombre de habilidad prevista; no duplica el catálogo.
-- `src/config/gameConfig.ts`: selector como primera escena, registro de IntroScene, contenedor DOM y escalado FIT centrado.
+- `src/config/gameConfig.ts`: selector como primera escena, registro de VisualNovelScene, contenedor DOM y escalado FIT centrado.
 - `src/config/GameSettings.ts`: elimina la antigua selección fija `playerCharacter`; la partida ahora exige una selección válida.
 - `src/scenes/GameScene.ts`: comprueba desbloqueo antes de crear entidades y rechaza datos ausentes, inválidos o bloqueados. Se conserva el transporte de personaje entre habitaciones y Game Over.
 - `src/scenes/GameOverScene.ts`: valida permiso al entrar/reintentar y permite volver al selector mediante «CAMBIAR PERSONAJE».
@@ -60,6 +70,8 @@ Modificados:
 - `tests/run-combat.mjs`: reutiliza el cliente CDP común; mantiene las verificaciones de interfaz del Sprint 3.
 
 Player, Enemy, Projectile, EnemyManager y LineOfSight mantienen sus reglas de combate. No se alteraron los nuevos assets RobotBlue/Orange/Yellow del usuario.
+
+En Fase 4, GameScene carga/crea/destruye SpecialAbilityManager, cancela al morir y transporta cooldown al cambiar habitación. Player añade una suspensión temporal de disparo normal; Projectile permite velocidad opcional; EnemyManager expone una copia de sus enemigos vivos. CharacterSelectView indica la tecla de habilidad configurada. Enemy y LineOfSight no necesitan cambios.
 
 ## Desbloqueos
 
@@ -106,7 +118,7 @@ Es un desbloqueo funcional de cliente: los códigos están en el bundle y el alm
 Flujo actual:
 
 ```text
-CharacterSelectScene → IntroScene → GameScene → GameOverScene
+CharacterSelectScene → VisualNovelScene → GameScene → GameOverScene
         ↑                              ↑              │
         └──── cambiar personaje ───────┴─ reintentar ──┘
 ```
@@ -115,7 +127,7 @@ El selector muestra Alex y Lua con las imágenes originales `alex-selector.png` 
 
 Se permite seleccionar mediante clic o enfocando las tarjetas con Tab/flechas y confirmando con Enter. El formulario admite Enter o el botón «DESBLOQUEAR». Desbloquear el primer personaje lo selecciona; canjear el segundo no reemplaza una selección existente. Un personaje bloqueado nunca sustituye a uno válido.
 
-El selector no permite comenzar sin permiso. IntroScene lo verifica al entrar y antes de pasar al combate. GameScene vuelve a comprobarlo antes de crear jugador, robots o colliders. GameOverScene comprueba el mismo servicio al entrar y al reintentar. Un dato de personaje inválido o ausente dirige al selector, sin usar un personaje predeterminado que permita evadir el bloqueo.
+El selector no permite comenzar sin permiso. VisualNovelScene lo verifica al entrar y antes de pasar al combate. GameScene vuelve a comprobarlo antes de crear jugador, robots o colliders. GameOverScene comprueba el mismo servicio al entrar y al reintentar. Un dato de personaje inválido o ausente dirige al selector, sin usar un personaje predeterminado que permita evadir el bloqueo.
 
 La selección viaja por datos de escena, como en Sprint 3, incluyendo la introducción. Se crea un solo Player y se conservan su identidad, habitación y reinicio. «CAMBIAR PERSONAJE» en Game Over regresa al selector con los desbloqueos intactos; empezar desde el selector reproduce la introducción y comienza en la primera habitación. Reintentar desde Game Over vuelve directamente a la habitación actual, sin repetir narrativa.
 
@@ -129,70 +141,91 @@ El DOM renderer de Phaser fuerza display:block sobre el nodo que administra; por
 
 ## Narrativa y diálogos — Fase 3 implementada
 
-No se encontró una historia oficial en el repositorio. Se incorporaron tres líneas provisionales por personaje y el rótulo visible «INTRODUCCIÓN PROVISIONAL»: transmisión de contexto, intervención propia de Alex/Lua e instrucciones de movimiento/disparo y salidas. El texto vive en `src/dialogue/introDialogue.ts`; no se presenta como historia definitiva.
+No se encontró una historia oficial. La introducción inicial fue sustituida por dos secuencias técnicas provisionales (alex_test/lua_test), con los textos de prueba solicitados. No representan capítulos definitivos. El contenido vive en `src/narrative/routes/`, separado del motor.
 
-`DialogueEntry` define speaker, text y portraitKey opcional. `DialogueSequence` agrupa id, provisional y entries. `DialogueManager` copia los datos, expone current/position/total/isComplete y permite advance/skip. Una secuencia vacía o ya terminada no produce avances adicionales. El gestor no importa Phaser ni crea listeners/temporizadores; puede reutilizarse en otros contextos.
+DialogueManager sigue siendo el único gestor de diálogo y ahora ofrece escritura progresiva configurable: una pulsación completa la línea, la siguiente avanza. NarrativeSequence define ruta/capítulo/ID e instrucciones validadas para fondos, retratos, diálogos, música y sonidos. NarrativeSequenceRunner las interpreta en orden hasta cada diálogo, sin ramas ni decisiones.
 
-IntroScene selecciona la secuencia del personaje autorizado, monta IntroView y espera al final. No inicia GameScene en segundo plano: durante el diálogo no existen jugador, IA ni proyectiles activos. Al terminar u omitir, una bandera `leaving` impide duplicar la transición y GameScene recibe el personaje seleccionado con habitación inicial 0.
+VisualNovelScene verifica el personaje, resuelve su secuencia y monta VisualNovelView. No inicia GameScene en segundo plano. Al terminar u omitir, una bandera impide duplicar la transición y GameScene recibe el personaje y destino permitido (habitaciones actuales 0/1). El selector utiliza habitación inicial 0. El puente startNarrative también permite iniciar una secuencia desde gameplay sin agregar una condición de victoria.
 
-La vista muestra interlocutor, texto, contador de líneas, retrato opcional y arte original del personaje. Los recursos se reutilizan desde selectorPath sin modificar imágenes. La aparición usa una transición CSS breve que respeta prefers-reduced-motion; no se agregan vídeos, arte generado ni temporizadores de narrativa.
+La vista muestra interlocutor, typewriter, contador, fondo y retratos posicionados. Las expresiones sin ilustración utilizan neutral con leyenda; no se deforman los originales. Se reutilizan las láminas de fondos con recortes explícitos. El audio tiene infraestructura preparada y se prueba sin archivos y con un AudioBuffer de prueba; todavía no hay pistas narrativas de producción.
 
 Controles:
 
-- Enter o espacio: una línea por pulsación.
-- Botón CONTINUAR / ENTRAR: avanzar o comenzar la partida desde la última línea.
-- Escape o botón OMITIR INTRO: entrar directamente con el mismo personaje.
+- Enter o espacio: completar texto en escritura; una nueva pulsación avanza.
+- Botón COMPLETAR / CONTINUAR / ENTRAR: completar, avanzar o comenzar al final.
+- Escape o botón OMITIR: entrar directamente con el mismo personaje.
+- VOLVER: regresar al selector conservando el checkpoint de lectura.
 - Tab: alternar botones; Enter/espacio sobre OMITIR ejecuta esa acción.
 
 El foco inicial está en CONTINUAR. Los keydown repetidos y las pulsaciones duplicadas sin keyup se ignoran; se previene el clic nativo adicional de Enter/espacio. Un doble clic de ratón no salta una segunda línea. El Enter mantenido al salir del selector tampoco avanza accidentalmente la nueva escena. Los handlers se limitan al contenedor enfocado; el listener de blur y los demás eventos se abortan al cerrar, y se vacía el conjunto de teclas mantenidas.
 
-Para modificar la narrativa, editar las entries de introDialogue.alex/lua. Para agregar una secuencia, crear un DialogueSequence y pasarlo a DialogueManager; el gestor no necesita cambios. portraitKey puede omitirse para narración/sistema; la vista actual resuelve alex/lua mediante el catálogo de personajes. Otros interlocutores con retrato requerirán añadir su correspondencia visual sin cambiar el gestor. Solo debe retirarse provisional cuando el contenido haya sido aprobado.
+Para agregar guiones, capítulos, fondos, personajes narrativos y audio, consultar los ejemplos de [sprint-4-visual-novel.md](sprint-4-visual-novel.md). El catálogo y los datos se amplían sin modificar la lógica de la escena. El progreso usa berzerk_narrative_progress_v1, separado de los códigos; reanuda diálogos reconstruyendo presentación sin repetir efectos sonoros anteriores. Finalizar u omitir no inventa un capítulo siguiente.
 
-## Habilidades especiales — Fase 4 pendiente
+## Habilidades especiales — Fase 4 implementada
+
+`SpecialAbilityConfig.ts` centraliza tecla y parámetros. `SpecialAbility` administra los estados lista → carga → activa → recuperación → reutilización mediante delta de escena, sin temporizadores propios. `SpecialAbilityManager` elige el módulo por personaje, consume Q con JustDown y administra HUD, poses originales y electricidad. Player conserva movimiento y cuerpo físico durante la habilidad y suspende disparos normales hasta terminar. No concede invulnerabilidad: un impacto enemigo sigue siendo letal.
+
+Los recortes de las hojas originales se cargan como atlas en memoria sobre un lienzo lógico de 512 × 544, con línea de suelo fija. Un sprite visual acompaña al cuerpo de Player sin cambiar sus dimensiones ni colisiones; al terminar vuelve a mostrarse el sprite normal. No se editan ni sustituyen imágenes originales.
 
 ### Alex
 
-`alex-special.png` (1774 × 887) incluye poses de cambio de arma, metralleta y destellos, pero aún no se carga como animación ni dispara ráfagas. La futura habilidad reutilizará Projectile y sus grupos/colliders, con duración, cadencia, velocidad, cantidad, dispersión y recarga configurables.
+`AlexSpecial` carga durante 350 ms y, al empezar la fase activa, elimina a todos los enemigos vivos registrados en la habitación actual, igual que Lua. Esta eliminación ignora paredes, distancia y dirección de disparo y reutiliza EnemyManager.defeatLivingEnemies(), que llama a die() una vez por enemigo válido. No afecta al jugador ni a otras habitaciones, y se cancela si Alex muere durante la carga.
+
+Conserva su animación de metralleta durante 3000 ms y recupera el arma en 250 ms, con cooldown de 8000 ms. No crea proyectiles durante el especial: al terminar la carga, aparece una bola verde de radio 8 px en la posición de cada robot alcanzado, con desvanecimiento de 450 ms. Los valores impactRadius e impactMs son configurables. Las poses originales muestran cambio de arma, disparo/retroceso, destellos y retorno al arma habitual. La eliminación de pantalla ocurre una sola vez por activación.
+
+Las bolas verdes se dibujan con Graphics, sin cuerpo físico, velocidad ni colisiones. Permanecen donde estaba cada enemigo al recibir el impacto y desaparecen sin temporizadores. Una habitación vacía no genera impactos. Se limpian también al morir, reiniciar o cambiar de habitación. Los disparos normales siguen usando Projectile y las colisiones existentes, con velocidad y vida útil originales.
 
 ### Lua
 
-`lua-special.png` (1774 × 887) incluye acumulación y descarga. La futura habilidad seleccionará únicamente enemigos vivos de la habitación actual, sin exigir línea de visión individual, y llamará al `die()` existente. No se implementó aún el efecto de habitación ni su recarga.
+`LuaSpecial` carga durante 650 ms, descarga durante 500 ms y se recupera en 200 ms; después espera 12000 ms. Al iniciar la descarga usa EnemyManager.defeatLivingEnemies(), compartido con Alex, para eliminar una copia de los enemigos vivos de la escena activa sin consultar línea de visión. No opera sobre otra escena ni aplica daño al jugador. EnemyManager sigue contando muertes y emitiendo ROOM_CLEARED una sola vez.
 
-Las tarjetas muestran «HABILIDAD PREVISTA» para no presentar esas funciones como disponibles. Las hojas especiales y sus fondos ya existen; los recortes y su alineación deberán verificarse antes de integrarlos. No se han inventado índices ni sustituido diseños. No hay assets faltantes que bloqueen el selector.
+La hoja original muestra carga, expansión y disipación; Graphics añade rayos amarillos hasta los límites físicos de la habitación, destello y anillo expansivo. Todos los efectos se retiran al terminar/cancelar. Las tarjetas indican la tecla configurada. No faltan sprites para estas habilidades; no se añaden sonidos porque no hay archivos de audio especiales proporcionados.
+
+### Cancelación y extensión
+
+La muerte cancela inmediatamente la habilidad y conserva visible la animación de derrota. Cambiar de habitación cancela ataques y transporta el cooldown restante; si había una habilidad en curso, empieza el cooldown completo. Reintentar desde Game Over inicia una partida lista para usarla. Cerrar la escena destruye poses, Graphics, HUD y tecla; los grupos existentes destruyen balas y sus temporizadores. Las habilidades destruidas ignoran nuevas actualizaciones y activaciones.
+
+Para incorporar otra habilidad, extender SpecialAbility, implementar onDischarge y opcionalmente onActiveUpdate, configurar sus tiempos y asociarla en SpecialAbilityManager. Mantener muertes y colisiones en las entidades/sistemas existentes. Los fondos especiales usados por la VN no se modifican.
 
 ## Cambios futuros y extensión
 
 - **Códigos:** modificar `CHARACTER_CODES` y conservar correspondencia independiente por personaje.
 - **Fondos/retratos:** cambiar selectorPath/accent en `characters.ts` o el estilo del retrato, conservando la proporción del arte original. No hace falta editar la escena para sustituir una imagen.
 - **Añadir personajes:** queda fuera del alcance actual. En el futuro ampliar PlayerCharacter, catálogo, esquema de desbloqueos, migración de almacenamiento, códigos y lista de tarjetas/pruebas conjuntamente. No basta añadir una imagen.
-- **Diálogos:** añadir/editar DialogueSequence en los datos y reutilizar DialogueManager. Para otra presentación, implementar una vista que consuma current/position/total; no duplicar navegación ni callbacks de finalización.
-- **Habilidades/recargas:** crear la infraestructura compartida de Fase 4 y luego módulos por personaje; centralizar parámetros y cancelar efectos al morir, reiniciar o cambiar de habitación. No están implementados todavía.
+- **Diálogos:** añadir NarrativeSequence al catálogo de rutas y reutilizar el intérprete, gestores y vista existentes. No duplicar el motor para cada personaje/capítulo.
+- **Habilidades/recargas:** modificar SpecialAbilityConfig; las fases y la limpieza compartidas están en abilities/. Los módulos concretos reutilizan EnemyManager o Projectile.
 
-## Validación de Fases 2 y 3
+## Validación final — Fase 5
 
 Comandos ejecutados:
 
 - `npm.cmd run build`: TypeScript y Vite correctos. Persiste el aviso del bundle de Phaser mayor de 500 kB.
 - `git diff --check`: sin errores de whitespace.
-- `node tests/run-selection.mjs`: 67 comprobaciones de servicio/diálogo/escenas, 8 de interfaz con entradas nativas, 2 de recarga real y 4 de layout (selector e introducción); todas aprobadas, cero errores de consola.
+- `node tests/run-selection.mjs`: 124 comprobaciones de servicios/motor/escenas, 8 de interfaz con entradas nativas, 3 de recarga real y 4 de layout (selector y VN); todas aprobadas, cero errores de consola.
 - `node tests/run-combat.mjs`: 66 comprobaciones de regresión y 2 de interfaz nativa de Game Over; todas aprobadas, cero errores de consola.
+- `node tests/run-abilities.mjs`: 50 comprobaciones de habilidades con escenas, cuerpos y efectos reales y 2 de tecla Q nativa; todas aprobadas, cero errores de consola.
+- `node tests/run-sprint-4.mjs`: 44 comprobaciones del recorrido integrado y estabilidad durante 12 reinicios; todas aprobadas, cero errores de consola.
+- `npm.cmd run test:sprint4`: ejecuta las cuatro suites y escribe el informe final solo si todas pasan. Comprueba primero acceso al servidor y al navegador dedicado.
+- Arranque de `dist/` mediante `npm.cmd run preview -- --host 127.0.0.1 --port 4173`: selector, canvas 1024 × 768 e imágenes originales cargan sin errores de consola. Evidencia en `docs/test-results/sprint-4-production.json`.
 
-Se verifican códigos vacíos/incorrectos/repetidos, normalización, exclusividad, datos corruptos, errores de lectura/escritura y recuperación de guardado. También selección de ambos personajes, rechazo al navegar con personaje bloqueado/ausente/inválido (incluida IntroScene), cambios de habitación, reintentos y liberación del formulario. La recarga crea un documento, juego y servicio nuevos y recupera ambos desbloqueos de localStorage.
+Se verifican códigos vacíos/incorrectos/repetidos, normalización, exclusividad, datos corruptos, errores de lectura/escritura y recuperación de guardado. También selección de ambos personajes, rechazo al navegar con personaje bloqueado/ausente/inválido (incluida VisualNovelScene), cambios de habitación, reintentos y liberación del formulario. La recarga crea un documento, juego y servicios nuevos y recupera desbloqueos y progreso narrativo independiente.
 
 La narrativa se recorre completamente y se omite tanto con botón como con Escape. Se verifican orden, interlocutor, retrato, primera/última línea, secuencia vacía, tecla mantenida, doble clic, bloqueo del gameplay, limpieza y reentradas con ambos personajes. Enter y espacio se prueban con eventos reales del navegador. Reintentar después de morir no repite la introducción. El diálogo y sus botones permanecen dentro del área visible y sin solaparse en 800 × 600 y 390 × 844. Se inspeccionó visualmente la pantalla narrativa.
 
-Total: **149 verificaciones aprobadas**, sumando los dos runners y sus controles nativos, recarga y layout. Las pruebas de habilidades siguen pendientes porque aún no se implementaron.
+Total: **303 verificaciones aprobadas**, sumando los cuatro runners y sus controles nativos, recarga y layout. Habilidades: carga, cooldown, repeticiones, exclusividad, habitación vacía, eliminación de pantalla detrás de paredes con Alex y Lua, impactos verdes en las posiciones de los enemigos sin proyectiles físicos, animación de metralleta, expiración de efectos, movimiento, retorno de arma, muerte en carga/descarga/ráfaga, reinicio y cambio de habitación. Alex añade verificaciones de eliminación única, cancelación al morir durante carga y aislamiento de otros robots al cambiar habitación. Se inspeccionaron visualmente las poses originales de Alex y Lua y sus efectos en Canvas.
+
+El recorrido final enlaza formulario real → selección → VN (Alex completa; Lua omite) → especial → impacto de bala enemiga → derrota → Game Over → reintento → selector. Los servicios de esta suite usan almacenamiento en memoria. En 12 reinicios alternados de personajes, la habitación 0 mantiene 3 cuerpos dinámicos, 51 estáticos, 7 colliders, 9 teclas y 117 objetos al empezar. No se observó acumulación en esos contadores; no constituye un perfil exhaustivo de memoria.
 
 La regresión conserva movimiento, disparos, colisiones, IA, visión, muertes únicas, limpieza, habitación despejada, Game Over y reinicio. Las pruebas de combate autorizan ambos personajes mediante el servicio real con almacenamiento aislado en memoria; no agregan una excepción de producción.
 
-Las pruebas del selector utilizan la clave `test_berzerk_character_unlocks_v1`, independiente del progreso real. El runner la elimina al terminar. No se borran ni canjean códigos en la clave del jugador. Se inspeccionó visualmente el selector de la entrada principal con ambos retratos cargados.
+Las pruebas utilizan `test_berzerk_character_unlocks_v1` y `test_berzerk_narrative_progress_v1`, independientes del progreso real. El runner las elimina al terminar. No se borran datos del jugador. Se inspeccionaron visualmente selector y presentación VN.
 
 ### Reproducción
 
 1. Ejecutar `npm.cmd run dev -- --host 127.0.0.1`.
 2. Abrir `http://127.0.0.1:5173/` para jugar con el selector.
-3. Abrir `/tests/selection.html` para las 67 comprobaciones del servicio, narrativa y escenas, o `/tests/combat.html` para la regresión de combate.
-4. Para las entradas nativas, iniciar una instancia dedicada de Edge/Chrome con perfil de pruebas y depuración remota en puerto 9224; ejecutar los dos runners anteriores con Node 22+. `CDP_PORT` y `TEST_BASE_URL` permiten cambiar puerto/URL.
+3. Abrir `/tests/selection.html` para servicios/VN, `/tests/combat.html` para combate, `/tests/abilities.html` para habilidades o `/tests/sprint-4.html` para integración final.
+4. Para entradas nativas e informe, iniciar una instancia dedicada de Edge/Chrome con perfil de pruebas y depuración remota en puerto 9224; ejecutar `npm.cmd run test:sprint4` con Node 22+. `CDP_PORT` y `TEST_BASE_URL` permiten cambiar puerto/URL. Ver el comando de navegador y los pasos exactos en [sprint-4-cierre.md](sprint-4-cierre.md).
 
 Los runners navegan la primera pestaña de esa instancia dedicada. Edge se comprobó en renderer Canvas. No se certifican WebGL, todos los navegadores, reinicio del sistema operativo ni controles móviles; quedan como validación adicional antes de publicar.
 
@@ -206,4 +239,4 @@ Los runners navegan la primera pestaña de esa instancia dedicada. Edge se compr
 - La introducción usa contenido provisional y retratos reutilizados del selector; queda pendiente la aprobación de narrativa definitiva. El sistema y las transiciones de Fase 3 están implementados y validados.
 - El wrapper y la restauración de capturas de teclado se extrajeron a mountSceneView para reutilizarlos entre selector e introducción. Se mantiene la limpieza de listeners en cada vista.
 - El cliente CDP ahora convierte condiciones de espera a booleanos y evita serializar referencias circulares de escenas Phaser en los runners.
-- Las habilidades no forman parte de esta entrega. Deben completarse y validarse antes de declarar terminado todo el Sprint 4.
+- Las habilidades y el recorrido completo están verificados en Canvas. La instancia dedicada no ofrece contexto WebGL; otros navegadores/dispositivos, perfiles de memoria prolongados y balance manual quedan como validación de publicación. La narrativa y el audio definitivos siguen pendientes de contenido.

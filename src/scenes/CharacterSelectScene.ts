@@ -3,19 +3,22 @@ import { characters, type PlayerCharacter } from "../config/characters";
 import { getCharacterUnlocks, type CharacterUnlockService } from "../systems/CharacterUnlockService";
 import { CharacterSelectView } from "../ui/CharacterSelectView";
 import { mountSceneView } from "../ui/mountSceneView";
+import { startNarrative } from "../narrative/startNarrative";
 
 export class CharacterSelectScene extends Phaser.Scene {
     private selected: PlayerCharacter | null = null;
     private starting = false;
     private unlocks!: CharacterUnlockService;
     private view: CharacterSelectView | null = null;
+    private notice = "";
 
     constructor() { super("CharacterSelectScene"); }
 
-    init(): void {
+    init(data: { notice?: string } = {}): void {
         this.selected = null;
         this.starting = false;
         this.unlocks = getCharacterUnlocks(this.game);
+        this.notice = typeof data.notice === "string" ? data.notice : "";
     }
 
     create(): void {
@@ -27,6 +30,7 @@ export class CharacterSelectScene extends Phaser.Scene {
         });
         mountSceneView(this, this.view.element);
         this.view.render(this.unlocks, this.selected);
+        if (this.notice) this.view.message(this.notice, true);
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             this.view?.destroy();
             this.view = null;
@@ -62,6 +66,6 @@ export class CharacterSelectScene extends Phaser.Scene {
     private startGame(): void {
         if (this.starting || !this.selected || !this.unlocks.isUnlocked(this.selected)) return;
         this.starting = true;
-        this.scene.start("IntroScene", { character: this.selected });
+        startNarrative(this, { route: this.selected });
     }
 }

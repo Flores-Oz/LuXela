@@ -1,0 +1,42 @@
+{
+  "status": "passed",
+  "generatedAt": "2026-10-17T04:32:52.572Z",
+  "node": "v22.16.0",
+  "browser": "Edg/155.0.4283.45",
+  "renderer": "Canvas",
+  "suites": [
+    {
+      "name": "selection",
+      "status": "passed",
+      "checks": 139,
+      "consoleErrors": 0
+    },
+    {
+      "name": "combat",
+      "status": "passed",
+      "checks": 68,
+      "consoleErrors": 0
+    },
+    {
+      "name": "abilities",
+      "status": "passed",
+      "checks": 52,
+      "consoleErrors": 0
+    },
+    {
+      "name": "sprint-4",
+      "status": "passed",
+      "checks": 44,
+      "consoleErrors": 0,
+      "cycles": 12,
+      "baseline": {
+        "bodies": 3,
+        "walls": 51,
+        "colliders": 7,
+        "keys": 9,
+        "children": 117
+      }
+    }
+  ],
+  "totalChecks": 303
+}

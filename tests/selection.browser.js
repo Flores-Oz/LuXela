@@ -3,8 +3,11 @@ import { gameConfig } from '../src/config/gameConfig';
 import { characters } from '../src/config/characters';
 import { CHARACTER_CODES, CHARACTER_UNLOCK_STORAGE_KEY } from '../src/config/CharacterUnlockConfig';
 import { CharacterUnlockService, getCharacterUnlocks } from '../src/systems/CharacterUnlockService';
-import { DialogueManager } from '../src/dialogue/DialogueManager';
-import { introDialogue } from '../src/dialogue/introDialogue';
+import { NarrativeSaveService, getNarrativeSaves } from '../src/narrative/NarrativeSaveService';
+import { NarrativeRouteManager } from '../src/narrative/NarrativeRouteManager';
+import { NarrativeConfig } from '../src/config/NarrativeConfig';
+import { testNarrativeEngine } from './visual-novel.browser.js';
+import { startNarrative } from '../src/narrative/startNarrative';
 
 const passed = [];
 const check = (name, condition) => {
@@ -31,12 +34,16 @@ const testStorage = {
 };
 window.selectionStorageKey = storageKey;
 const resume = new URLSearchParams(location.search).has('resume');
-if (!resume) localStorage.removeItem(storageKey);
+const narrativeStorageKey = `test_${NarrativeConfig.storageKey}`;
+window.selectionNarrativeKey = narrativeStorageKey;
+const narrativeStorage = {getItem: () => localStorage.getItem(narrativeStorageKey), setItem: (_key, value) => localStorage.setItem(narrativeStorageKey, value)};
+if (!resume) { localStorage.removeItem(storageKey); localStorage.removeItem(narrativeStorageKey); }
 window.selectionResults = { status: 'running' };
 
 const game = new Phaser.Game({ ...gameConfig, type: Phaser.CANVAS,
     callbacks: { preBoot(game) {
         game.registry.set('character-unlock-service', new CharacterUnlockService(() => testStorage));
+        game.registry.set('narrative-save-service', new NarrativeSaveService(new NarrativeRouteManager(), () => narrativeStorage));
     } }
 });
 window.selectionGame = game;
@@ -51,18 +58,20 @@ const submit = code => {
 const start = async id => {
     card(id).click();
     root().querySelector('.select-start').click();
-    await until(() => active('IntroScene') && document.querySelector('.intro-next'));
-    const intro = game.scene.getScene('IntroScene');
-    for (let i = 0; i < intro.dialogue.total; i++) document.querySelector('.intro-next').click();
+    await until(() => active('VisualNovelScene') && document.querySelector('.intro-next'));
+    const intro = game.scene.getScene('VisualNovelScene');
+    for (let i = 0; i < intro.runner.dialogueTotal * 2; i++) document.querySelector('.intro-next').click();
     await until(() => active('GameScene') && game.scene.getScene('GameScene').player);
 };
 window.resetSelectionProgress = async () => {
     localStorage.removeItem(storageKey);
+    localStorage.removeItem(narrativeStorageKey);
+    game.registry.set('narrative-save-service', new NarrativeSaveService(new NarrativeRouteManager(), () => narrativeStorage));
     game.registry.set('character-unlock-service', new CharacterUnlockService(() => testStorage));
     const before = root();
     game.scene.stop('GameScene');
     game.scene.stop('GameOverScene');
-    game.scene.stop('IntroScene');
+    game.scene.stop('VisualNovelScene');
     if (active('CharacterSelectScene')) selector().scene.restart();
     else game.scene.start('CharacterSelectScene');
     await until(() => active('CharacterSelectScene') && root() && root() !== before);
@@ -74,22 +83,11 @@ async function run() {
         const service = getCharacterUnlocks(game);
         check('Desbloqueos sobreviven recarga real de página', service.isUnlocked('alex') && service.isUnlocked('lua'));
         check('Selección no se impone tras recargar', root().querySelector('.select-start').disabled);
+        check('Recarga recupera checkpoint Lua y progreso Alex separado', getNarrativeSaves(game).get('lua')?.entryIndex === 4 && getNarrativeSaves(game).get('lua')?.status === 'reading' && getNarrativeSaves(game).get('alex')?.status === 'skipped');
         return;
     }
 
-    const conversation = new DialogueManager([
-        { speaker: 'A', text: 'Primera' }, { speaker: 'B', text: 'Segunda', portraitKey: 'alex' }
-    ]);
-    check('Diálogo inicia en primera línea', conversation.position === 0 && conversation.current.text === 'Primera');
-    conversation.advance();
-    check('Diálogo conserva orden, nombre y retrato', conversation.current.speaker === 'B' && conversation.current.portraitKey === 'alex');
-    conversation.advance();
-    check('Diálogo termina una sola vez', conversation.isComplete && conversation.current === null && !conversation.advance() && !conversation.skip());
-    const skipped = new DialogueManager(introDialogue.lua.entries);
-    skipped.skip();
-    check('Omitir finaliza secuencia completa', skipped.isComplete && skipped.position === skipped.total && !skipped.skip());
-    const emptyDialogue = new DialogueManager([]);
-    check('Secuencia vacía finaliza sin error', emptyDialogue.isComplete && !emptyDialogue.advance());
+    await testNarrativeEngine(game, check, until);
 
     const storage = memory();
     const service = new CharacterUnlockService(() => storage);
@@ -144,9 +142,9 @@ async function run() {
         await until(() => active('CharacterSelectScene') && root() && root() !== before);
         check(`GameScene rechaza entrada sin permiso: ${JSON.stringify(data)}`, !active('GameScene') && !game.scene.getScene('GameScene').player);
         const beforeIntro = root();
-        selector().scene.start('IntroScene', data);
+        selector().scene.start('VisualNovelScene', {route: data.character});
         await until(() => active('CharacterSelectScene') && root() && root() !== beforeIntro);
-        check(`IntroScene rechaza entrada sin permiso: ${JSON.stringify(data)}`, !active('IntroScene') && !document.querySelector('.intro-screen'));
+        check(`VisualNovelScene rechaza entrada sin permiso: ${JSON.stringify(data)}`, !active('VisualNovelScene') && !document.querySelector('.intro-screen'));
     }
     const beforeGuard = root();
     selector().scene.start('GameOverScene', { character: 'alex', roomIndex: 0 });
@@ -172,37 +170,32 @@ async function run() {
     const oldView = selector().view;
     root().querySelector('.select-start').click();
     selector().startGame();
-    await until(() => active('IntroScene') && document.querySelector('.intro-screen'));
-    const intro = game.scene.getScene('IntroScene');
+    await until(() => active('VisualNovelScene') && document.querySelector('.intro-screen'));
+    const intro = game.scene.getScene('VisualNovelScene');
     const introView = intro.view;
-    check('Selector pasa a narrativa con Lua y sin gameplay', intro.character === 'lua' && !active('GameScene') && !active('CharacterSelectScene'));
+    check('Selector inicia ruta Lua sin combate', intro.sequence.route === 'lua' && !active('GameScene') && !active('CharacterSelectScene'));
     check('Selector libera formulario y callbacks', !root() && oldView.events.signal.aborted && selector().view === null);
-    check('Introducción identificada como provisional y usa arte original', document.querySelector('.intro-draft').textContent.includes('PROVISIONAL') &&
-        document.querySelector('.intro-character img').getAttribute('src') === characters.lua.selectorPath);
-    check('Primera línea coincide con datos narrativos', document.querySelector('.intro-text').textContent === introDialogue.lua.entries[0].text);
+    check('Muestra de prueba identificada', document.querySelector('.intro-draft').textContent.includes('PROVISIONAL'));
+    check('Texto inicialmente progresivo y guion correcto', intro.runner.position === 2 && intro.runner.dialogue.current.text === 'Iniciando secuencia de prueba.');
     const next = document.querySelector('.intro-next');
     next.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }));
     next.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', repeat: true, bubbles: true, cancelable: true }));
     next.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }));
-    check('Una pulsación mantenida solo avanza una línea', intro.dialogue.position === 1 && document.querySelector('.intro-speaker').textContent === 'Lua');
+    check('Una pulsacion completa sin saltar entrada', intro.runner.position === 2 && !intro.runner.dialogue.isTyping);
     next.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', bubbles: true }));
     next.dispatchEvent(new MouseEvent('click', { detail: 2, bubbles: true }));
-    check('Doble clic no salta otra línea', intro.dialogue.position === 1);
-    check('Intervención muestra retrato del personaje', !document.querySelector('.intro-portrait img').hidden && document.querySelector('.intro-portrait img').alt === 'Lua');
-    // No GameScene exists underneath the dialogue to consume movement or shots.
-    next.dispatchEvent(new KeyboardEvent('keydown', { key: 'w', code: 'KeyW', bubbles: true }));
-    check('Narrativa no crea jugador ni combate en segundo plano', !game.scene.getScene('GameScene').player && !active('GameScene'));
+    check('Doble clic no consume siguiente entrada', intro.runner.position === 2);
+    check('Narrativa no crea jugador ni combate', !game.scene.getScene('GameScene').player && !active('GameScene'));
     next.click();
-    check('Última línea muestra instrucciones y opción Entrar', intro.dialogue.position === 2 && next.textContent === 'ENTRAR →' &&
-        document.querySelector('.intro-text').textContent === introDialogue.lua.entries[2].text);
+    check('Siguiente dialogo aplica expresion y posicion del guion', intro.runner.position === 4 && document.querySelector('.vn-center').dataset.expression === 'surprised');
     next.click();
-    intro.skip(); intro.advance();
+    check('Linea final completa permite entrar', next.textContent === 'ENTRAR →');
+    next.click(); intro.skip(); intro.advance();
     await until(() => active('GameScene') && game.scene.getScene('GameScene').player);
     let gameplay = game.scene.getScene('GameScene');
-    check('Inicia solo Lua y consume transición única', gameplay.character === 'lua' && gameplay.player.physicsSprite.texture.key === 'lua-walk' &&
-        gameplay.children.list.filter(c => c.texture?.key === 'lua-walk').length === 1);
-    check('Narrativa libera eventos, vista y estado tras finalizar', !document.querySelector('.intro-screen') && introView.events.signal.aborted &&
-        intro.dialogue === null && intro.view === null && introView.heldKeys.size === 0);
+    check('Finalizar conserva Lua y un solo jugador', gameplay.character === 'lua' && gameplay.children.list.filter(c => c.texture?.key === 'lua-walk').length === 1);
+    check('Final guarda estado completado solo en Lua', getNarrativeSaves(game).get('lua').status === 'completed' && !getNarrativeSaves(game).get('alex'));
+    check('Motor libera eventos y managers al salir', !document.querySelector('.intro-screen') && introView.events.signal.aborted && intro.runner === null && intro.audio === null && introView.heldKeys.size === 0);
     gameplay.player.die();
     await until(() => active('GameOverScene'));
     game.scene.getScene('GameOverScene').children.list.find(c => c.text === 'CAMBIAR PERSONAJE').emit('pointerdown');
@@ -220,21 +213,53 @@ async function run() {
     game.scene.getScene('GameOverScene').input.keyboard.emit('keydown-ENTER');
     await until(() => active('GameScene') && gameplay.player);
     check('Reinicio conserva personaje y habitación desbloqueados', gameplay.character === 'alex' && gameplay.roomIndex === 1 && !gameplay.player.isDead());
-    check('Reintento no vuelve a reproducir introducción', !active('IntroScene') && !document.querySelector('.intro-screen'));
+    check('Reintento no vuelve a reproducir introducción', !active('VisualNovelScene') && !document.querySelector('.intro-screen'));
 
     // Re-enter and skip both characters; no stale dialogue or listeners remain.
     for (const id of ['alex', 'lua']) {
         gameplay.scene.start('CharacterSelectScene');
         await until(() => active('CharacterSelectScene') && root());
         card(id).click(); root().querySelector('.select-start').click();
-        await until(() => active('IntroScene') && document.querySelector('.intro-screen'));
-        check(`Reentrada ${id} reinicia narrativa desde primera línea`, intro.dialogue.position === 0 && intro.character === id);
-        document.querySelector('.intro-skip').click();
+        await until(() => active('VisualNovelScene') && document.querySelector('.intro-screen'));
+        check(`Reentrada ${id} reinicia narrativa desde primera línea`, intro.runner.position === 2 && intro.sequence.route === id);
+        document.querySelector('.vn-skip').click();
         intro.skip();
         await until(() => active('GameScene') && gameplay.player);
         check(`Omitir ${id} inicia una sola entidad correcta`, gameplay.character === id && gameplay.player.physicsSprite.texture.key === `${id}-walk` &&
             gameplay.children.list.filter(c => c.texture?.key === `${id}-walk`).length === 1);
     }
+
+    for (const sequenceId of ['missing', 'lua_test']) {
+        gameplay.scene.start('VisualNovelScene', {route:'alex', sequenceId});
+        await until(() => active('CharacterSelectScene') && root());
+        check(`Secuencia invalida controlada: ${sequenceId}`, root().querySelector('.select-message').classList.contains('is-error'));
+        await start('alex');
+    }
+    for (const request of [null, { route: 'alex', sequenceId: 99 }, { route: 'alex', resume: 'bad' }, { route: 'alex', returnTo: { roomIndex: 99 } }]) {
+        startNarrative(gameplay, request);
+        await until(() => active('CharacterSelectScene') && root());
+        check(`Solicitud malformada no inicia narrativa: ${JSON.stringify(request)}`, !active('VisualNovelScene') && root().querySelector('.select-message').classList.contains('is-error'));
+        await start('alex');
+    }
+    // Return from gameplay without changing victory/room logic.
+    startNarrative(gameplay, {route:'alex', sequenceId:'alex_test', resume:false, returnTo:{roomIndex:1}});
+    await until(() => active('VisualNovelScene') && intro.runner);
+    const firstRunView = intro.view;
+    intro.advance(); intro.advance();
+    check('Checkpoint guarda dialogo visible y no otra ruta', getNarrativeSaves(game).get('alex').entryIndex === 4 && getNarrativeSaves(game).get('lua').status === 'skipped');
+    document.querySelector('.vn-back').click();
+    await until(() => active('CharacterSelectScene') && root());
+    check('Volver detiene escritura y limpia eventos', firstRunView.events.signal.aborted && intro.runner === null);
+    card('alex').click(); root().querySelector('.select-start').click();
+    await until(() => active('VisualNovelScene') && intro.runner);
+    check('Seleccionar reanuda entrada y presentacion de Alex', intro.runner.position === 4 && document.querySelector('.vn-right').dataset.character === 'alex' && intro.background.currentKey === 'alex-test');
+    intro.skip();
+    await until(() => active('GameScene') && gameplay.player);
+    startNarrative(gameplay, {route:'lua', resume:false, returnTo:{roomIndex:1}});
+    await until(() => active('VisualNovelScene') && intro.runner);
+    intro.skip();
+    await until(() => active('GameScene') && gameplay.player);
+    check('Puente gameplay narrativa gameplay conserva destino', gameplay.roomIndex === 1 && gameplay.character === 'lua');
 
     // Inaccessible storage must still work across scene transitions in this game.
     const temporary = new CharacterUnlockService(() => { throw new Error('storage disabled'); });
@@ -247,6 +272,21 @@ async function run() {
     await start('alex');
     check('Memoria compartida autoriza gameplay sin almacenamiento', game.scene.getScene('GameScene').character === 'alex' && getCharacterUnlocks(game) === temporary);
 
+    const temporaryNarrative = new NarrativeSaveService(new NarrativeRouteManager(), () => { throw new Error('storage disabled'); });
+    game.registry.set('narrative-save-service', temporaryNarrative);
+    startNarrative(gameplay, { route: 'alex', resume: false });
+    await until(() => active('VisualNovelScene') && intro.runner);
+    intro.advance(); intro.advance();
+    check('Visual Novel informa guardado narrativo temporal', temporaryNarrative.get('alex').entryIndex === 4 && document.querySelector('.vn-save-note').textContent.includes('temporal'));
+    document.querySelector('.vn-back').click();
+    await until(() => active('CharacterSelectScene') && root());
+    card('alex').click(); root().querySelector('.select-start').click();
+    await until(() => active('VisualNovelScene') && intro.runner);
+    check('Progreso narrativo en memoria sobrevive cambio de escenas', intro.runner.position === 4 && getNarrativeSaves(game) === temporaryNarrative);
+    intro.skip();
+    await until(() => active('GameScene') && gameplay.player);
+
+    game.registry.set('narrative-save-service', new NarrativeSaveService(new NarrativeRouteManager(), () => narrativeStorage));
     game.registry.set('character-unlock-service', new CharacterUnlockService(() => testStorage));
     game.scene.getScene('GameScene').scene.start('CharacterSelectScene');
     await until(() => active('CharacterSelectScene') && root());

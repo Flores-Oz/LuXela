@@ -15,12 +15,15 @@ import { loadPlayerAssets, createPlayerAnimations } from "../systems/PlayerAnima
 import { CombatEvents } from "../systems/CombatEvents";
 import { EnemyManager } from "../systems/EnemyManager";
 import { getCharacterUnlocks } from "../systems/CharacterUnlockService";
+import { loadSpecialAssets, SpecialAbilityManager } from "../abilities/SpecialAbilityManager";
 
 
 
 export class GameScene extends Phaser.Scene {
 
     private player: Player | null = null;
+    private specialAbilities: SpecialAbilityManager | null = null;
+    private abilityCooldownMs = 0;
 
     private roomIndex = 0;
 
@@ -56,6 +59,7 @@ export class GameScene extends Phaser.Scene {
 
     preload(): void {
         loadPlayerAssets(this);
+        loadSpecialAssets(this);
 
         this.load.spritesheet(
             "robot-red",
@@ -85,6 +89,8 @@ export class GameScene extends Phaser.Scene {
             // Arcade and the display list destroy bodies/groups on shutdown.
             // Group shutdown listeners run first; do not clear destroyed groups.
             this.enemyManager?.destroy();
+            this.specialAbilities?.destroy();
+            this.specialAbilities = null;
             this.enemyManager = null;
             this.player = null;
             this.walls = null;
@@ -215,10 +221,12 @@ export class GameScene extends Phaser.Scene {
             this.player.die();
         });
         this.enemyManager.start();
+        this.specialAbilities = new SpecialAbilityManager(this, this.player, this.character, this.enemyManager, this.abilityCooldownMs);
     }
 
-    update(time: number): void {
+    update(time: number, delta = 1000 / 60): void {
         if (this.combatState !== "playing" || !this.player || !this.lineOfSight || this.isChangingRoom) return;
+        this.specialAbilities?.update(delta);
         this.player.update();
 
         for (const child of this.enemies.getChildren()) {
@@ -237,6 +245,7 @@ export class GameScene extends Phaser.Scene {
     private beginDefeat(): void {
         if (this.combatState !== "playing") return;
         this.combatState = "defeat";
+        this.specialAbilities?.cancel();
         // Pause only physics. Animation updates must continue until defeat ends.
         this.physics.pause();
         for (const child of this.enemies.getChildren()) (child as Enemy).stop();
@@ -371,7 +380,7 @@ export class GameScene extends Phaser.Scene {
             return;
         }
 
-        const spawn = 
+        const spawn =
             this.player.getProjectileSpawn(
                 direction
             );
@@ -387,6 +396,7 @@ export class GameScene extends Phaser.Scene {
         }
 
         this.isChangingRoom = true;
+        const abilityCooldownMs = this.specialAbilities?.cancel() ?? 0;
 
         const nextRoomIndex =
             (this.roomIndex + 1) %
@@ -394,11 +404,14 @@ export class GameScene extends Phaser.Scene {
 
         this.scene.restart({
             roomIndex: nextRoomIndex,
+            abilityCooldownMs,
             character: this.character
         });
     }
 
-    init(data: { roomIndex?: number; character?: PlayerCharacter } = {}): void {
+    init(data: { roomIndex?: number; character?: PlayerCharacter; abilityCooldownMs?: number } = {}): void {
+        this.abilityCooldownMs = typeof data.abilityCooldownMs === "number" && Number.isFinite(data.abilityCooldownMs) ?
+            Math.max(0, data.abilityCooldownMs) : 0;
         this.roomIndex =
             data.roomIndex ?? 0;
 

@@ -1,4 +1,5 @@
 import { characters, type PlayerCharacter } from "../config/characters";
+import { SpecialAbilityConfig } from "../config/SpecialAbilityConfig";
 import type { CharacterUnlockService } from "../systems/CharacterUnlockService";
 import "./character-select.css";
 
@@ -32,7 +33,7 @@ export class CharacterSelectView {
                                 <path d="M8 14V9a8 8 0 0 1 16 0v5M3 14h26v20H3z" stroke="currentColor" stroke-width="3"/>
                                 <path d="M16 22v5" stroke="currentColor" stroke-width="3"/></svg></span>
                         </span>
-                        <span class="card-footer"><span><small>HABILIDAD PREVISTA</small><span>${config.abilityName}</span></span>
+                        <span class="card-footer"><span><small>HABILIDAD · ${SpecialAbilityConfig.key}</small><span>${config.abilityName}</span></span>
                             <span class="card-check" aria-hidden="true">✓</span></span>
                     </button>`;
                 }).join("")}

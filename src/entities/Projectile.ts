@@ -6,8 +6,6 @@ export class Projectile {
     private readonly body:
         Phaser.Physics.Arcade.Image;
 
-    private readonly speed = 500;
-
     private readonly lifetime = 2000;
 
     private readonly expiration: Phaser.Time.TimerEvent;
@@ -20,7 +18,8 @@ export class Projectile {
         y: number,
         direction: Phaser.Math.Vector2,
         owner: ProjectileOwner = "player",
-        group?: Phaser.Physics.Arcade.Group
+        group?: Phaser.Physics.Arcade.Group,
+        speed = 500
     ){
         this.owner = owner;
         const textureKey = `${owner}-projectile`;
@@ -55,8 +54,8 @@ export class Projectile {
             direction.clone().normalize();
 
         this.body.setVelocity(
-            normalizedDirection.x * this.speed,
-            normalizedDirection.y * this.speed
+            normalizedDirection.x * speed,
+            normalizedDirection.y * speed
         );
 
         this.expiration = scene.time.delayedCall(

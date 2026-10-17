@@ -25,6 +25,7 @@ type ShootingKeys = {
 export class Player {
 
     private dead = false;
+    private specialPerforming = false;
 
     private readonly sprite: 
         Phaser.Physics.Arcade.Sprite;
@@ -117,7 +118,7 @@ export class Player {
             return;
         }
 
-        this.updateShooting();
+        if (!this.specialPerforming) this.updateShooting();
 
         this.sprite.setVelocity(0);
 
@@ -264,6 +265,11 @@ export class Player {
 
     isDead(): boolean {
         return this.dead;
+    }
+
+    setSpecialPerforming(performing: boolean): void {
+        this.specialPerforming = performing;
+        if (performing) this.shootRequested = null;
     }
 
     die(): void {

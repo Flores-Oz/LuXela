@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "generatedAt": "2026-10-17T04:34:37.501Z",
+  "selector": true,
+  "originalImages": [
+    {
+      "src": "assets/sprites/player/alex-selector.png",
+      "width": 1024,
+      "height": 1536
+    },
+    {
+      "src": "assets/sprites/player/lua-selector.png",
+      "width": 1024,
+      "height": 1536
+    }
+  ],
+  "canvas": {
+    "width": 1024,
+    "height": 768
+  },
+  "webglAvailable": false,
+  "consoleErrors": []
+}

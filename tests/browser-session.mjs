@@ -38,6 +38,8 @@ export async function openBrowserSession() {
         }
         throw new Error(`Timed out: ${expression}`);
     };
+    // Runtime.enable replays console history from the previous test page.
+    await send('Runtime.discardConsoleEntries');
     await send('Runtime.enable');
     return { send, evaluate, waitUntil, errors, baseUrl, close: () => ws.close() };
 }

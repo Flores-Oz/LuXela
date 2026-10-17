@@ -31,18 +31,19 @@ try {
     await key('Enter', 'Enter', 13);
     await waitUntil("document.querySelector('[data-character=lua]').getAttribute('aria-pressed') === 'true'");
     await click('.select-start');
-    await waitUntil("window.selectionGame.scene.isActive('IntroScene') && document.querySelector('.intro-next')");
+    await waitUntil("window.selectionGame.scene.isActive('VisualNovelScene') && document.querySelector('.intro-next')");
     // A held Enter from the selector must not advance the newly focused intro.
     await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, autoRepeat: true });
     await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });
-    if (!(await evaluate("window.selectionGame.scene.getScene('IntroScene').dialogue.position === 0"))) {
+    if (!(await evaluate("window.selectionGame.scene.getScene('VisualNovelScene').runner.position === 2"))) {
         throw new Error('Held Enter leaked from selection into introduction');
     }
     await key('Enter', 'Enter', 13);
-    if (!(await evaluate("window.selectionGame.scene.getScene('IntroScene').dialogue.position === 1"))) {
+    if (!(await evaluate("window.selectionGame.scene.getScene('VisualNovelScene').runner.position === 2 && !window.selectionGame.scene.getScene('VisualNovelScene').runner.dialogue.isTyping"))) {
         throw new Error('Enter must advance exactly one dialogue line');
     }
     await key(' ', 'Space', 32);
+    await click('.intro-next');
     await click('.intro-next');
     await waitUntil("window.selectionGame.scene.isActive('GameScene')");
     if (!(await evaluate("window.selectionGame.scene.getScene('GameScene').character === 'lua'"))) {
@@ -55,15 +56,21 @@ try {
         await waitUntil("document.querySelector('.select-start')");
         await click(`[data-character=${id}]`);
         await click('.select-start');
-        await waitUntil("window.selectionGame.scene.isActive('IntroScene') && document.querySelector('.intro-skip')");
+        await waitUntil("window.selectionGame.scene.isActive('VisualNovelScene') && document.querySelector('.vn-skip')");
         if (skipWithKey) await key('Escape', 'Escape', 27);
-        else await click('.intro-skip');
+        else await click('.vn-skip');
         await waitUntil("window.selectionGame.scene.isActive('GameScene')");
         if (!(await evaluate(`window.selectionGame.scene.getScene('GameScene').character === '${id}'`))) {
             throw new Error('Skip replaced the selected character');
         }
         result.nativeUiTests.push(`${skipWithKey ? 'Escape' : 'Botón omitir'} inicia ${id}`);
     }
+
+    await evaluate("void window.selectionGame.scene.getScene('GameScene').scene.start('VisualNovelScene', {route:'lua', resume:false})");
+    await waitUntil("window.selectionGame.scene.isActive('VisualNovelScene') && document.querySelector('.intro-next')");
+    await click('.intro-next'); await click('.intro-next');
+    await click('.vn-back');
+    await waitUntil("document.querySelector('.select-start')");
 
     // A new document creates a new game/service and must recover actual localStorage.
     await send('Page.navigate', { url: `${baseUrl}/tests/selection.html?resume=1` });
@@ -88,7 +95,8 @@ try {
     }
     await click('[data-character=lua]');
     await click('.select-start');
-    await waitUntil("window.selectionGame.scene.isActive('IntroScene') && document.querySelector('.intro-next')");
+    await waitUntil("window.selectionGame.scene.isActive('VisualNovelScene') && document.querySelector('.intro-next')");
+    if (!(await evaluate("window.selectionGame.scene.getScene('VisualNovelScene').runner.position === 4 && document.querySelector('.vn-center').dataset.character === 'lua'"))) throw new Error('Visual state not restored after real reload');
     result.introLayoutTests = [];
     for (const [width, height] of [[800, 600], [390, 844]]) {
         await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
@@ -103,7 +111,7 @@ try {
         if (!fits) throw new Error(`Introduction overflow at ${width}x${height}`);
         result.introLayoutTests.push(`${width}x${height}: diálogo y controles visibles sin solaparse`);
     }
-    await evaluate('localStorage.removeItem(window.selectionStorageKey)');
+    await evaluate('localStorage.removeItem(window.selectionStorageKey);localStorage.removeItem(window.selectionNarrativeKey)');
     console.log(JSON.stringify({ ...result, consoleErrors: errors }, null, 2));
     if (errors.length) process.exitCode = 1;
 } finally {
