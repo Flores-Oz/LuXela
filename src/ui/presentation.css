@@ -1,0 +1,35 @@
+.presentation-screen { position: relative; width: 100%; height: 100%; overflow: auto; box-sizing: border-box; color: var(--ui-text); background: var(--ui-background); font: 16px var(--ui-font); }
+.presentation-screen * { box-sizing: border-box; }
+.presentation-background, .presentation-shade { position: absolute; inset: 0; pointer-events: none; }
+.presentation-background canvas { display: block; width: 100%; height: 100%; object-fit: cover; }
+.presentation-portrait { position: absolute; right: 5%; bottom: 0; width: 43%; height: 94%; object-fit: contain; }
+.main-screen .presentation-panel { width: 62%; }
+.completion-screen .presentation-portrait { width: 100%; right: 0; opacity: .3; }
+.presentation-shade { background: linear-gradient(90deg, #080d10ed, #080d1080 65%, #080d1033), linear-gradient(0deg, #080d10cc, transparent 60%); }
+.presentation-brand { position: absolute; top: clamp(20px, 5vh, 56px); left: clamp(24px, 6vw, 100px); letter-spacing: .35em; font-size: 18px; font-weight: 600; }
+.presentation-brand span { color: var(--ui-accent); }
+.presentation-panel { position: relative; min-height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 110px clamp(24px, 9vw, 160px) 100px; }
+.presentation-eyebrow { text-transform: uppercase; letter-spacing: .22em; font-size: 12px; color: var(--ui-accent); }
+.presentation-panel h1 { font-size: clamp(40px, 6.5vw, 96px); line-height: 1.05; letter-spacing: -.04em; font-weight: 400; max-width: 850px; margin: 12px 0 24px; }
+.presentation-subtitle { color: var(--ui-muted); max-width: 460px; line-height: 1.7; margin: 0 0 32px; }
+.presentation-actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-width: min(280px, 100%); }
+.presentation-actions button { text-align: left; color: var(--ui-text); font: inherit; padding: 14px 22px; border: 1px solid transparent; border-radius: 0; background: transparent; cursor: pointer; transition: background .2s, border-color .2s; }
+.presentation-actions button.is-primary { color: var(--ui-accent); border-color: var(--ui-border); }
+.presentation-actions button:hover, .presentation-actions button:focus-visible { background: #b4dfbd14; border-color: var(--ui-accent); outline: none; }
+.presentation-footer { position: absolute; bottom: 25px; left: clamp(24px, 6vw, 100px); right: clamp(24px, 6vw, 100px); display: flex; justify-content: space-between; gap: 16px; letter-spacing: .15em; font-size: 10px; color: var(--ui-muted); }
+.pause-screen { background: #080d10a8; }
+.pause-screen .presentation-shade { background: linear-gradient(90deg, #080d10aa, transparent); }
+.pause-screen .presentation-panel h1 { font-size: clamp(44px, 7vw, 80px); }
+.completion-screen .presentation-panel { align-items: center; text-align: center; }
+.completion-screen .presentation-shade { background: #080d1070; }
+.completion-screen .presentation-actions button { text-align: center; }
+@media (prefers-reduced-motion: reduce) { .presentation-actions button { transition: none; } }
+@media (max-width: 700px) { .main-screen .presentation-panel { width: 100%; } .main-screen .presentation-portrait { width: 80%; right: -10%; opacity: .4; } }
+@media (max-height: 500px) {
+    .presentation-panel { padding-top: 82px; padding-bottom: 24px; }
+    .presentation-brand { top: 20px; }
+    .presentation-footer { display: none; }
+    .presentation-panel h1, .pause-screen .presentation-panel h1 { font-size: 40px; margin: 10px 0 16px; }
+    .presentation-subtitle { margin-bottom: 16px; font-size: 14px; }
+    .presentation-actions button { padding: 10px 18px; }
+}

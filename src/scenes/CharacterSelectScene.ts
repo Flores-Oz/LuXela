@@ -26,7 +26,8 @@ export class CharacterSelectScene extends Phaser.Scene {
         this.view = new CharacterSelectView({
             select: id => this.select(id),
             redeem: code => this.redeem(code),
-            start: () => this.startGame()
+            start: () => this.startGame(),
+            back: () => { if (!this.starting) this.scene.start("MainMenuScene"); }
         });
         mountSceneView(this, this.view.element);
         this.view.render(this.unlocks, this.selected);

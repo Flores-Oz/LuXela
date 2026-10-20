@@ -1,5 +1,6 @@
 import { narrativePortraits, NarrativeConfig, type PortraitAsset } from "../config/NarrativeConfig";
 import type { PortraitPosition } from "./NarrativeTypes";
+import { loadPortraitFrame } from "./PortraitFrameRenderer";
 
 export class CharacterPortraitManager {
     private readonly portraits = new Map<string, HTMLElement>();
@@ -17,6 +18,7 @@ export class CharacterPortraitManager {
         node.className = `vn-portrait vn-${position}`;
         node.dataset.character = character;
         node.dataset.expression = expression;
+        for (const image of node.querySelectorAll("img")) image.onerror = null;
         node.replaceChildren();
         const asset = Object.hasOwn(this.assets, character) ? this.assets[character] : undefined;
         const caption = document.createElement("figcaption");
@@ -26,13 +28,25 @@ export class CharacterPortraitManager {
         if (source) {
             const image = document.createElement("img");
             image.alt = asset?.name ?? character;
-            image.src = source;
-            image.onerror = () => { image.hidden = true; caption.textContent = `${asset?.name ?? character} · retrato no disponible`; };
+            image.hidden = true;
+            const fail = () => {
+                if (this.portraits.get(character) !== node || !node.contains(image)) return;
+                image.hidden = true; node.classList.add("vn-portrait-missing");
+                caption.hidden = false;
+                caption.textContent = `${asset?.name ?? character} · retrato no disponible`;
+                this.report(`No se pudo cargar el retrato: ${character} / ${expression}.`);
+            };
+            image.onerror = fail;
+            void loadPortraitFrame(source).then(url => {
+                if (this.portraits.get(character) !== node || !node.contains(image)) return;
+                image.src = url; image.hidden = false;
+            }).catch(fail);
             node.append(image);
             if (!desired) {
                 caption.textContent += ` · ${expression} no disponible; neutral`;
                 this.report(`Expresión ${expression} de ${asset?.name ?? character}: se reutiliza neutral.`);
             }
+            else caption.hidden = true;
         } else {
             node.classList.add("vn-portrait-missing");
             caption.textContent += " · retrato no disponible";

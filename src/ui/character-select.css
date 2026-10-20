@@ -1,22 +1,23 @@
 .character-select {
-    box-sizing: border-box; width: 1024px; height: 768px; padding: 28px 48px;
-    color: #e7eee9; font-family: "Courier New", monospace; font-size: 15px;
+    box-sizing: border-box; width: 100%; height: 100%; padding: clamp(16px, 3vh, 36px) clamp(20px, 6vw, 120px); overflow: auto;
+    color: var(--ui-text); font-family: var(--ui-font); font-size: 15px;
     background: radial-gradient(ellipse at 12% 30%, #17302b66, transparent 60%), #0b1014;
-    display: flex; flex-direction: column; gap: 18px; text-align: left;
+    display: flex; flex-direction: column; gap: 12px; text-align: left;
 }
 .character-select *, .character-select *::before, .character-select *::after { box-sizing: border-box; }
 .character-select button, .character-select input { font: inherit; }
 .select-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2d3d3e; padding-bottom: 16px; }
 .select-brand { font-size: 26px; font-weight: bold; letter-spacing: 5px; }
 .select-brand span { color: #8aff92; }
+.select-menu { background: transparent; border: 1px solid var(--ui-border); color: var(--ui-muted); padding: 8px 12px; cursor: pointer; font-size: 10px !important; }
 .select-section, .select-eyebrow { font-size: 11px; letter-spacing: 2px; color: #8daba2; }
 .select-heading { display: flex; align-items: flex-end; justify-content: space-between; }
 .select-heading p { margin: 0; color: #91a69f; line-height: 1.5; }
 .select-heading .select-eyebrow { color: #8aff92; margin-bottom: 8px; }
 .select-heading h1 { font-size: 36px; line-height: 1; margin: 0; letter-spacing: -1px; }
-.select-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.select-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; flex: 1; min-height: 190px; }
 .select-card {
-    position: relative; display: flex; flex-direction: column; height: 392px; padding: 0;
+    position: relative; display: flex; flex-direction: column; min-height: 190px; padding: 0;
     border: 1px solid #344147; background: #11191d; color: #a4b1af; cursor: pointer; text-align: left;
     transition: border-color .15s, box-shadow .15s;
 }
@@ -63,3 +64,31 @@
 .select-start span { margin-left: 24px; }
 .select-start:disabled { cursor: default; background: #25322d; color: #7d8b83; }
 .select-start:not(:disabled):hover { background: #c5ffc4; }
+@media (max-width: 600px) {
+    .select-heading > p, .select-bottom > span, .select-section { display: none; }
+    .select-heading h1 { font-size: 28px; }
+    .select-header { padding-bottom: 12px; }
+    .select-cards { gap: 12px; min-height: 250px; }
+    .card-header { padding: 0 10px; flex-direction: column; justify-content: center; height: 54px; }
+    .card-header strong { font-size: 18px; }
+    .card-state { font-size: 8px; }
+    .card-footer { padding: 10px; min-height: 70px; }
+    .card-footer span > span { font-size: 12px; }
+    .card-footer small { font-size: 8px; letter-spacing: .04em; }
+    .card-check { display: none; }
+    .select-code { flex-wrap: wrap; gap: 8px; }
+    .select-code label { flex: 1 0 100%; }
+    .select-code input { min-width: 0; width: 0; flex: 1; }
+    .select-code button { padding: 0 12px; font-size: 10px; }
+    .select-code button span { display: none; }
+    .select-start { min-width: 0; width: 100%; }
+    .select-bottom { padding-top: 10px; }
+}
+@media (max-height: 650px) and (min-width: 601px) {
+    .character-select { gap: 8px; padding-top: 14px; padding-bottom: 14px; }
+    .select-header { padding-bottom: 8px; }
+    .select-heading h1 { font-size: 28px; }
+    .select-heading > p, .select-eyebrow, .select-code label span { display: none; }
+    .select-feedback { min-height: 25px; margin-top: 0; }
+    .select-bottom { padding-top: 8px; }
+}

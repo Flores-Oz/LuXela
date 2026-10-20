@@ -9,6 +9,7 @@ import { NarrativeAudioManager, loadNarrativeAudio } from "../narrative/Narrativ
 import { getCharacterUnlocks } from "../systems/CharacterUnlockService";
 import { VisualNovelView } from "../ui/VisualNovelView";
 import { mountSceneView } from "../ui/mountSceneView";
+import { getArcadeRun } from "../systems/ArcadeRunService";
 
 export class VisualNovelScene extends Phaser.Scene {
     private request: Partial<NarrativeRequest> = {};
@@ -35,9 +36,19 @@ export class VisualNovelScene extends Phaser.Scene {
             this.reject("Solicitud narrativa inválida."); return;
         }
         const routes = new NarrativeRouteManager();
+        const destination = this.request.destination;
+        if (destination !== undefined && (!destination || typeof destination !== "object" ||
+            (destination.kind !== "game" && destination.kind !== "completion") ||
+            (destination.kind === "game" && ![0, 1].includes(destination.roomIndex)) ||
+            (destination.kind === "completion" && !getArcadeRun(this.game).canComplete(route, destination.runId)))) {
+            this.reject("No hay un resultado válido para este destino."); return;
+        }
+        if (this.request.sequenceId?.endsWith("_ending") && destination?.kind !== "completion") {
+            this.reject("El cierre requiere una victoria de partida."); return;
+        }
         this.saves = getNarrativeSaves(this.game);
         const saved = this.saves.get(route);
-        const resume = this.request.resume !== false && saved?.status === "reading";
+        const resume = destination?.kind !== "completion" && this.request.resume !== false && saved?.status === "reading" && !saved.sequenceId.endsWith("_ending");
         const id = this.request.sequenceId ?? (resume ? saved.sequenceId : undefined);
         const sequence = routes.resolve(route, id);
         if (!sequence) { this.reject("La secuencia solicitada no existe en esta ruta."); return; }
@@ -53,7 +64,7 @@ export class VisualNovelScene extends Phaser.Scene {
             effect: (entry, restoring) => this.effect(entry, restoring),
             dialogue: (entry, index) => {
                 this.portraits?.highlight(entry.speakerId ?? entry.speaker);
-                this.saves.save(route, { chapterId: sequence.chapterId, sequenceId: sequence.id, entryIndex: index, status: "reading" });
+                if (destination?.kind !== "completion") this.saves.save(route, { chapterId: sequence.chapterId, sequenceId: sequence.id, entryIndex: index, status: "reading" });
                 this.view?.storageStatus(this.saves.storageStatus);
             },
             complete: () => this.finish("completed")
@@ -95,8 +106,15 @@ export class VisualNovelScene extends Phaser.Scene {
         this.leaving = true;
         this.runner?.destroy();
         if (!getCharacterUnlocks(this.game).isUnlocked(this.request.route)) { this.reject("Este personaje está bloqueado."); return; }
-        this.saves.save(this.request.route, { chapterId: this.sequence.chapterId, sequenceId: this.sequence.id, entryIndex: this.sequence.entries.length, status });
-        this.scene.start("GameScene", { character: this.request.route, roomIndex: this.request.returnTo?.roomIndex ?? 0 });
+        const destination = this.request.destination;
+        if (destination?.kind === "completion") {
+            if (!getArcadeRun(this.game).canComplete(this.request.route, destination.runId)) { this.reject("La victoria ya no está disponible."); return; }
+            this.scene.start("CompletionScene", { character: this.request.route, runId: destination.runId });
+        } else {
+            this.saves.save(this.request.route, { chapterId: this.sequence.chapterId, sequenceId: this.sequence.id, entryIndex: this.sequence.entries.length, status });
+            this.scene.start("GameScene", { character: this.request.route, roomIndex: destination?.roomIndex ?? this.request.returnTo?.roomIndex ?? 0,
+                runId: destination?.runId ?? this.request.returnTo?.runId });
+        }
     }
     private reject(notice: string): void { this.scene.start("CharacterSelectScene", { notice }); }
 }

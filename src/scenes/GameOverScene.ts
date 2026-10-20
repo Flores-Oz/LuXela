@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import type { PlayerCharacter } from "../config/characters";
 import { getCharacterUnlocks } from "../systems/CharacterUnlockService";
 
-export type RetryData = { roomIndex: number; character: PlayerCharacter };
+export type RetryData = { roomIndex: number; character: PlayerCharacter; runId?: number };
 
 export class GameOverScene extends Phaser.Scene {
     private restarting = false;

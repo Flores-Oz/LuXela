@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "generatedAt": "2026-10-19T23:08:48.642Z",
+  "mainMenu": true,
+  "canvas": {
+    "width": 1920,
+    "height": 1080
+  },
+  "view": {
+    "width": 1920,
+    "height": 1080
+  },
+  "background": {
+    "width": 1672,
+    "height": 941
+  },
+  "webglAvailable": false,
+  "consoleErrors": []
+}

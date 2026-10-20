@@ -6,7 +6,8 @@ import { isNarrativeSequence } from '../src/narrative/NarrativeTypes';
 import { BackgroundManager } from '../src/narrative/BackgroundManager';
 import { CharacterPortraitManager } from '../src/narrative/CharacterPortraitManager';
 import { NarrativeAudioManager } from '../src/narrative/NarrativeAudioManager';
-import { NarrativeConfig, narrativeBackgrounds } from '../src/config/NarrativeConfig';
+import { NarrativeConfig, narrativeBackgrounds, narrativePortraits, portraitExpressionOrder, portraitLayout } from '../src/config/NarrativeConfig';
+import { loadPortraitFrame } from '../src/narrative/PortraitFrameRenderer';
 
 const memory = initial => {
     let saved = initial ?? null;
@@ -132,7 +133,7 @@ export async function testNarrativeEngine(game, check, until) {
     portraits.show('alex', 'neutral', 'left', false);
     portraits.highlight('alex');
     check('Retrato aparece a izquierda y hablante destacado', host.querySelector('.vn-left.is-speaking img').alt === 'Alex');
-    portraits.show('alex', 'happy', 'right', false);
+    portraits.show('alex', 'unsupported', 'right', false);
     check('Expresión ausente conserva arte neutral identificado', host.querySelectorAll('figure').length === 1 &&
         host.querySelector('.vn-right figcaption').textContent.includes('neutral'));
     portraits.show('guest', 'sad', 'center', false);
@@ -142,6 +143,46 @@ export async function testNarrativeEngine(game, check, until) {
     portraits.show('lua', 'neutral', 'left', true);
     portraits.destroy();
     check('Retratos limpian animaciones y referencias', host.childElementCount === 0 && portraits.animations.size === 0 && portraits.portraits.size === 0);
+
+    for (const character of ['alex', 'lua']) {
+        const urls = [], feet = [];
+        for (const expression of portraitExpressionOrder) {
+            const source = narrativePortraits[character].expressions[expression];
+            const frame = await loadPortraitFrame(source);
+            const image = new Image(); image.src = frame; await image.decode();
+            if (image.naturalWidth !== portraitLayout.width || image.naturalHeight !== portraitLayout.height) throw new Error(`Lienzo de retrato incorrecto: ${character}/${expression}`);
+            const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height;
+            const context = canvas.getContext('2d'); context.drawImage(image, 0, 0);
+            const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+            for (const region of source.omit ?? []) {
+                const left = portraitLayout.centerX - source.anchorX + region.x;
+                const top = portraitLayout.groundY - source.groundY + region.y;
+                for (let y = top; y < top + region.height; y++) for (let x = left; x < left + region.width; x++) {
+                    if (pixels[(y * canvas.width + x) * 4 + 3] !== 0) throw new Error(`Restos de fila superior en ${character}/${expression}`);
+                }
+            }
+            let ground = -1;
+            for (let y = canvas.height - 1; y >= 0 && ground < 0; y--) {
+                for (let x = 0; x < canvas.width; x++) if (pixels[(y * canvas.width + x) * 4 + 3] > 128) { ground = y; break; }
+            }
+            feet.push(ground); urls.push(frame);
+        }
+        check(`${character}: diez expresiones distintas recortadas desde hoja original`, urls.length === 10 && new Set(urls).size === 10);
+        check(`${character}: todas las poses conservan escala y línea de suelo`, feet.every(y => y === portraitLayout.groundY));
+        const source = narrativePortraits[character].expressions.neutral;
+        check(`${character}: recortes reutilizan caché de render`, loadPortraitFrame(source) === loadPortraitFrame(source));
+    }
+    let badCrop = false;
+    try { await loadPortraitFrame({ ...narrativePortraits.alex.expressions.neutral, crop: { x: -1, y: 0, width: 5, height: 5 } }); }
+    catch (error) { badCrop = error.message.includes('Recorte de retrato inválido'); }
+    let badMask = false;
+    try { await loadPortraitFrame({ ...narrativePortraits.alex.expressions.neutral, omit: [{ x: 0, y: 0, width: 10, height: 10 }] }); }
+    catch (error) { badMask = error.message.includes('Máscara de retrato inválida'); }
+    check('Recortes y máscaras fuera de límites se rechazan sin publicar imagen', badCrop && badMask);
+    const transient = new CharacterPortraitManager(host, text => reports.push(text));
+    transient.show('lua', 'happy', 'left', false); transient.show('lua', 'angry', 'right', false); transient.destroy();
+    await Promise.resolve(); await Promise.resolve();
+    check('Render asíncrono de retratos no revive elementos destruidos', host.childElementCount === 0);
 
     const scene = game.scene.getScene('CharacterSelectScene');
     const before = scene.sound.listenerCount('unlocked');

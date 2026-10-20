@@ -3,9 +3,9 @@ import { characters, defeatAtlas, type PlayerCharacter } from "../config/charact
 
 export function loadPlayerAssets(scene: Phaser.Scene): void {
     for (const id of Object.keys(characters) as PlayerCharacter[]) {
-        scene.load.spritesheet(`${id}-walk`, characters[id].walkPath,
+        if (!scene.textures.exists(`${id}-walk`)) scene.load.spritesheet(`${id}-walk`, characters[id].walkPath,
             { frameWidth: 256, frameHeight: 256 });
-        scene.load.atlas(`${id}-defeat`, characters[id].defeatPath, defeatAtlas(id));
+        if (!scene.textures.exists(`${id}-defeat`)) scene.load.atlas(`${id}-defeat`, characters[id].defeatPath, defeatAtlas(id));
     }
 }
 

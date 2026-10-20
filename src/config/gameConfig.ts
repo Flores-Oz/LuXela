@@ -4,6 +4,9 @@ import { GameScene } from "../scenes/GameScene";
 import { GameOverScene } from "../scenes/GameOverScene";
 import { CharacterSelectScene } from "../scenes/CharacterSelectScene";
 import { VisualNovelScene } from "../scenes/VisualNovelScene";
+import { MainMenuScene } from "../scenes/MainMenuScene";
+import { PauseScene } from "../scenes/PauseScene";
+import { CompletionScene } from "../scenes/CompletionScene";
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
 
@@ -21,7 +24,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     dom: { createContainer: true },
 
     scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH
     },
 
@@ -39,9 +42,12 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
     },
 
     scene: [
+        MainMenuScene,
         CharacterSelectScene,
         VisualNovelScene,
         GameScene,
-        GameOverScene
+        GameOverScene,
+        PauseScene,
+        CompletionScene
     ]
 };

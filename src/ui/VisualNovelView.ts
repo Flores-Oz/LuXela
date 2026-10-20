@@ -1,6 +1,5 @@
 import { characters, type PlayerCharacter } from "../config/characters";
 import type { NarrativeSequenceRunner } from "../narrative/NarrativeSequenceRunner";
-import { narrativePortraits } from "../config/NarrativeConfig";
 import "./visual-novel.css";
 
 type IntroActions = { advance: () => void; skip: () => void; back: () => void };
@@ -15,16 +14,15 @@ export class VisualNovelView {
         const root = this.element;
         root.className = "intro-screen";
         root.style.setProperty("--intro-accent", config.accent);
-        root.setAttribute("aria-label", "Visual Novel");
+        root.setAttribute("aria-label", "Presentación narrativa");
         root.innerHTML = `
             <header class="intro-header"><span>BERZERK<span class="intro-underscore">_</span></span>
-                <span class="intro-draft">${provisional ? "SECUENCIA DE PRUEBA · PROVISIONAL" : "VISUAL NOVEL"}</span></header>
+                <span class="intro-draft">${provisional ? "SECUENCIA DE PRUEBA · PROVISIONAL" : "PRESENTACIÓN NARRATIVA"}</span></header>
             <div class="intro-stage">
                 <div class="vn-background"></div><div class="vn-portraits"></div>
                 <span class="vn-route">RUTA ${config.name.toUpperCase()}</span>
             </div>
             <div class="intro-dialogue">
-                <div class="intro-portrait"><span aria-hidden="true">TX</span><img alt="" hidden></div>
                 <div class="intro-content"><div class="intro-line-header"><strong class="intro-speaker"></strong><span class="intro-progress"></span></div>
                     <p class="intro-text" aria-hidden="true"></p><p class="vn-announcement" role="status" aria-live="polite"></p></div>
             </div>
@@ -64,24 +62,14 @@ export class VisualNovelView {
         const announcement = this.element.querySelector(".vn-announcement")!;
         if (announcement.textContent !== `${entry.speaker}: ${entry.text}`) announcement.textContent = `${entry.speaker}: ${entry.text}`;
         this.element.querySelector(".intro-progress")!.textContent = `${String(runner.dialogueNumber).padStart(2, "0")} / ${String(runner.dialogueTotal).padStart(2, "0")}`;
-        this.element.querySelector(".intro-next")!.textContent = dialogue.isTyping ? "COMPLETAR ▸" : runner.dialogueNumber === runner.dialogueTotal ? "ENTRAR →" : "CONTINUAR ▸";
-        const portrait = this.element.querySelector<HTMLImageElement>(".intro-portrait img")!;
-        const id = runner.sequence.entries[runner.position];
-        const key = id?.type === "dialogue" ? id.speakerId ?? entry.speaker.toLowerCase() : "";
-        const asset = Object.hasOwn(narrativePortraits, key) ? narrativePortraits[key] : undefined;
-        portrait.hidden = !asset;
-        this.element.querySelector<HTMLElement>(".intro-portrait span")!.hidden = !!asset;
-        if (asset) {
-            if (portrait.getAttribute("src") !== asset.expressions.neutral) portrait.src = asset.expressions.neutral!;
-            portrait.alt = asset.name;
-        }
+        this.element.querySelector(".intro-next")!.textContent = dialogue.isTyping ? "COMPLETAR ▸" : runner.dialogueNumber === runner.dialogueTotal ? "CONTINUAR →" : "CONTINUAR ▸";
     }
 
     notice(message: string): void { this.element.querySelector(".vn-notice")!.textContent = message; }
     storageStatus(status: string): void {
         this.element.querySelector(".vn-save-note")!.textContent = status === "unavailable"
             ? "Guardado no disponible: progreso temporal en esta sesión."
-            : status === "corrupt" ? "Progreso narrativo inválido: se inicia desde un punto seguro." : "Progreso de esta ruta guardado.";
+            : status === "corrupt" ? "Progreso narrativo inválido: se inicia desde un punto seguro." : "";
     }
 
     focus(): void { this.element.querySelector<HTMLButtonElement>(".intro-next")!.focus({ preventScroll: true }); }

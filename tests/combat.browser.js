@@ -286,6 +286,7 @@ async function run() {
     scene = game.scene.getScene('GameScene');
     scene.sys.sceneUpdate = () => {};
     const oldEnemies = scene.enemies.getChildren().slice();
+    scene.enemyManager.defeatLivingEnemies();
     const oldWalls = scene.walls;
     let emptyRoomClears = 0;
     const onEmptyClear = () => { if (scene.roomIndex === 1) emptyRoomClears++; };
@@ -310,7 +311,11 @@ async function run() {
     scene.sys.sceneUpdate = () => {};
     reset(scene.player.physicsSprite, 544, 96);
     tick(4);
-    check('Regreso reconstruye primera habitación', scene.roomIndex === 0 && scene.enemies.getLength() === 2);
+    check('Salida final conduce a cierre narrativo de victoria', game.scene.isActive('VisualNovelScene') && game.scene.getScene('VisualNovelScene').sequence.id === 'alex_ending');
+    game.scene.getScene('VisualNovelScene').scene.start('GameScene', { character: 'alex', roomIndex: 0 });
+    tick(4);
+    scene.sys.sceneUpdate = () => {};
+    check('Nueva partida reconstruye primera habitación', scene.roomIndex === 0 && scene.enemies.getLength() === 2);
     check('Personaje se conserva entre habitaciones', scene.character === 'alex' && scene.player.physicsSprite.texture.key === 'alex-walk');
     check('Colliders estables tras cambios', scene.physics.world.colliders.getActive().length === colliderCount);
     scene.sys.sceneUpdate = normalUpdate;

@@ -31,8 +31,8 @@ export async function openBrowserSession() {
         if (response.exceptionDetails) throw new Error(response.exceptionDetails.exception?.description ?? response.exceptionDetails.text);
         return response.result?.value;
     };
-    const waitUntil = async expression => {
-        for (let i = 0; i < 120; i++) {
+    const waitUntil = async (expression, timeoutMs = 12000) => {
+        for (let i = 0; i < Math.ceil(timeoutMs / 100); i++) {
             if (await evaluate(`Boolean(${expression})`)) return;
             await new Promise(r => setTimeout(r, 100));
         }

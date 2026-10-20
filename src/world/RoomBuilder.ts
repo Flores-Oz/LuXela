@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { Room } from "./Room";
 import { TileType } from "../types/RoomTypes";
+import { GameSettings } from "../config/GameSettings";
 
 export class RoomBuilder {
 
@@ -79,7 +80,7 @@ export class RoomBuilder {
 
             case TileType.RobotSpawn:
                 this.drawFloor(x, y, size);
-                this.drawRobotSpawn(x, y, size);
+                if (GameSettings.physicsDebug) this.drawRobotSpawn(x, y, size);
                 break;
 
             case TileType.Exit:

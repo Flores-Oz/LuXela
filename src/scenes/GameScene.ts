@@ -16,6 +16,9 @@ import { CombatEvents } from "../systems/CombatEvents";
 import { EnemyManager } from "../systems/EnemyManager";
 import { getCharacterUnlocks } from "../systems/CharacterUnlockService";
 import { loadSpecialAssets, SpecialAbilityManager } from "../abilities/SpecialAbilityManager";
+import { getArcadeRun } from "../systems/ArcadeRunService";
+import { startNarrative } from "../narrative/startNarrative";
+import { UITheme } from "../config/UITheme";
 
 
 
@@ -31,7 +34,14 @@ export class GameScene extends Phaser.Scene {
 
     private selectionValid = false;
 
-    private combatState: "playing" | "defeat" | "game-over" = "playing";
+    private combatState: "playing" | "defeat" | "game-over" | "victory" = "playing";
+    private runId = 0;
+    private pausedAt = 0;
+    private pausedDuration = 0;
+    private roomWidth = 0;
+    private roomHeight = 0;
+    private roomLabel: Phaser.GameObjects.Text | null = null;
+    private pauseButton: Phaser.GameObjects.Text | null = null;
 
     private enemyManager: EnemyManager | null = null;
 
@@ -61,7 +71,7 @@ export class GameScene extends Phaser.Scene {
         loadPlayerAssets(this);
         loadSpecialAssets(this);
 
-        this.load.spritesheet(
+        if (!this.textures.exists("robot-red")) this.load.spritesheet(
             "robot-red",
             "assets/sprites/enemies/RobotRed-fixed.png",
             {
@@ -95,6 +105,10 @@ export class GameScene extends Phaser.Scene {
             this.player = null;
             this.walls = null;
             this.lineOfSight = null;
+            this.roomLabel = null;
+            this.pauseButton = null;
+            this.scale.off(Phaser.Scale.Events.RESIZE, this.layoutRoom, this);
+            this.input.keyboard?.off("keydown-ESC", this.pauseGame, this);
         });
 
         const tileSize = 64;
@@ -156,9 +170,9 @@ export class GameScene extends Phaser.Scene {
             room.heightInPixels
         );
 
-        this.cameras.main.setBackgroundColor(
-            "#000000"
-        );
+        this.cameras.main.setBackgroundColor(UITheme.background);
+        this.roomWidth = room.widthInPixels;
+        this.roomHeight = room.heightInPixels;
 
         this.cameras.main.centerOn(
             room.widthInPixels / 2,
@@ -220,8 +234,17 @@ export class GameScene extends Phaser.Scene {
             projectile.getData("projectile")?.destroy();
             this.player.die();
         });
+        this.roomLabel = this.add.text(16, 48, "", { fontFamily: UITheme.font, fontSize: "14px", color: UITheme.muted }).setScrollFactor(0).setDepth(100);
+        this.pauseButton = this.add.text(0, 16, "PAUSA · ESC", { fontFamily: UITheme.font, fontSize: "14px", color: UITheme.text, backgroundColor: UITheme.overlay, padding: { x: 12, y: 10 } })
+            .setScrollFactor(0).setDepth(100).setOrigin(1, 0).setInteractive({ useHandCursor: true }).on("pointerdown", this.pauseGame, this);
+        this.events.on(CombatEvents.ROOM_CLEARED, this.roomCleared, this);
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.events.off(CombatEvents.ROOM_CLEARED, this.roomCleared, this));
         this.enemyManager.start();
         this.specialAbilities = new SpecialAbilityManager(this, this.player, this.character, this.enemyManager, this.abilityCooldownMs);
+        this.roomLabel.setText(`Habitación ${this.roomIndex + 1} / ${this.rooms.length} · ${this.enemyManager.isCleared ? "Salida disponible" : "Elimina a los robots para salir"}`);
+        this.input.keyboard?.on("keydown-ESC", this.pauseGame, this);
+        this.scale.on(Phaser.Scale.Events.RESIZE, this.layoutRoom, this);
+        this.layoutRoom();
     }
 
     update(time: number, delta = 1000 / 60): void {
@@ -231,7 +254,7 @@ export class GameScene extends Phaser.Scene {
 
         for (const child of this.enemies.getChildren()) {
             const enemy = child as Enemy;
-            const direction = enemy.updateBehavior(this.player, this.lineOfSight, time);
+            const direction = enemy.updateBehavior(this.player, this.lineOfSight, time - this.pausedDuration);
             if (direction) {
                 // Spawn at the robot center so a muzzle offset cannot jump a wall.
                 new Projectile(this, enemy.x, enemy.y, direction, "enemy", this.enemyProjectiles);
@@ -245,6 +268,7 @@ export class GameScene extends Phaser.Scene {
     private beginDefeat(): void {
         if (this.combatState !== "playing") return;
         this.combatState = "defeat";
+        getArcadeRun(this.game).defeat(this.runId);
         this.specialAbilities?.cancel();
         // Pause only physics. Animation updates must continue until defeat ends.
         this.physics.pause();
@@ -256,7 +280,7 @@ export class GameScene extends Phaser.Scene {
     private showGameOver(): void {
         if (this.combatState !== "defeat") return;
         this.combatState = "game-over";
-        this.scene.start("GameOverScene", { roomIndex: this.roomIndex, character: this.character });
+        this.scene.start("GameOverScene", { roomIndex: this.roomIndex, character: this.character, runId: this.runId });
     }
 
     private createEnemyAnimations(): void {
@@ -395,6 +419,17 @@ export class GameScene extends Phaser.Scene {
             return;
         }
 
+        if (!this.enemyManager?.isCleared) return;
+        if (this.roomIndex === this.rooms.length - 1) {
+            if (!getArcadeRun(this.game).finish(this.runId, this.roomIndex)) return;
+            this.combatState = "victory";
+            this.isChangingRoom = true;
+            this.specialAbilities?.cancel();
+            startNarrative(this, { route: this.character, sequenceId: `${this.character}_ending`, resume: false,
+                destination: { kind: "completion", runId: this.runId } });
+            return;
+        }
+
         this.isChangingRoom = true;
         const abilityCooldownMs = this.specialAbilities?.cancel() ?? 0;
 
@@ -405,21 +440,60 @@ export class GameScene extends Phaser.Scene {
         this.scene.restart({
             roomIndex: nextRoomIndex,
             abilityCooldownMs,
+            runId: this.runId,
             character: this.character
         });
     }
 
-    init(data: { roomIndex?: number; character?: PlayerCharacter; abilityCooldownMs?: number } = {}): void {
+    init(data: { roomIndex?: number; character?: PlayerCharacter; abilityCooldownMs?: number; runId?: number } = {}): void {
         this.abilityCooldownMs = typeof data.abilityCooldownMs === "number" && Number.isFinite(data.abilityCooldownMs) ?
             Math.max(0, data.abilityCooldownMs) : 0;
         this.roomIndex =
             data.roomIndex ?? 0;
 
         this.selectionValid = getCharacterUnlocks(this.game).isUnlocked(data.character);
+        this.selectionValid = this.selectionValid && Number.isInteger(this.roomIndex) && this.roomIndex >= 0 && this.roomIndex < this.rooms.length;
         if (this.selectionValid && (data.character === "alex" || data.character === "lua")) {
             this.character = data.character;
         }
         this.combatState = "playing";
         this.isChangingRoom = false;
+        this.pausedDuration = 0;
+        const runs = getArcadeRun(this.game);
+        this.runId = this.selectionValid && runs.continue(data.runId, this.character) ? data.runId! :
+            this.selectionValid ? runs.begin(this.character) : 0;
+    }
+
+    get selectedCharacter(): PlayerCharacter { return this.character; }
+
+    private roomCleared(): void {
+        getArcadeRun(this.game).clearRoom(this.runId, this.roomIndex);
+        this.roomLabel?.setText(`Habitación ${this.roomIndex + 1} / ${this.rooms.length} · Salida disponible`);
+    }
+
+    private pauseGame(event?: KeyboardEvent): void {
+        if (event?.repeat || this.combatState !== "playing" || this.isChangingRoom || !this.player || this.player.isDead() || this.scene.isActive("PauseScene")) return;
+        this.pausedAt = this.game.loop.time;
+        this.input.keyboard?.resetKeys();
+        this.scene.pause();
+        this.scene.launch("PauseScene");
+    }
+
+    resumeFromPause(): void {
+        this.pausedDuration += Math.max(0, this.game.loop.time - this.pausedAt);
+        this.input.keyboard?.resetKeys();
+    }
+
+    private layoutRoom(): void {
+        const camera = this.cameras.main;
+        const zoom = Math.max(0.1, Math.min((this.scale.width - 24) / this.roomWidth, (this.scale.height - 112) / this.roomHeight));
+        camera.setZoom(zoom).centerOn(this.roomWidth / 2, this.roomHeight / 2 - 32 / zoom);
+        const positionHUD = (text: Phaser.GameObjects.Text | null, x: number, y: number) => {
+            text?.setScale(1 / zoom).setPosition(camera.width / 2 + (x - camera.width / 2) / zoom, camera.height / 2 + (y - camera.height / 2) / zoom);
+        };
+        this.roomLabel?.setWordWrapWidth(this.scale.width - 32).setFontSize(this.scale.width < 650 ? 12 : 14);
+        positionHUD(this.roomLabel, 16, 58);
+        positionHUD(this.pauseButton, this.scale.width - 16, this.scale.width < 650 ? this.scale.height - 56 : 16);
+        this.specialAbilities?.layoutHUD();
     }
 }

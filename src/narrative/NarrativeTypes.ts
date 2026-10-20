@@ -1,7 +1,7 @@
 import type { PlayerCharacter } from "../config/characters";
 
 export type NarrativeRouteId = PlayerCharacter;
-export type CharacterExpression = "neutral" | "happy" | "sad" | "angry" | "surprised";
+export type CharacterExpression = "neutral" | "happy" | "shy" | "surprised" | "angry" | "serious" | "sad" | "determined" | "crying" | "confident";
 export type PortraitPosition = "left" | "center" | "right";
 export type NarrativeEntry =
     | { type: "background"; key: string; transition?: "none" | "fade" }
@@ -21,7 +21,8 @@ export interface NarrativeRequest {
     route: NarrativeRouteId;
     sequenceId?: string;
     resume?: boolean;
-    returnTo?: { roomIndex: number };
+    returnTo?: { roomIndex: number; runId?: number };
+    destination?: { kind: "game"; roomIndex: number; runId?: number } | { kind: "completion"; runId: number };
 }
 export interface NarrativeProgress {
     chapterId: string;

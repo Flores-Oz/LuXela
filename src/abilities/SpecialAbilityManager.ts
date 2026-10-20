@@ -11,6 +11,7 @@ import type { SpecialAbility } from "./SpecialAbility";
 /** Original 4x2 sheets, with a stable ground line on a logical 512x544 canvas. */
 export function loadSpecialAssets(scene: Phaser.Scene): void {
     for (const character of ["alex", "lua"] as const) {
+        if (scene.textures.exists(`${character}-special`)) continue;
         const frames: Record<string, object> = {};
         const columns = [0, 444, 887, 1330, 1774];
         for (let index = 0; index < 8; index++) {
@@ -69,6 +70,12 @@ export class SpecialAbilityManager {
         this.ability.update(delta);
         if (Phaser.Input.Keyboard.JustDown(this.key)) this.ability.activate();
         this.render();
+    }
+
+    layoutHUD(): void {
+        const camera = this.scene.cameras.main;
+        this.hud.setScale(1 / camera.zoom).setPosition(camera.width / 2 + (16 - camera.width / 2) / camera.zoom,
+            camera.height / 2 + (16 - camera.height / 2) / camera.zoom);
     }
 
     private render(): void {

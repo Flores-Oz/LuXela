@@ -7,6 +7,7 @@ type SelectionActions = {
     select: (id: PlayerCharacter) => void;
     redeem: (code: string) => void;
     start: () => void;
+    back: () => void;
 };
 
 export class CharacterSelectView {
@@ -19,7 +20,7 @@ export class CharacterSelectView {
         root.setAttribute("aria-label", "Selección de personajes");
         root.innerHTML = `
             <header class="select-header"><span class="select-brand">BERZERK<span>_</span></span>
-                <span class="select-section">ACCESO / 01</span></header>
+                <button class="select-menu" type="button">VOLVER AL MENÚ</button></header>
             <div class="select-heading"><div><p class="select-eyebrow">DOS PERSONAJES. TU ELECCIÓN.</p>
                 <h1>Elige quién entra.</h1></div><p>Desbloquea tu personaje<br>y entra en la habitación.</p></div>
             <div class="select-cards" role="group" aria-label="Personajes">
@@ -50,6 +51,7 @@ export class CharacterSelectView {
                 <button class="select-start" type="button" disabled>SELECCIONA UN PERSONAJE <span>→</span></button></footer>`;
 
         const options = { signal: this.events.signal };
+        root.querySelector(".select-menu")!.addEventListener("click", actions.back, options);
         const cards = [...root.querySelectorAll<HTMLButtonElement>("[data-character]")];
         cards.forEach((card, index) => {
             card.addEventListener("click", () => actions.select(card.dataset.character as PlayerCharacter), options);

@@ -14,8 +14,9 @@ for (const url of [baseUrl, `http://127.0.0.1:${port}/json/version`]) {
 }
 const browser = await fetch(`http://127.0.0.1:${port}/json/version`).then(response => response.json());
 const suites = [];
+const sprint = process.argv.includes('--sprint5') ? 5 : 4;
 // Runners share a dedicated browser tab; execute sequentially.
-for (const suite of ['selection', 'combat', 'abilities', 'sprint-4']) {
+for (const suite of ['selection', 'combat', 'abilities', 'sprint-4', ...(sprint === 5 ? ['sprint-5'] : [])]) {
     const result = spawnSync(process.execPath, [`tests/run-${suite}.mjs`], { encoding: 'utf8', timeout: 120000 });
     if (result.error) throw result.error;
     if (result.status !== 0) {
@@ -35,5 +36,5 @@ const report = { status: 'passed', generatedAt: new Date().toISOString(), node: 
     browser: browser.Browser, renderer: 'Canvas', suites,
     totalChecks: suites.reduce((sum, suite) => sum + suite.checks, 0) };
 mkdirSync('docs/test-results', { recursive: true });
-writeFileSync('docs/test-results/sprint-4.json', `${JSON.stringify(report, null, 2)}\n`);
-console.log(`Total: ${report.totalChecks}. Informe: docs/test-results/sprint-4.json`);
+writeFileSync(`docs/test-results/sprint-${sprint}.json`, `${JSON.stringify(report, null, 2)}\n`);
+console.log(`Total: ${report.totalChecks}. Informe: docs/test-results/sprint-${sprint}.json`);

@@ -8,6 +8,7 @@ import { NarrativeRouteManager } from '../src/narrative/NarrativeRouteManager';
 import { NarrativeConfig } from '../src/config/NarrativeConfig';
 import { testNarrativeEngine } from './visual-novel.browser.js';
 import { startNarrative } from '../src/narrative/startNarrative';
+import { CharacterSelectScene } from '../src/scenes/CharacterSelectScene';
 
 const passed = [];
 const check = (name, condition) => {
@@ -41,6 +42,7 @@ if (!resume) { localStorage.removeItem(storageKey); localStorage.removeItem(narr
 window.selectionResults = { status: 'running' };
 
 const game = new Phaser.Game({ ...gameConfig, type: Phaser.CANVAS,
+    scene: [CharacterSelectScene, ...gameConfig.scene.filter(scene => scene !== CharacterSelectScene)],
     callbacks: { preBoot(game) {
         game.registry.set('character-unlock-service', new CharacterUnlockService(() => testStorage));
         game.registry.set('narrative-save-service', new NarrativeSaveService(new NarrativeRouteManager(), () => narrativeStorage));
@@ -176,7 +178,7 @@ async function run() {
     check('Selector inicia ruta Lua sin combate', intro.sequence.route === 'lua' && !active('GameScene') && !active('CharacterSelectScene'));
     check('Selector libera formulario y callbacks', !root() && oldView.events.signal.aborted && selector().view === null);
     check('Muestra de prueba identificada', document.querySelector('.intro-draft').textContent.includes('PROVISIONAL'));
-    check('Texto inicialmente progresivo y guion correcto', intro.runner.position === 2 && intro.runner.dialogue.current.text === 'Iniciando secuencia de prueba.');
+    check('Texto inicialmente progresivo y guion correcto', intro.runner.position === 2 && intro.runner.dialogue.current.text.includes('La energía está lista.'));
     const next = document.querySelector('.intro-next');
     next.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }));
     next.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', repeat: true, bubbles: true, cancelable: true }));
@@ -187,9 +189,9 @@ async function run() {
     check('Doble clic no consume siguiente entrada', intro.runner.position === 2);
     check('Narrativa no crea jugador ni combate', !game.scene.getScene('GameScene').player && !active('GameScene'));
     next.click();
-    check('Siguiente dialogo aplica expresion y posicion del guion', intro.runner.position === 4 && document.querySelector('.vn-center').dataset.expression === 'surprised');
+    check('Siguiente dialogo aplica expresion y posicion del guion', intro.runner.position === 4 && document.querySelector('.vn-center').dataset.expression === 'determined');
     next.click();
-    check('Linea final completa permite entrar', next.textContent === 'ENTRAR →');
+    check('Linea final completa permite continuar', next.textContent === 'CONTINUAR →');
     next.click(); intro.skip(); intro.advance();
     await until(() => active('GameScene') && game.scene.getScene('GameScene').player);
     let gameplay = game.scene.getScene('GameScene');
@@ -205,6 +207,7 @@ async function run() {
     await start('alex');
     gameplay = game.scene.getScene('GameScene');
     check('Seleccionar Alex crea arte correcto', gameplay.character === 'alex' && gameplay.player.physicsSprite.texture.key === 'alex-walk');
+    gameplay.enemyManager.defeatLivingEnemies();
     gameplay.changeRoom();
     await until(() => gameplay.roomIndex === 1 && gameplay.player);
     check('Cambio de habitación conserva Alex', gameplay.character === 'alex' && gameplay.player.physicsSprite.texture.key === 'alex-walk');
@@ -252,7 +255,7 @@ async function run() {
     check('Volver detiene escritura y limpia eventos', firstRunView.events.signal.aborted && intro.runner === null);
     card('alex').click(); root().querySelector('.select-start').click();
     await until(() => active('VisualNovelScene') && intro.runner);
-    check('Seleccionar reanuda entrada y presentacion de Alex', intro.runner.position === 4 && document.querySelector('.vn-right').dataset.character === 'alex' && intro.background.currentKey === 'alex-test');
+    check('Seleccionar reanuda entrada y presentacion de Alex', intro.runner.position === 4 && document.querySelector('.vn-right').dataset.character === 'alex' && intro.background.currentKey === 'alex-intro');
     intro.skip();
     await until(() => active('GameScene') && gameplay.player);
     startNarrative(gameplay, {route:'lua', resume:false, returnTo:{roomIndex:1}});
