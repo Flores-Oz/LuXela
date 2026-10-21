@@ -208,6 +208,17 @@ El tamaño de viewport se toma de Scale.RESIZE. layoutRoom en GameScene calcula 
 
 ## Controles
 
+### Recursos decorativos de interfaz
+
+Los PNG de `public/assets/ui/` se integran sin incrustar los textos ni las acciones en las imágenes:
+
+- `dialogue-panel.png`: fondo del diálogo mediante `border-image` de nueve segmentos para conservar los bordes al cambiar de tamaño.
+- `dialogue-advance.png`: indicador de seis frames, visible únicamente cuando termina la escritura de una línea. Respeta la preferencia de movimiento reducido. El original mide 2172 × 724, con seis columnas.
+- `pause-overlay.png`: panel central semitransparente de pausa, con las tres opciones nativas superpuestas e indicador de foco verde.
+- `completion-overlay.png`: decoración de conclusión conservando sus acentos dorados originales; título y ruta dinámicos, con las dos opciones en la barra inferior.
+
+Tras integrar estos recursos se volvió a compilar y se ejecutó `node tests/run-sprint-5.mjs`: 58 comprobaciones aprobadas, sin errores de consola. Además se verificaron las áreas de los botones de pausa y conclusión a 1366 × 768, 390 × 844 y 844 × 390. Estas comprobaciones complementan el informe completo de 370 pruebas anterior; no lo sustituyen ni actualizan su fecha.
+
 | Pantalla | Controles |
 |---|---|
 | Menú / pausa / conclusión | Ratón, Tab, flechas arriba/abajo, Home/End, Enter/espacio |

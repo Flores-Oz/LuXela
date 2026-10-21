@@ -11,7 +11,7 @@ export class MenuView {
         root.className = `presentation-screen ${options.kind}-screen`;
         root.setAttribute("aria-label", options.title);
         applyUITheme(root);
-        root.innerHTML = `<div class="presentation-background"></div><div class="presentation-shade"></div>
+        root.innerHTML = `<div class="presentation-background"></div><div class="presentation-shade"></div><div class="presentation-decoration" aria-hidden="true"></div>
             <header class="presentation-brand">BERZERK<span>_</span></header>
             <main class="presentation-panel"><p class="presentation-eyebrow"></p><h1></h1><p class="presentation-subtitle"></p>
                 <nav class="presentation-actions" aria-label="Opciones"></nav></main>

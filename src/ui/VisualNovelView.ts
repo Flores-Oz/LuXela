@@ -25,6 +25,7 @@ export class VisualNovelView {
             <div class="intro-dialogue">
                 <div class="intro-content"><div class="intro-line-header"><strong class="intro-speaker"></strong><span class="intro-progress"></span></div>
                     <p class="intro-text" aria-hidden="true"></p><p class="vn-announcement" role="status" aria-live="polite"></p></div>
+                <span class="vn-advance-indicator" aria-hidden="true" hidden></span>
             </div>
             <div class="vn-status"><span class="vn-notice" role="status"></span><span class="vn-save-note"></span></div>
             <footer class="intro-footer"><div><span>ENTER / ESPACIO · completar / avanzar</span><span>ESC · omitir secuencia</span></div>
@@ -56,6 +57,7 @@ export class VisualNovelView {
     render(runner: NarrativeSequenceRunner): void {
         const dialogue = runner.dialogue;
         const entry = dialogue?.current;
+        this.element.querySelector<HTMLElement>(".vn-advance-indicator")!.hidden = !entry || dialogue!.isTyping || runner.isComplete;
         if (!entry) return;
         this.element.querySelector(".intro-speaker")!.textContent = entry.speaker;
         this.element.querySelector(".intro-text")!.textContent = dialogue.visibleText;

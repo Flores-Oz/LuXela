@@ -15,8 +15,13 @@
 .vn-left { left: 4%; } .vn-center { left: 31%; } .vn-right { right: 4%; }
 .vn-portrait figcaption { position: absolute; bottom: 6px; left: 0; right: 0; padding: 8px; font-size: 10px; background: var(--ui-overlay); color: var(--ui-accent); }
 .vn-portrait-missing { border: 1px dashed var(--ui-muted); }
-.intro-dialogue { position: absolute; z-index: 2; left: 5%; right: 5%; bottom: 112px; min-height: 156px; padding: 24px 30px; background: var(--ui-overlay); border: 1px solid var(--ui-border); border-left: 2px solid var(--ui-accent); backdrop-filter: blur(10px); }
+.intro-dialogue { position: absolute; z-index: 2; left: 5%; right: 5%; bottom: 112px; min-height: 156px; padding: 24px 30px; border: 8px solid transparent; border-image: url('/assets/ui/dialogue-panel.png') 8 fill / 8px / 0 stretch; backdrop-filter: blur(10px); }
 .intro-portrait { display: none; }
+.intro-content { padding-bottom: 12px; }
+/* Original sheet: six 362 x 724 cells. Crop vertical whitespace at display size. */
+.vn-advance-indicator { position: absolute; right: 14px; bottom: 8px; width: 32px; height: 32px; pointer-events: none; background: url('/assets/ui/dialogue-advance.png') no-repeat 0 center / 192px 64px; animation: vn-advance-pulse 1.2s steps(6, end) infinite; }
+.vn-advance-indicator[hidden] { display: none; animation: none; }
+@keyframes vn-advance-pulse { from { background-position-x: 0; } to { background-position-x: -192px; } }
 .intro-line-header { display: flex; justify-content: space-between; gap: 20px; }
 .intro-speaker { color: var(--ui-accent); font-size: 13px; letter-spacing: .16em; text-transform: uppercase; font-weight: 600; }
 .intro-progress { font-size: 11px; color: var(--ui-muted); }
@@ -33,4 +38,4 @@
 @keyframes intro-arrive { from { opacity: 0; } to { opacity: 1; } }
 @media (max-width: 600px) { .intro-draft { max-width: 160px; text-align: right; font-size: 9px; } .intro-footer > div { display: none; } .intro-footer button { flex: 1; padding: 0 8px; font-size: 10px; } .intro-dialogue { padding: 20px; min-height: 170px; } .vn-portrait { width: 64%; height: 74%; bottom: 145px; } .vn-left { left: -5%; } .vn-center { left: 18%; } .vn-right { right: -5%; } }
 @media (max-height: 500px) { .intro-header { top: 16px; } .vn-route { top: 50px; } .intro-dialogue { bottom: 94px; min-height: 112px; padding: 16px 22px; } .intro-text { margin-top: 10px; font-size: 17px; } .intro-footer { bottom: 16px; } .vn-status { bottom: 67px; } }
-@media (prefers-reduced-motion: reduce) { .intro-screen { animation: none; } .vn-portrait { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .intro-screen, .vn-advance-indicator { animation: none; } .vn-portrait { transition: none; } }
