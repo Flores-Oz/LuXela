@@ -95,7 +95,7 @@ try {
             check(`${label}: no residual dynamic bodies`, scene.physics.world.bodies.size === config.enemies.count + 1);
             check(`${label}: no duplicated colliders`, scene.physics.world.colliders.getActive().length === 2);
             // Drive each robot toward the left boundary with actual Arcade physics.
-            const robot = scene.testEnemies.getChildren().find(enemy => enemy.texture.key === 'robot-red');
+            let robot = scene.testEnemies.getChildren()[0];
             robot.setPosition(87, 160); robot.body.reset(87, 160); robot.moveLeft();
             await delay(180);
             check(`${label}: wall blocks robot movement`, robot.body.left >= 63.9);
@@ -103,6 +103,9 @@ try {
             check(`${label}: wall occludes detection line`, !new LineOfSight(scene.testWalls).hasLineOfSight({ x: 32, y: 160 }, { x: 96, y: 160 }));
             if (testDifficulty) {
                 const difficulty = config.difficulty;
+                // Probe the basic soldier's level scaling independently of the room's featured color.
+                robot = new Enemy(scene,160,160,'robot-red',difficulty);
+                scene.testEnemyManager.add(robot);
                 const player = scene.testPlayer;
                 const sight = new LineOfSight(scene.testWalls);
                 robot.body.reset(160, 160);

@@ -41,7 +41,7 @@ Se reutilizan los grupos físicos de la partida. El proceso de colisión omite �
 
 Los overlaps existentes siguen matando a Alex, Lua o cualquier robot con un único impacto válido. Las cuatro variantes conservan su identificador de oleada; sus bajas actualizan puntuación, limpieza y contador de especial mediante los mismos servicios del Sprint 7.
 
-Se conservan las cinco habitaciones y diez oleadas actuales, con las cuatro variantes disponibles. La distribución por siete niveles del prompt era sugerida; no se agregan niveles ni se ocultan variantes del catálogo ya integrado. La campaña mantiene 106 robots y 10600 puntos posibles.
+Se conservan cinco habitaciones y diez oleadas. La distribución posterior solicitada presenta exclusivamente rojos en el nivel 1, azules en el 2, amarillos en el 3 y naranjas en el 4. El nivel 5 conserva un combate mixto provisional mientras se define el jefe; no se ha implementado ningún jefe. La campaña provisional mantiene 106 robots y 10600 puntos posibles. Los mapas y sus ventajas tácticas se detallan en [sprint-9-mapas.md](sprint-9-mapas.md).
 
 ## Archivos
 

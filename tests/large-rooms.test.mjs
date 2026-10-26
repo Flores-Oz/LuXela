@@ -15,7 +15,7 @@ for(const [width,height] of [[40,24],[48,30],[24,16],[20,14]])test(`${width}x${h
         const matrix=rooms[config.roomId],room=new Room(matrix,64);
         assert.equal(room.widthInPixels,width*64);assert.equal(room.heightInPixels,height*64);
         assert.ok(matrix[0].every(tile=>tile===1)&&matrix.at(-1).every(tile=>tile===1)&&matrix.every(row=>row[0]===1&&row.at(-1)===1));
-        assert.ok(matrix.slice(1,-1).flatMap(row=>row.slice(1,-1)).filter(tile=>tile===1).length/(width-2)/(height-2)<.12);
+        assert.ok(matrix.slice(1,-1).flatMap(row=>row.slice(1,-1)).filter(tile=>tile===1).length/(width-2)/(height-2)<.22);
         const start=room.findTile(2),exit=room.findTile(4);
         assert.deepEqual(config.exits[0].position,exit);
         const walkable=new Set([`${start.row},${start.column}`]),queue=[start];
@@ -39,6 +39,34 @@ test('large-room combat density increases while wave progression and movement re
     assert.equal(waves.length,10);assert.equal(robots.length,106);assert.equal(robots.length*catalog[0].scorePerEnemy,10600);
     assert.deepEqual([...new Set(robots.map(robot=>robot.type))].sort(),['robot-blue','robot-orange','robot-red','robot-yellow']);
     assert.deepEqual(catalog.map(config=>config.difficulty.moveSpeed),[80,88,96,104,112]);
+});
+test('rooms 1-4 introduce red, blue, yellow and orange separately in every wave',()=>{
+    const catalog=createLevelCatalog();
+    for(const [index,type] of ['robot-red','robot-blue','robot-yellow','robot-orange'].entries()){
+        assert.deepEqual(catalog[index].enemies.types,[type]);
+        for(const wave of catalog[index].waves)assert.ok(wave.enemies.spawns.every(spawn=>spawn.type===type));
+        assert.ok(catalog[index].presentation.title&&catalog[index].presentation.hint);
+    }
+});
+test('the fifth room remains a mixed placeholder without inventing a boss',()=>{
+    const arena=createLevelCatalog()[4];
+    assert.equal(arena.presentation.title,'Arena de entrenamiento');
+    assert.equal(arena.enemies.types.length,4);
+    assert.ok(arena.waves.every(wave=>wave.enemies.spawns.every(enemy=>enemy.type.startsWith('robot-'))));
+});
+test('the first four layouts use substantially more physical machinery and 128 safe floor details',()=>{
+    const catalog=createLevelCatalog();
+    for(const config of catalog.slice(0,4)){
+        const matrix=createArcadeRooms()[config.roomId];
+        const walls=matrix.slice(1,-1).flatMap(row=>row.slice(1,-1)).filter(tile=>tile===1).length;
+        assert.ok(walls>=80&&walls<836*.22);
+        assert.equal(config.presentation.decorations.length,128);
+    }
+});
+test('red firing lanes and blue retreat avenues remain continuous',()=>{
+    const rooms=createArcadeRooms();
+    for(const row of [4,11,19])assert.ok(rooms['open-room'][row].slice(1,-1).every(tile=>tile!==1));
+    for(const column of [18,30])assert.ok(rooms.corridors.slice(1,-1).every(row=>row[column]!==1));
 });
 for(const [width,height]of [[1366,768],[1920,1080],[390,844],[3440,1440],[3840,2160],[2560,1536]])test(`${width}x${height}: camera covers the entire viewport without exposing outside space`,()=>{
     const zoom=roomCameraZoom(width,height,2560,1536);

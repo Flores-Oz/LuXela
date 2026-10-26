@@ -7,7 +7,7 @@
     "Large Canvas rooms use bounded static chunks",
     "Only walls and the exit create static bodies",
     "Perimeter is marked separately from interior walls",
-    "Large rooms have denser waves and scenery",
+    "Large rooms have denser waves and tactical scenery",
     "Robots engage at 320px instead of waiting until point-blank range",
     "Basic soldier respects the specified 1.5 second interval",
     "Blocked pursuit changes axis instead of pushing the same wall",
@@ -124,8 +124,8 @@
     "width": 2560,
     "height": 1536
   },
-  "chunks": 45,
+  "chunks": 46,
   "renderer": "Canvas",
   "consoleErrors": [],
-  "generatedAt": "2026-10-26T18:41:00.073Z"
+  "generatedAt": "2026-10-26T19:03:40.200Z"
 }

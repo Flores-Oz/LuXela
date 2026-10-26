@@ -9,20 +9,20 @@
     40,
     24
   ],
-  "chunkCount": 45,
-  "cachePixelBytes": 29507584,
+  "chunkCount": 46,
+  "cachePixelBytes": 34111488,
   "timingsMsPerFrame": {
     "uncached": [
-      1.6516666666759798,
-      1.6158333333364376,
-      1.8316666666728756,
-      1.409999999993791
+      2.7816666667039196,
+      2.3833333333333333,
+      2.7558333332960805,
+      3.136666666716337
     ],
     "cached": [
-      0.19666666666356225,
-      0.27416666665424905,
-      0.19916666666977106,
-      0.21666666666666667
+      0.35666666670391955,
+      0.3283333333209157,
+      0.22916666666666666,
+      0.2574999999875824
     ]
   },
   "tilemapDrawsPerFrame": {
@@ -32,5 +32,5 @@
   "maxPixelDifference": 1,
   "scope": "Local static Canvas draw comparison at native scale, not a device FPS guarantee",
   "consoleErrors": [],
-  "generatedAt": "2026-10-26T08:16:59.529Z"
+  "generatedAt": "2026-10-26T19:04:31.650Z"
 }

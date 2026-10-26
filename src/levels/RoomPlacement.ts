@@ -12,12 +12,18 @@ export function placeRoomPoints(matrix:RoomMatrix,anchors:readonly RoomAnchor[],
     const floor:TilePosition[]=[];
     for(let row=1;row<height-1;row++)for(let column=1;column<width-1;column++)if(matrix[row]![column]===TileType.Floor&&Math.hypot(row-player.row,column-player.column)>=playerClearance&&Math.hypot(row-door.row,column-door.column)>=2)floor.push({row,column});
     const result:TilePosition[]=[];
+    let available=floor;
     for(const [r,c] of anchors){
         const row=1+(height-3)*r,column=1+(width-3)*c;
-        const candidate=floor.filter(point=>result.every(other=>Math.hypot(point.row-other.row,point.column-other.column)>=spacing))
-            .sort((a,b)=>Math.hypot(a.row-row,a.column-column)-Math.hypot(b.row-row,b.column-column))[0];
+        let candidate:TilePosition|undefined,best=Infinity;
+        for(const point of available){
+            const distance=(point.row-row)**2+(point.column-column)**2;
+            if(distance<best){candidate=point;best=distance;}
+        }
         if(!candidate)throw new Error("Insufficient safe room placements");
         result.push(candidate);
+        const chosen=candidate;
+        available=available.filter(point=>(point.row-chosen.row)**2+(point.column-chosen.column)**2>=spacing*spacing);
     }
     return result;
 }

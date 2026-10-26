@@ -3,11 +3,17 @@ import type { LevelRoomCatalog } from "../../levels/LevelConfig";
 
 export const arcadeRoomSize = { columns:40, rows:24 } as const;
 type Block = readonly [row:number,column:number,height:number,width:number];
+// Author at 40x24, then resolve proportionally at every supported room size.
+const blocks = (rectangles: readonly Block[]): readonly Block[] => rectangles.map(([r,c,h,w])=>[(r-1)/21,(c-1)/37,h/22,w/38]);
 const designs: Readonly<Record<string,readonly Block[]>> = {
-    "open-room":[[.34,.34,.08,.05],[.57,.65,.08,.05],[.24,.58,.08,.05],[.67,.20,.08,.05],[.78,.80,.045,.08],[.45,.82,.045,.05]],
-    corridors:[[.14,.30,.35,.025],[.50,.63,.32,.025],[.28,.53,.08,.05],[.70,.20,.08,.05],[.18,.82,.08,.05],[.74,.82,.08,.05]],
-    "mixed-room":[[.25,.20,.045,.15],[.62,.23,.09,.05],[.45,.60,.045,.15],[.70,.78,.09,.025],[.20,.73,.08,.05],[.78,.47,.08,.05],[.45,.35,.08,.05]],
-    maze:[[.18,.28,.38,.025],[.45,.52,.38,.025],[.15,.75,.38,.025],[.65,.14,.08,.05],[.20,.48,.08,.05],[.73,.82,.08,.05]],
+    // Red: three long horizontal firing lanes separated by equipment banks.
+    "open-room":blocks([[6,8,2,6],[6,20,2,6],[6,31,2,5],[14,8,2,6],[14,20,2,6],[14,31,2,5],[2,28,2,5],[20,10,1,5],[20,25,1,5]]),
+    // Blue: staggered racks, medium-distance avenues and room to retreat.
+    corridors:blocks([[5,10,6,3],[15,10,5,3],[2,24,6,3],[12,24,6,3],[20,4,2,4],[20,31,2,5],[6,33,4,3],[14,33,3,3]]),
+    // Yellow: offset machinery islands create short turns and connected loops.
+    "mixed-room":blocks([[7,14,5,5],[12,22,5,5],[15,14,4,5],[5,22,4,5],[8,6,3,3],[16,6,3,3],[4,32,3,3],[13,32,3,3]]),
+    // Orange: freestanding shielding obstructs normal shots, but leaves escape routes.
+    maze:blocks([[3,10,6,2],[14,10,6,2],[6,22,7,2],[17,22,4,2],[3,32,6,2],[13,32,5,2],[10,4,2,4],[10,16,2,4],[10,27,2,3],[2,17,2,3],[19,4,2,3],[20,29,2,3],[15,16,2,3]]),
     "combat-arena":[[.28,.30,.08,.05],[.28,.68,.08,.05],[.68,.30,.08,.05],[.68,.68,.08,.05],[.46,.16,.08,.05],[.46,.83,.08,.05],[.16,.48,.045,.08],[.82,.48,.045,.08]]
 };
 

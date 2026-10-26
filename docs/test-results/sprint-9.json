@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "generatedAt": "2026-10-26T17:19:17.760Z",
+  "generatedAt": "2026-10-26T19:03:41.983Z",
   "node": "v22.16.0",
   "browser": "Edg/156.0.4314.42",
   "renderer": "Canvas",
@@ -8,7 +8,7 @@
     {
       "name": "level-config",
       "status": "passed",
-      "checks": 122,
+      "checks": 126,
       "consoleErrors": 0
     },
     {
@@ -37,10 +37,10 @@
       "cycles": 12,
       "baseline": {
         "bodies": 7,
-        "walls": 146,
+        "walls": 213,
         "colliders": 7,
         "keys": 9,
-        "children": 209
+        "children": 278
       }
     },
     {
@@ -76,9 +76,9 @@
     {
       "name": "robot-attacks",
       "status": "passed",
-      "checks": 99,
+      "checks": 103,
       "consoleErrors": 0
     }
   ],
-  "totalChecks": 1426
+  "totalChecks": 1434
 }

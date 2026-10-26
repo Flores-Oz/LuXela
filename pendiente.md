@@ -6,6 +6,17 @@ La ampliación del Sprint 9 también está implementada: salas físicas de 40 ×
 
 Los patrones de ataque del Sprint 9 también están conectados: disparo rojo, ráfaga azul, persecución amarilla y carga con abanico naranja. Se pueden revisar por separado en `/robots.html`; los tiempos, archivos y pruebas están en `docs/sprint-9-ataques.md`. El balance manual sigue pendiente en las validaciones finales.
 
+Los niveles 1–4 ahora presentan exclusivamente rojo, azul, amarillo y naranja, con mapas diseñados para sus patrones. Ver `docs/sprint-9-mapas.md`.
+
+## Jefe del nivel 5 — pendiente de definir
+
+- [ ] Definir concepto, apariencia y recursos del jefe.
+- [ ] Definir ataques y reglas del encuentro, compatibles con las reglas de combate que se acuerden.
+- [ ] Diseñar su mapa definitivo e integrarlo en la progresión.
+- [ ] Sustituir el combate mixto temporal de la «Arena de entrenamiento» cuando se defina ese diseño.
+
+No se implementa la propuesta de comandante ni ventanas de vulnerabilidad. El usuario indicó que los jefes todavía no están definidos; el nivel 5 conserva una sala provisional jugable.
+
 ## Diálogos definitivos
 
 - [ ] Sustituir los textos provisionales de las introducciones de Alex y Lua por la narrativa definitiva.

@@ -110,7 +110,10 @@ async function run(){
         reset(s.player.physicsSprite,500,160);
         const runs=getArcadeRun(game),score=runs.getScore(s.runId),charge=runs.getSpecialCharge(s.runId),alive=s.enemyManager.aliveCount;
         for(const type of ['red','blue','yellow','orange']){
-            const enemy=s.enemyManager.getLivingEnemies().find(enemy=>enemy.texture.key===`robot-${type}`);
+            // Reuse a real wave identity while probing every variant in the red teaching room.
+            const replaced=s.enemyManager.getLivingEnemies()[0],identity=replaced.getData('level-enemy-id');
+            replaced.destroy();
+            const enemy=make(type);enemy.setData('level-enemy-id',identity);s.enemyManager.add(enemy);
             enemy.enableBody(true,260,160,true,true);
             if(type==='blue'||type==='orange')emit(enemy,70000);
             // Use the production player-projectile overlap rather than calling die().

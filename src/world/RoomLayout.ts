@@ -7,6 +7,8 @@ import type { EnvironmentStyle } from "./environment/EnvironmentSheets";
 /** Optional Sprint 8 asset references. They never define current collision permission. */
 export interface RoomPresentation {
     readonly scenarioId: string;
+    readonly title?: string;
+    readonly hint?: string;
     readonly tilemapKey?: string;
     readonly layers?: { readonly floor?: string; readonly walls?: string; readonly collision?: string; readonly decoration?: string };
     readonly theme?: RoomTheme;

@@ -39,7 +39,7 @@ async function run(){
     check('Large Canvas rooms use bounded static chunks',caches(s).length>4&&caches(s).every(image=>image.texture.source[0].width<=512&&image.texture.source[0].height<=512)&&layers(s).every(layer=>!layer.visible));
     check('Only walls and the exit create static bodies',s.physics.world.staticBodies.size===s.walls.getLength()+1&&s.physics.world.staticBodies.size<960/4);
     check('Perimeter is marked separately from interior walls',s.walls.getChildren().some(wall=>wall.getData('room-perimeter'))&&s.walls.getChildren().some(wall=>!wall.getData('room-perimeter')));
-    check('Large rooms have denser waves and scenery',s.enemyManager.aliveCount>=6&&levels[0].presentation.decorations.length>=40&&s.walls.getChildren().filter(wall=>!wall.getData('room-perimeter')).length>=20);
+    check('Large rooms have denser waves and tactical scenery',s.enemyManager.aliveCount>=6&&levels[0].presentation.decorations.length===128&&s.walls.getChildren().filter(wall=>!wall.getData('room-perimeter')).length>=80);
     const aggressive=new Enemy(s,300,200,'robot-red',{...levels[0].difficulty,patrol:false});
     const attackTarget={x:620,y:200,isDead:()=>false,physicsSprite:{x:620,y:200,active:true}};
     const clearSight={hasLineOfSight:()=>true};

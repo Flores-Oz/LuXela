@@ -17,6 +17,7 @@ import { LevelManager } from "../levels/LevelManager";
 import { isLevelIndex } from "../levels/levels";
 import { UITheme } from "../config/UITheme";
 import { GameHUD } from "../ui/GameHUD";
+import { RoomBriefing } from "../ui/RoomBriefing";
 import { WaveManager } from "../levels/WaveManager";
 import { getWaves, type WaveConfig } from "../levels/WaveConfig";
 import { planWaveSpawns } from "../levels/SpawnPlanner";
@@ -48,6 +49,7 @@ export class GameScene extends Phaser.Scene {
     private roomWidth = 0;
     private roomHeight = 0;
     private hud: GameHUD | null = null;
+    private briefing: RoomBriefing | null = null;
     private pauseButton: Phaser.GameObjects.Text | null = null;
 
     private enemyManager: EnemyManager | null = null;
@@ -108,6 +110,8 @@ export class GameScene extends Phaser.Scene {
             this.lineOfSight = null;
             this.hud?.destroy();
             this.hud = null;
+            this.briefing?.destroy();
+            this.briefing = null;
             this.pauseButton = null;
             this.scale.off(Phaser.Scale.Events.RESIZE, this.layoutRoom, this);
             this.input.keyboard?.off("keydown-ESC", this.pauseGame, this);
@@ -116,6 +120,7 @@ export class GameScene extends Phaser.Scene {
         const tileSize = 64;
 
         const config = this.levels.getLevel(this.roomIndex);
+        if (config.presentation?.title) this.briefing = new RoomBriefing(this, config.presentation.title, config.presentation.hint ?? "");
         const room = this.levels.createRoom(this.roomIndex, tileSize);
 
         const builder = new RoomBuilder(this);
@@ -249,6 +254,7 @@ export class GameScene extends Phaser.Scene {
 
     update(time: number, delta = 1000 / 60): void {
         if (this.combatState !== "playing" || !this.player || !this.lineOfSight || this.isChangingRoom) return;
+        this.briefing?.update(delta);
         const abilityState = this.specialAbilities?.ability.state;
         const cooldownSeconds = Math.ceil((this.specialAbilities?.ability.cooldownRemaining ?? 0) / 1000);
         this.specialAbilities?.update(delta);
@@ -435,6 +441,7 @@ export class GameScene extends Phaser.Scene {
             text?.setScale(1 / zoom).setPosition(camera.width / 2 + (x - camera.width / 2) / zoom, camera.height / 2 + (y - camera.height / 2) / zoom);
         };
         this.hud?.layout();
+        this.briefing?.layout();
         positionHUD(this.pauseButton, this.scale.width - 16, this.scale.width < 650 ? this.scale.height - 56 : 16);
     }
 }
