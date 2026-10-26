@@ -1,16 +1,9 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import ts from 'typescript';
+import { tsModuleUrl } from './ts-module.mjs';
 
 // Compile the pure TS validator in memory; no browser, Phaser runtime or generated files.
-const moduleUrl = source => `data:text/javascript;base64,${Buffer.from(ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 }
-}).outputText).toString('base64')}`;
-const tileModule = moduleUrl(readFileSync(new URL('../src/types/RoomTypes.ts', import.meta.url), 'utf8'));
-const validatorModule = moduleUrl(readFileSync(new URL('../src/levels/validateLevelConfig.ts', import.meta.url), 'utf8')
-    .replace('"../types/RoomTypes"', JSON.stringify(tileModule)));
-const { validateLevelCatalog, assertValidLevelCatalog } = await import(validatorModule);
+const { validateLevelCatalog, assertValidLevelCatalog } = await import(tsModuleUrl(new URL('../src/levels/validateLevelConfig.ts', import.meta.url)));
 
 function fixture() {
     return {

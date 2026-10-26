@@ -1,5 +1,7 @@
 import type { LevelConfig, LevelEnemySpawn } from "./LevelConfig";
 import type { EncounterConfig } from "./WaveConfig";
+import type { RoomTheme, DecorationConfig } from "../world/environment/RoomTheme";
+import type { EnvironmentStyle } from "../world/environment/EnvironmentSheets";
 
 const spawns = (positions: readonly (readonly [number, number])[]): readonly LevelEnemySpawn[] =>
     positions.map(([row, column]) => ({ row, column, type: "robot-red" }));
@@ -15,6 +17,24 @@ const reinforcementPositions: Readonly<Record<string, readonly SpawnPoints[]>> =
         [[1, 7], [2, 11], [4, 4], [4, 10], [6, 2], [8, 6], [9, 12]],
         [[2, 6], [2, 13], [5, 2], [5, 12], [8, 3], [8, 8], [9, 11]]
     ]
+};
+
+const roomAppearance: Readonly<Record<string, { theme: RoomTheme; environmentStyle: EnvironmentStyle; decorations: readonly DecorationConfig[] }>> = {
+    "open-room": { theme: "industrial", environmentStyle:"industrial-green", decorations: [
+        { row:3,column:3,kind:"grate" }, { row:6,column:10,kind:"panel" }, { row:7,column:8,kind:"warning" },
+        { row:2,column:7,kind:"circuit" }, { row:3,column:11,kind:"grate" }, { row:6,column:3,kind:"panel" }, { row:8,column:6,kind:"warning" }, { row:8,column:10,kind:"grate" }] },
+    corridors: { theme:"laboratory", environmentStyle:"reactor-cyan", decorations: [
+        { row:2,column:2,kind:"grate" }, { row:6,column:6,kind:"circuit" }, { row:3,column:11,kind:"panel" },
+        { row:2,column:6,kind:"circuit" }, { row:7,column:3,kind:"panel" }, { row:8,column:10,kind:"warning" }, { row:5,column:12,kind:"grate" }, { row:9,column:6,kind:"panel" }] },
+    "mixed-room": { theme:"control", environmentStyle:"data-blue", decorations: [
+        { row:2,column:4,kind:"circuit" }, { row:6,column:6,kind:"grate" }, { row:8,column:12,kind:"panel" },
+        { row:2,column:12,kind:"grate" }, { row:4,column:2,kind:"panel" }, { row:8,column:4,kind:"warning" }, { row:9,column:8,kind:"circuit" }, { row:4,column:9,kind:"grate" }] },
+    maze: { theme:"industrial", environmentStyle:"cargo-olive", decorations: [
+        { row:3,column:2,kind:"warning" }, { row:2,column:6,kind:"grate" }, { row:8,column:10,kind:"panel" },
+        { row:6,column:2,kind:"grate" }, { row:5,column:6,kind:"circuit" }, { row:2,column:9,kind:"panel" }, { row:8,column:12,kind:"grate" }, { row:9,column:5,kind:"warning" }] },
+    "combat-arena": { theme:"control", environmentStyle:"hangar-amber", decorations: [
+        { row:4,column:7,kind:"circuit" }, { row:6,column:8,kind:"grate" }, { row:8,column:10,kind:"warning" },
+        { row:2,column:4,kind:"panel" }, { row:2,column:10,kind:"grate" }, { row:5,column:7,kind:"warning" }, { row:8,column:4,kind:"grate" }, { row:9,column:10,kind:"panel" }] }
 };
 
 /** Gradual test balance: +8 px/s movement, +12 px detection, -100 ms cooldown per level. */
@@ -61,7 +81,7 @@ export const levels: readonly EncounterConfig[] = roomSeeds.map((seed, index) =>
     }));
     return {
         ...seed, order: index + 1, encounter: index === 4 ? "final" : index === 2 ? "special" : count > 1 ? "multiwave" : "normal",
-        waves, next, presentation: { scenarioId: seed.roomId, layers: { floor: "floor", walls: "walls", collision: "collision", decoration: "decoration" } },
+        waves, next, presentation: { scenarioId: seed.roomId, ...roomAppearance[seed.roomId], layers: { floor: "floor", walls: "walls", collision: "collision", decoration: "decoration" } },
         exits: [{ id: "progression-exit", position: { row: 9, column: 13 }, next, requiresClear: true }]
     };
 });

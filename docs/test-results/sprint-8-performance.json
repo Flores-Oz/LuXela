@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "renderer": "Canvas",
+  "style": "data-blue",
+  "viewport": [
+    1920,
+    1080
+  ],
+  "timingsMsPerFrame": {
+    "uncached": [
+      1.8216666668653487,
+      1.7116666664679845,
+      1.5041666666666667,
+      1.4933333337306975
+    ],
+    "cached": [
+      0.125,
+      0.12333333293596903,
+      0.14000000059604645,
+      0.10916666686534882
+    ]
+  },
+  "tilemapDrawsPerFrame": {
+    "uncached": 4,
+    "cached": 0
+  },
+  "maxPixelDifference": 0,
+  "scope": "Static scene drawing on a local headless Canvas renderer; not a device FPS measurement",
+  "consoleErrors": [],
+  "generatedAt": "2026-10-26T04:30:18.384Z"
+}

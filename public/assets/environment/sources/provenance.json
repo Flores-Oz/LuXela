@@ -1,0 +1,50 @@
+[
+    {
+        "id":  "industrial-green",
+        "originalName":  "a_clean_top_down_view_pixel_art_tileset_sheet_sc_1.png",
+        "file":  "sources/industrial-green.png",
+        "sha256":  "5AB5E6783FCCF7E01B1FCC925573F5CE04A7B5EBED6B1BF9764791549C11D0E4"
+    },
+    {
+        "id":  "assembly-amber",
+        "originalName":  "a_top_down_isometric_less_perfectly_grid_aligned_2_batch_1.png",
+        "file":  "sources/assembly-amber.png",
+        "sha256":  "B05D75287C7D4EBA8405AD949E3CD24E6BADF35D84E78B465C0E3BFCAA9CE97E"
+    },
+    {
+        "id":  "reactor-cyan",
+        "originalName":  "a_top_down_grid_based_pixel_art_tileset_illustrat_3_batch_2.png",
+        "file":  "sources/reactor-cyan.png",
+        "sha256":  "6A7532D8E244BAC893EAB8D2EC94282CAF0DBA0678E5DED8C872BE965C9F1327"
+    },
+    {
+        "id":  "cargo-olive",
+        "originalName":  "a_top_down_overhead_pixel_art_tileset_texture_shee_4_batch_3.png",
+        "file":  "sources/cargo-olive.png",
+        "sha256":  "78638E31BBB3F3324245C4B9064F633397C0FDC7BFD0277E60470D80B099AEB2"
+    },
+    {
+        "id":  "quarantine-red",
+        "originalName":  "top_down_pixel_art_tileset_sprite_sheet_in_a_squ_5_batch_4.png",
+        "file":  "sources/quarantine-red.png",
+        "sha256":  "CABD62C76C8AC9A4809029E58B20775369ECE4F59C9FCAFB3AC6B2CA4A3437FA"
+    },
+    {
+        "id":  "data-blue",
+        "originalName":  "top_down_pixel_art_tileset_in_a_4x4_grid_sci_fi_c_6_batch_5.png",
+        "file":  "sources/data-blue.png",
+        "sha256":  "F510A531BEC96B4BCCB55C2C16CCF592B57A3B3DE4897E3E4AD59A82D37BAAB8"
+    },
+    {
+        "id":  "hangar-amber",
+        "originalName":  "a_detailed_pixel_art_top_down_tileset_sheet_clean_7_batch_6.png",
+        "file":  "sources/hangar-amber.png",
+        "sha256":  "1DD5841DB3485AA8BCBDA4E50AAADC05C6EE9D98C873FDCEE08222095E556672"
+    },
+    {
+        "id":  "maintenance-teal",
+        "originalName":  "a_square_top_down_pixel_art_tileset_tilesheet_in_8_batch_7.png",
+        "file":  "sources/maintenance-teal.png",
+        "sha256":  "F4900C1A5C8C7985E0C10F1DFBBC27096F0D46DBFFBD9686F1027807BCA4795B"
+    }
+]

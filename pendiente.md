@@ -1,6 +1,6 @@
 # Pendientes — retoques finales
 
-Los sprints 5, 6 y 7 tienen su integración funcional terminada. Los siguientes ajustes de contenido se dejan pendientes para el acabado final del juego.
+Los sprints 5, 6, 7 y 8 tienen su integración funcional terminada. Los siguientes ajustes de contenido se dejan pendientes para el acabado final del juego.
 
 ## Diálogos definitivos
 
@@ -30,9 +30,13 @@ El Sprint 6 ya incluye los cinco niveles, dificultad progresiva, transiciones, p
 
 ## Sprint 8 — escenarios visuales
 
-- [ ] Aportar texturas o tilesets definitivos de pisos y paredes.
-- [ ] Aportar el arte y las animaciones de puertas bloqueadas, disponibles y en transición.
-- [ ] Implementar el renderer de Tilemaps y asociar las capas visuales y de decoración a las referencias configuradas.
-- [ ] Si se importan colisiones desde Tilemaps, adaptarlas al contrato físico de `RoomLayout` y verificar paredes y línea de visión.
+- [x] Integrar los tres tilesets aportados de pisos, paredes y decoración: industrial, laboratorio y sala de control.
+- [x] Integrar la puerta del atlas y distinguir los estados bloqueado, disponible y en transición mediante un indicador de color.
+- [x] Implementar el renderer de Tilemaps con cuatro capas visuales, selección de tema y limpieza al cambiar de habitación.
+- [x] Conservar las colisiones de `RoomLayout` y comprobar paredes, proyectiles y línea de visión.
+- [x] Ordenar las ocho láminas adicionales, medir sus recortes e integrar piezas de todas ellas en las cinco habitaciones.
+- [ ] Opcional: aportar animaciones específicas de puerta para sustituir la imagen compartida entre estados.
+
+El informe y los resultados del Sprint 8 están en `docs/sprint-8.md`. Las colisiones siguen usando los grupos estáticos existentes; importar física desde Tilemaps sería una ampliación opcional, no un requisito pendiente de este sprint.
 
 El Sprint 7 ya incluye oleadas, encuentros especiales, carga de habilidades mediante diez bajas configurables, puertas funcionales y separación de gráficos y física. No usa cooldown temporal para habilidades. Las diez oleadas contienen 53 robots y permiten obtener 5300 puntos.

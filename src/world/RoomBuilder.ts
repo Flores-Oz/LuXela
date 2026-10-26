@@ -4,7 +4,8 @@ import { GameSettings } from "../config/GameSettings";
 import { DoorController, type DoorEntry } from "./DoorController";
 import type { ExitConfig } from "../levels/WaveConfig";
 import { createRoomLayout, type RoomLayout, type RoomPresentation } from "./RoomLayout";
-import { GeometryRoomRenderer, type RoomRenderer } from "./RoomRenderer";
+import type { RoomRenderer } from "./RoomRenderer";
+import { ModularRoomRenderer } from "./environment/ModularRoomRenderer";
 
 /** Builds collision zones and triggers independently from the replaceable visual renderer. */
 export class RoomBuilder {
@@ -15,8 +16,8 @@ export class RoomBuilder {
     private doors: DoorController | null = null;
     private layout: RoomLayout | null = null;
 
-    constructor(scene: Phaser.Scene, renderer: RoomRenderer = new GeometryRoomRenderer(scene)) {
-        this.scene = scene; this.renderer = renderer;
+    constructor(scene: Phaser.Scene, renderer?: RoomRenderer) {
+        this.scene = scene; this.renderer = renderer ?? new ModularRoomRenderer(scene);
         this.walls = scene.physics.add.staticGroup(); this.exits = scene.physics.add.staticGroup();
     }
     build(room: Room, exitConfigs: readonly ExitConfig[] = [], presentation?: RoomPresentation): void {

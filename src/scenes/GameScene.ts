@@ -23,6 +23,7 @@ import { planWaveSpawns } from "../levels/SpawnPlanner";
 import type { Room } from "../world/Room";
 import type { DoorController } from "../world/DoorController";
 import { SpecialAbilityConfig } from "../config/SpecialAbilityConfig";
+import { loadEnvironmentAssets } from "../world/environment/EnvironmentTiles";
 
 
 
@@ -70,6 +71,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     preload(): void {
+        loadEnvironmentAssets(this);
         loadPlayerAssets(this);
         loadSpecialAssets(this);
 

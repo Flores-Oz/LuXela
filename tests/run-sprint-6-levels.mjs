@@ -11,7 +11,8 @@ try {
     console.log(JSON.stringify(report, null, 2));
     if (result.status !== 'passed' || browser.errors.length) process.exitCode = 1;
     else {
-        mkdirSync('docs/test-results', { recursive: true });
-        writeFileSync(`docs/test-results/sprint-6-stage-${difficulty ? 4 : 3}.json`, `${JSON.stringify(report, null, 2)}\n`);
+        const directory = process.env.TEST_REPORT_DIR ?? 'docs/test-results';
+        mkdirSync(directory, { recursive: true });
+        writeFileSync(`${directory}/sprint-6-stage-${difficulty ? 4 : 3}.json`, `${JSON.stringify(report, null, 2)}\n`);
     }
 } finally { browser.close(); }

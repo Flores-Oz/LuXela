@@ -1,12 +1,17 @@
 import type { Room, TilePosition } from "./Room";
 import { TileType } from "../types/RoomTypes";
 import type { ExitConfig } from "../levels/WaveConfig";
+import type { RoomTheme, DecorationConfig } from "./environment/RoomTheme";
+import type { EnvironmentStyle } from "./environment/EnvironmentSheets";
 
 /** Optional Sprint 8 asset references. They never define current collision permission. */
 export interface RoomPresentation {
     readonly scenarioId: string;
     readonly tilemapKey?: string;
     readonly layers?: { readonly floor?: string; readonly walls?: string; readonly collision?: string; readonly decoration?: string };
+    readonly theme?: RoomTheme;
+    readonly environmentStyle?: EnvironmentStyle;
+    readonly decorations?: readonly DecorationConfig[];
 }
 export interface RoomCell extends Readonly<TilePosition> { readonly x: number; readonly y: number; readonly size: number }
 export interface LayoutDoor extends RoomCell { readonly config: ExitConfig }

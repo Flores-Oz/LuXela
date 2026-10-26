@@ -54,5 +54,5 @@ try {
     const report = { ...result, totalChecks: result.count + (result.nativeInput?.length ?? 0) + (result.layoutTests?.length ?? 0), generatedAt: new Date().toISOString(), renderer: 'Canvas', consoleErrors: b.errors };
     console.log(JSON.stringify(report, null, 2));
     if (result.status !== 'passed' || b.errors.length) process.exitCode = 1;
-    else { mkdirSync('docs/test-results', { recursive: true }); writeFileSync('docs/test-results/sprint-7-integration.json', JSON.stringify(report, null, 2) + '\n'); }
+    else { const directory=process.env.TEST_REPORT_DIR??'docs/test-results'; mkdirSync(directory, { recursive: true }); writeFileSync(`${directory}/sprint-7-integration.json`, JSON.stringify(report, null, 2) + '\n'); }
 } finally { await b.send('Emulation.clearDeviceMetricsOverride'); b.close(); }

@@ -1,5 +1,7 @@
 import { TileType } from "../types/RoomTypes";
 import type { LevelConfig, LevelRoomCatalog } from "./LevelConfig";
+import { roomThemeIds } from "../world/environment/RoomTheme";
+import { environmentStyleIds } from "../world/environment/EnvironmentSheets";
 
 type RecordValue = Record<string, unknown>;
 const isRecord = (value: unknown): value is RecordValue =>
@@ -27,8 +29,17 @@ export function validateLevelCatalog(catalog: unknown, rooms: unknown): string[]
         if (value.presentation !== undefined) {
             if (!isRecord(value.presentation) || !isId(value.presentation.scenarioId)) error("presentation requires a scenarioId");
             else {
+                const theme = value.presentation.theme;
+                if (theme !== undefined && !roomThemeIds.some(id => id === theme)) error("unknown room theme");
+                const style = value.presentation.environmentStyle;
+                if (style !== undefined && !environmentStyleIds.some(id=>id===style)) error("unknown environment style");
                 if (value.presentation.tilemapKey !== undefined && !isId(value.presentation.tilemapKey)) error("invalid tilemap reference");
                 if (value.presentation.layers !== undefined && (!isRecord(value.presentation.layers) || Object.values(value.presentation.layers).some(layer => !isId(layer)))) error("invalid layer references");
+                else if (isRecord(value.presentation.layers)) {
+                    const decorationLayer = value.presentation.layers.decoration ?? "decoration";
+                    const layers = [value.presentation.layers.floor ?? "floor", value.presentation.layers.walls ?? "walls", decorationLayer, `${decorationLayer}-overlay`];
+                    if (new Set(layers).size !== layers.length) error("visual layer names must be distinct");
+                }
             }
         }
 
@@ -62,6 +73,20 @@ export function validateLevelCatalog(catalog: unknown, rooms: unknown): string[]
             error("room must be a non-empty rectangular matrix of known tiles"); return;
         }
         const grid = matrix as number[][];
+        if (isRecord(value.presentation) && value.presentation.decorations !== undefined) {
+            if (!Array.isArray(value.presentation.decorations)) error("decorations must be an array");
+            else {
+                const cells = new Set<string>();
+                for (const decoration of value.presentation.decorations) {
+                    if (!isRecord(decoration) || !coordinate(decoration.row) || !coordinate(decoration.column) ||
+                        ![TileType.Floor, TileType.RobotSpawn].includes(grid[decoration.row]?.[decoration.column] as 0 | 3) ||
+                        !["grate", "panel", "warning", "circuit"].includes(String(decoration.kind))) { error("invalid decoration position or kind"); continue; }
+                    const key = `${decoration.row},${decoration.column}`;
+                    if (cells.has(key)) error("duplicate decoration position");
+                    cells.add(key);
+                }
+            }
+        }
         const players: { row: number; column: number }[] = [];
         const exits: { row: number; column: number }[] = [];
         grid.forEach((row, r) => row.forEach((tile, c) => {
