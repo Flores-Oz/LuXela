@@ -1,27 +1,62 @@
 import type Phaser from "phaser";
 import type { PlayerCharacter } from "../config/characters";
+import { levels } from "../levels/levels";
+import { SpecialAbilityConfig } from "../config/SpecialAbilityConfig";
 
 /** Session-only arcade result. Narrative/UI cannot manufacture a victory by scene data alone. */
 export class ArcadeRunService {
     private serial = 0;
-    private run: { id: number; character: PlayerCharacter; cleared: Set<number>; status: "playing" | "defeat" | "victory" } | null = null;
+    private run: { id: number; character: PlayerCharacter; roomIndex: number; cleared: Set<number>; score: number; entryScore: number; specialCharge: number; entryCharge: number; awarded: Set<string>; status: "playing" | "defeat" | "victory" } | null = null;
     readonly roomCount: number;
-    constructor(roomCount = 2) { this.roomCount = roomCount; }
+    constructor(roomCount = levels.length) {
+        if (!Number.isSafeInteger(roomCount) || roomCount < 1) throw new RangeError("Invalid room count");
+        this.roomCount = roomCount;
+    }
     begin(character: PlayerCharacter): number {
-        this.run = { id: ++this.serial, character, cleared: new Set(), status: "playing" };
+        this.run = { id: ++this.serial, character, roomIndex: 0, cleared: new Set(), score: 0, entryScore: 0, specialCharge: 0, entryCharge: 0, awarded: new Set(), status: "playing" };
         return this.run.id;
     }
-    continue(id: unknown, character: PlayerCharacter): boolean {
-        if (!this.run || this.run.id !== id || this.run.character !== character || this.run.status === "victory") return false;
+    continue(id: unknown, character: PlayerCharacter, roomIndex = this.run?.roomIndex): boolean {
+        if (!this.run || this.run.id !== id || this.run.character !== character || this.run.status === "victory" || roomIndex !== this.run.roomIndex) return false;
+        // The room is rebuilt on retry or narrative return: restore its entry checkpoint.
+        this.run.cleared.delete(this.run.roomIndex);
+        this.run.score = this.run.entryScore;
+        this.run.specialCharge = this.run.entryCharge;
+        this.run.awarded.clear();
         this.run.status = "playing";
         return true;
     }
     clearRoom(id: number, roomIndex: number): void {
-        if (this.run?.id === id && this.run.status === "playing" && Number.isInteger(roomIndex) && roomIndex >= 0 && roomIndex < this.roomCount) this.run.cleared.add(roomIndex);
+        if (this.run?.id === id && this.run.status === "playing" && roomIndex === this.run.roomIndex) this.run.cleared.add(roomIndex);
+    }
+    advance(id: number, roomIndex: number): boolean {
+        if (!this.run || this.run.id !== id || this.run.status !== "playing" || this.run.roomIndex !== roomIndex ||
+            !this.run.cleared.has(roomIndex) || roomIndex >= this.roomCount - 1) return false;
+        this.run.roomIndex++;
+        this.run.entryScore = this.run.score;
+        this.run.entryCharge = this.run.specialCharge;
+        this.run.awarded.clear();
+        return true;
+    }
+    awardKill(id: number, roomIndex: number, enemyId: string, points: number): boolean {
+        const run = this.run;
+        if (!run || run.id !== id || run.status !== "playing" || run.roomIndex !== roomIndex || run.cleared.has(roomIndex) ||
+            typeof enemyId !== "string" || !enemyId || run.awarded.has(enemyId) ||
+            !Number.isSafeInteger(points) || points < 0 || !Number.isSafeInteger(run.score + points)) return false;
+        run.awarded.add(enemyId);
+        run.score += points;
+        run.specialCharge = Math.min(SpecialAbilityConfig[run.character].killsRequired, run.specialCharge + 1);
+        return true;
+    }
+    getScore(id: number): number { return this.run?.id === id ? this.run.score : 0; }
+    getSpecialCharge(id: number): number { return this.run?.id === id ? this.run.specialCharge : 0; }
+    consumeSpecial(id: number): boolean {
+        if (!this.run || this.run.id !== id || this.run.status !== "playing" || this.run.specialCharge < SpecialAbilityConfig[this.run.character].killsRequired) return false;
+        this.run.specialCharge = 0; return true;
     }
     defeat(id: number): void { if (this.run?.id === id && this.run.status === "playing") this.run.status = "defeat"; }
     finish(id: number, roomIndex: number): boolean {
-        if (!this.run || this.run.id !== id || this.run.status !== "playing" || roomIndex !== this.roomCount - 1 || this.run.cleared.size !== this.roomCount) return false;
+        if (!this.run || this.run.id !== id || this.run.status !== "playing" || this.run.roomIndex !== roomIndex || roomIndex !== this.roomCount - 1 || this.run.cleared.size !== this.roomCount) return false;
         this.run.status = "victory";
         return true;
     }

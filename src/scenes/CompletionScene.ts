@@ -6,6 +6,7 @@ import { getArcadeRun } from "../systems/ArcadeRunService";
 import { getCharacterUnlocks } from "../systems/CharacterUnlockService";
 import { isNarrativeRoute } from "../narrative/NarrativeTypes";
 import { characters } from "../config/characters";
+import { levels } from "../levels/levels";
 
 export class CompletionScene extends Phaser.Scene {
     private request: { character?: unknown; runId?: unknown } = {};
@@ -18,8 +19,8 @@ export class CompletionScene extends Phaser.Scene {
         }
         let leaving = false;
         const leave = (key: string) => { if (leaving) return; leaving = true; getArcadeRun(this.game).reset(); this.scene.start(key); };
-        const view = new MenuView({ kind: "completion", eyebrow: `Ruta de ${characters[character].name}`, title: "Historia completada",
-            subtitle: "Recorrido arcade completado. Presentación provisional: la historia definitiva sigue en preparación.", actions: [
+        const view = new MenuView({ kind: "completion", eyebrow: `Ruta de ${characters[character].name}`, title: "Niveles de prueba completados",
+            subtitle: `Has despejado ${levels.length} habitaciones y todas sus oleadas.`, actions: [
                 { label: "Volver al menú principal", primary: true, action: () => leave("MainMenuScene") },
                 { label: "Elegir otro personaje", action: () => leave("CharacterSelectScene") }
             ] });
@@ -27,7 +28,7 @@ export class CompletionScene extends Phaser.Scene {
         const background = new BackgroundManager(view.element.querySelector(".presentation-background")!, message => {
             view.element.querySelector(".presentation-subtitle")!.textContent = message;
         });
-        background.show(`${character}-ending`, true);
+        background.show("main-menu", true);
         view.focus();
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { background.destroy(); view.destroy(); });
     }

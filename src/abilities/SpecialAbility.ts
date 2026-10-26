@@ -1,26 +1,28 @@
 import type { Player } from "../entities/Player";
 
-export type AbilityState = "ready" | "charging" | "active" | "recovering" | "cooldown";
-export interface AbilityTiming { chargeMs: number; durationMs: number; recoveryMs: number; cooldownMs: number }
+export type AbilityState = "locked" | "ready" | "charging" | "active" | "recovering";
+export interface AbilityTiming { chargeMs: number; durationMs: number; recoveryMs: number; killsRequired: number }
+export interface AbilityCharge { count: () => number; consume: () => boolean }
 
-/** Scene delta drives all phases; no timers survive cancellation or shutdown. */
+/** Time advances animation only. Availability comes from validated eliminations. */
 export abstract class SpecialAbility {
-    state: AbilityState = "ready";
+    private phase: "charging" | "active" | "recovering" | null = null;
     elapsed = 0;
-    cooldownRemaining = 0;
     private destroyed = false;
 
     protected readonly player: Player;
     protected readonly timing: AbilityTiming;
-    constructor(player: Player, timing: AbilityTiming) { this.player = player; this.timing = timing; }
+    private readonly charge: AbilityCharge;
+    constructor(player: Player, timing: AbilityTiming, charge: AbilityCharge) { this.player = player; this.timing = timing; this.charge = charge; }
+    get state(): AbilityState { return this.phase ?? (!this.destroyed && this.charge.count() >= this.timing.killsRequired ? "ready" : "locked"); }
 
     get performing(): boolean {
-        return this.state === "charging" || this.state === "active" || this.state === "recovering";
+        return this.phase !== null;
     }
 
     activate(): boolean {
-        if (this.destroyed || this.player.isDead() || !this.player.physicsSprite.active || this.state !== "ready") return false;
-        this.state = "charging";
+        if (this.destroyed || this.player.isDead() || !this.player.physicsSprite.active || this.state !== "ready" || !this.charge.consume()) return false;
+        this.phase = "charging";
         this.elapsed = 0;
         return true;
     }
@@ -29,28 +31,23 @@ export abstract class SpecialAbility {
         if (this.destroyed || !Number.isFinite(delta) || delta <= 0) return;
         if (this.player.isDead()) { this.cancel(); return; }
         let remaining = delta;
-        while (remaining > 0 && this.state !== "ready") {
-            if (this.state === "cooldown") {
-                this.cooldownRemaining = Math.max(0, this.cooldownRemaining - remaining);
-                if (!this.cooldownRemaining) this.state = "ready";
-                break;
-            }
-            const duration = this.state === "charging" ? this.timing.chargeMs :
-                this.state === "active" ? this.timing.durationMs : this.timing.recoveryMs;
+        while (remaining > 0 && this.phase !== null) {
+            const duration = this.phase === "charging" ? this.timing.chargeMs :
+                this.phase === "active" ? this.timing.durationMs : this.timing.recoveryMs;
             const step = Math.min(remaining, Math.max(0, duration - this.elapsed));
             this.elapsed += step;
             remaining -= step;
-            if (this.state === "active") this.onActiveUpdate(this.elapsed);
+            if (this.phase === "active") this.onActiveUpdate(this.elapsed);
             if (this.elapsed < duration) break;
             this.elapsed = 0;
-            if (this.state === "charging") { this.state = "active"; this.onDischarge(); }
-            else if (this.state === "active") this.state = "recovering";
-            else { this.state = "cooldown"; this.cooldownRemaining = this.timing.cooldownMs; }
+            if (this.phase === "charging") { this.phase = "active"; this.onDischarge(); }
+            else if (this.phase === "active") this.phase = "recovering";
+            else this.phase = null;
         }
     }
 
     cancel(): void {
-        if (this.performing) { this.state = "cooldown"; this.cooldownRemaining = this.timing.cooldownMs; }
+        this.phase = null;
         this.elapsed = 0;
     }
 

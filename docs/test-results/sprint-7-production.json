@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "viewport": [
+    1920,
+    1080
+  ],
+  "canvas": [
+    1920,
+    1080
+  ],
+  "menu": [
+    1920,
+    1080
+  ],
+  "bundle": "/assets/index-D4GqG_Zq.js",
+  "backgroundLoaded": true,
+  "generatedAt": "2026-10-25T06:32:05.705Z",
+  "renderer": "Canvas",
+  "consoleErrors": [],
+  "scope": "Production menu startup only; integration and regressions run on Vite development server"
+}

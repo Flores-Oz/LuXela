@@ -5,6 +5,7 @@ import { NarrativeSaveService } from '../src/narrative/NarrativeSaveService';
 import { CHARACTER_CODES } from '../src/config/CharacterUnlockConfig';
 import { SpecialAbilityConfig } from '../src/config/SpecialAbilityConfig';
 import { Projectile } from '../src/entities/Projectile';
+import { getArcadeRun } from '../src/systems/ArcadeRunService';
 
 const checks = [];
 const check = (name, condition) => { if (!condition) throw new Error(name); checks.push(name); };
@@ -35,6 +36,8 @@ const metrics = scene => ({ bodies: scene.physics.world.bodies.size, walls: scen
     colliders: scene.physics.world.colliders.getActive().length,
     keys: Object.values(scene.input.keyboard.keys).filter(Boolean).length,
     children: scene.children.list.length });
+// Isolated ability regression fixture; real kill charging is tested by the Sprint 7 routes.
+const prime = scene => { for (let i=0;i<10;i++) getArcadeRun(scene.game).awardKill(scene.runId,scene.roomIndex,`fixture-${i}`,0); };
 
 async function run() {
     await until(() => active('CharacterSelectScene') && selector());
@@ -58,6 +61,7 @@ async function run() {
         check(`${character}: narrativa registra finalización independiente`, saves.get(character)?.status === (character === 'alex' ? 'completed' : 'skipped'));
         check(`${character}: una escena y un solo jugador`, game.scene.getScenes(true).length === 1 && scene.children.list.filter(c => c.texture?.key === `${character}-walk`).length === 1 && !selector() && !document.querySelector('.intro-screen'));
         const oldManager = scene.specialAbilities;
+        prime(scene);
         oldManager.ability.activate(); oldManager.update(SpecialAbilityConfig[character].chargeMs);
         check(`${character}: especial elimina habitación tras selección y narrativa`, scene.enemyManager.aliveCount === 0 && !scene.player.isDead() && scene.playerProjectiles.getLength() === 0);
         // Exercise actual enemy-shot overlap, defeat animation, Game Over and retry.
@@ -68,7 +72,7 @@ async function run() {
         const over = game.scene.getScene('GameOverScene');
         over.children.list.find(child => child.text === '[ REINTENTAR ]').emit('pointerdown');
         scene = await enterGameplay();
-        check(`${character}: reintento conserva personaje y restablece combate`, scene.character === character && scene.roomIndex === 0 && !scene.player.isDead() && scene.enemyManager.aliveCount === 2 && scene.specialAbilities.ability.state === 'ready');
+        check(`${character}: reintento conserva personaje y restablece combate`, scene.character === character && scene.roomIndex === 0 && !scene.player.isDead() && scene.enemyManager.aliveCount === 3 && scene.specialAbilities.ability.state === 'locked');
         check(`${character}: reintento no reproduce narrativa ni acumula atajos`, !active('VisualNovelScene') && over.input.keyboard.listenerCount('keydown-ENTER') === 0);
         scene.scene.start('CharacterSelectScene');
         await until(() => active('CharacterSelectScene') && selector());
@@ -81,12 +85,13 @@ async function run() {
     for (let cycle = 0; cycle < 12; cycle++) {
         const character = cycle % 2 ? 'lua' : 'alex';
         const manager = scene.specialAbilities;
+        prime(scene);
         manager.ability.activate(); manager.update(SpecialAbilityConfig[scene.character].chargeMs);
         scene.scene.restart({ character, roomIndex: 0 });
         await until(() => gameplay().specialAbilities && gameplay().specialAbilities !== manager && gameplay().character === character);
         scene = await enterGameplay();
         check(`Ciclo ${cycle + 1}: cuerpos, paredes, colliders, teclas y objetos estables`, JSON.stringify(metrics(scene)) === JSON.stringify(baseline));
-        check(`Ciclo ${cycle + 1}: efectos anteriores destruidos y especial disponible`, manager.destroyed && !manager.pose.scene && !manager.electricity.scene && !manager.hud.scene && scene.specialAbilities.ability.state === 'ready' && game.scene.getScenes(true).length === 1);
+        check(`Ciclo ${cycle + 1}: efectos anteriores destruidos y carga reiniciada`, manager.destroyed && !manager.pose.scene && !manager.electricity.scene && !manager.hud.scene && scene.specialAbilities.ability.state === 'locked' && game.scene.getScenes(true).length === 1);
     }
     window.sprint4Results = { status: 'passed', count: checks.length, checks, cycles: 12, baseline, renderer: 'Canvas' };
 }

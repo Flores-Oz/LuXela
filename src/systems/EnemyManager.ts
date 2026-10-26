@@ -24,6 +24,8 @@ export class EnemyManager {
 
     start(): void {
         this.started = true;
+        this.cleared = false;
+        this.scene.events.emit(CombatEvents.ENEMY_COUNT_CHANGED, this.aliveCount);
         this.checkCleared();
     }
 
@@ -40,14 +42,20 @@ export class EnemyManager {
     private remove(enemy: Enemy): void {
         enemy.off(CombatEvents.ENEMY_DIED, this.remove, this);
         enemy.off(Phaser.GameObjects.Events.DESTROY, this.remove, this);
-        if (this.living.delete(enemy)) this.checkCleared();
+        if (!this.living.delete(enemy)) return;
+        if (this.started && this.scene.sys.settings.status < Phaser.Scenes.SHUTDOWN) {
+            // Destruction during scene cleanup is not a combat elimination.
+            if (enemy.isDead()) this.scene.events.emit(CombatEvents.ENEMY_DEFEATED, enemy);
+            this.scene.events.emit(CombatEvents.ENEMY_COUNT_CHANGED, this.aliveCount);
+        }
+        this.checkCleared();
     }
 
     private checkCleared(): void {
         if (this.started && !this.cleared && this.living.size === 0 &&
             this.scene.sys.settings.status < Phaser.Scenes.SHUTDOWN) {
             this.cleared = true;
-            this.scene.events.emit(CombatEvents.ROOM_CLEARED);
+            this.scene.events.emit(CombatEvents.ENEMY_GROUP_CLEARED);
         }
     }
 

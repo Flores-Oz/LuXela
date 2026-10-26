@@ -7,6 +7,7 @@ import type { EnemyManager } from "../systems/EnemyManager";
 import { AlexSpecial } from "./AlexSpecial";
 import { LuaSpecial } from "./LuaSpecial";
 import type { SpecialAbility } from "./SpecialAbility";
+import { getArcadeRun } from "../systems/ArcadeRunService";
 
 /** Original 4x2 sheets, with a stable ground line on a logical 512x544 canvas. */
 export function loadSpecialAssets(scene: Phaser.Scene): void {
@@ -45,22 +46,23 @@ export class SpecialAbilityManager {
     private readonly player: Player;
     private readonly character: PlayerCharacter;
     constructor(scene: Phaser.Scene, player: Player,
-        character: PlayerCharacter, enemies: EnemyManager, cooldownMs = 0) {
+        character: PlayerCharacter, enemies: EnemyManager, runId: number) {
         this.scene = scene;
         this.player = player;
         this.character = character;
-        this.ability = character === "lua" ? new LuaSpecial(player, enemies) : new AlexSpecial(player, enemies, positions => {
+        const runs = getArcadeRun(scene.game);
+        const charge = { count: () => runs.getSpecialCharge(runId), consume: () => runs.consumeSpecial(runId) };
+        this.ability = character === "lua" ? new LuaSpecial(player, enemies, charge) : new AlexSpecial(player, enemies, positions => {
             this.impactPositions = positions;
             this.impactStartedAt = this.visualClock;
-        });
-        if (cooldownMs > 0) { this.ability.state = "cooldown"; this.ability.cooldownRemaining = cooldownMs; }
+        }, charge);
         this.key = scene.input.keyboard!.addKey(SpecialAbilityConfig.key);
         this.pose = scene.add.sprite(player.x, player.y, `${character}-special`, "0")
             .setOrigin(0.5, 480 / 544).setScale(0.25).setDepth(10).setVisible(false);
         this.electricity = scene.add.graphics().setDepth(9);
         this.hud = scene.add.text(16, 16, "", { fontFamily: "monospace", fontSize: "16px",
             color: characters[character].accent, backgroundColor: "#10141fee", padding: { x: 10, y: 8 } })
-            .setScrollFactor(0).setDepth(100);
+            .setScrollFactor(0).setDepth(100).setVisible(false);
         this.render();
     }
 
@@ -100,8 +102,7 @@ export class SpecialAbilityManager {
                 }
             } else this.impactPositions = [];
         }
-        const status = ability.state === "ready" ? "LISTA" : ability.state === "cooldown" ?
-            `${Math.ceil(ability.cooldownRemaining / 1000)} s` : ability.state === "charging" ? "CARGANDO" : "ACTIVA";
+        const status = ability.state === "ready" ? "LISTA" : ability.state === "locked" ? "ELIMINA ROBOTS" : ability.state === "charging" ? "CARGANDO" : "ACTIVA";
         this.hud.setText(`[${SpecialAbilityConfig.key}] ${characters[this.character].abilityName} · ${status}`);
     }
 
@@ -138,8 +139,8 @@ export class SpecialAbilityManager {
         graphics.strokeCircle(x, y, radius);
     }
 
-    /** A room transition cancels the attack and carries its cooldown to the next room. */
-    cancel(): number {
+    /** Cancels visuals; the session owns elimination charge and checkpoints. */
+    cancel(): void {
         this.ability.cancel();
         this.player.setSpecialPerforming(false);
         if (this.player.physicsSprite.active) this.player.physicsSprite.setVisible(true);
@@ -147,7 +148,6 @@ export class SpecialAbilityManager {
         this.electricity.clear();
         this.impactPositions = [];
         this.hud.setVisible(false);
-        return this.ability.cooldownRemaining;
     }
 
     destroy(): void {

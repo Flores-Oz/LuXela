@@ -262,7 +262,7 @@ async function run() {
     await until(() => active('VisualNovelScene') && intro.runner);
     intro.skip();
     await until(() => active('GameScene') && gameplay.player);
-    check('Puente gameplay narrativa gameplay conserva destino', gameplay.roomIndex === 1 && gameplay.character === 'lua');
+    check('Cambiar de ruta narrativa inicia nueva partida con Lua', gameplay.roomIndex === 0 && gameplay.character === 'lua');
 
     // Inaccessible storage must still work across scene transitions in this game.
     const temporary = new CharacterUnlockService(() => { throw new Error('storage disabled'); });

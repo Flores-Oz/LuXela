@@ -10,6 +10,7 @@ import { getCharacterUnlocks } from "../systems/CharacterUnlockService";
 import { VisualNovelView } from "../ui/VisualNovelView";
 import { mountSceneView } from "../ui/mountSceneView";
 import { getArcadeRun } from "../systems/ArcadeRunService";
+import { isLevelIndex } from "../levels/levels";
 
 export class VisualNovelScene extends Phaser.Scene {
     private request: Partial<NarrativeRequest> = {};
@@ -32,14 +33,14 @@ export class VisualNovelScene extends Phaser.Scene {
         if (!isNarrativeRoute(route) || !getCharacterUnlocks(this.game).isUnlocked(route)) { this.reject("Selecciona un personaje desbloqueado para acceder a su ruta."); return; }
         if ((this.request.sequenceId !== undefined && typeof this.request.sequenceId !== "string") ||
             (this.request.resume !== undefined && typeof this.request.resume !== "boolean") ||
-            (this.request.returnTo !== undefined && ![0, 1].includes(this.request.returnTo?.roomIndex))) {
+            (this.request.returnTo !== undefined && !isLevelIndex(this.request.returnTo?.roomIndex))) {
             this.reject("Solicitud narrativa inválida."); return;
         }
         const routes = new NarrativeRouteManager();
         const destination = this.request.destination;
         if (destination !== undefined && (!destination || typeof destination !== "object" ||
             (destination.kind !== "game" && destination.kind !== "completion") ||
-            (destination.kind === "game" && ![0, 1].includes(destination.roomIndex)) ||
+            (destination.kind === "game" && !isLevelIndex(destination.roomIndex)) ||
             (destination.kind === "completion" && !getArcadeRun(this.game).canComplete(route, destination.runId)))) {
             this.reject("No hay un resultado válido para este destino."); return;
         }

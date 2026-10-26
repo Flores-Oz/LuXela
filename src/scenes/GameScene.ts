@@ -1,15 +1,11 @@
 import Phaser from "phaser";
 
-import { Room } from "../world/Room";
 import { RoomBuilder } from "../world/RoomBuilder";
 import { TileType } from "../types/RoomTypes";
 import { Player } from "../entities/Player";
 import { Projectile } from "../entities/Projectile";
-import { testRoom } from "../data/rooms/testRoom";
-import { testRoom2 } from "../data/rooms/testRoom2";
 import { Enemy } from "../entities/enemies/Enemy";
 import { LineOfSight } from "../systems/LineOfSight";
-import { GameSettings } from "../config/GameSettings";
 import type { PlayerCharacter } from "../config/characters";
 import { loadPlayerAssets, createPlayerAnimations } from "../systems/PlayerAnimations";
 import { CombatEvents } from "../systems/CombatEvents";
@@ -17,8 +13,16 @@ import { EnemyManager } from "../systems/EnemyManager";
 import { getCharacterUnlocks } from "../systems/CharacterUnlockService";
 import { loadSpecialAssets, SpecialAbilityManager } from "../abilities/SpecialAbilityManager";
 import { getArcadeRun } from "../systems/ArcadeRunService";
-import { startNarrative } from "../narrative/startNarrative";
+import { LevelManager } from "../levels/LevelManager";
+import { isLevelIndex } from "../levels/levels";
 import { UITheme } from "../config/UITheme";
+import { GameHUD } from "../ui/GameHUD";
+import { WaveManager } from "../levels/WaveManager";
+import { getWaves, type WaveConfig } from "../levels/WaveConfig";
+import { planWaveSpawns } from "../levels/SpawnPlanner";
+import type { Room } from "../world/Room";
+import type { DoorController } from "../world/DoorController";
+import { SpecialAbilityConfig } from "../config/SpecialAbilityConfig";
 
 
 
@@ -26,7 +30,6 @@ export class GameScene extends Phaser.Scene {
 
     private player: Player | null = null;
     private specialAbilities: SpecialAbilityManager | null = null;
-    private abilityCooldownMs = 0;
 
     private roomIndex = 0;
 
@@ -40,10 +43,12 @@ export class GameScene extends Phaser.Scene {
     private pausedDuration = 0;
     private roomWidth = 0;
     private roomHeight = 0;
-    private roomLabel: Phaser.GameObjects.Text | null = null;
+    private hud: GameHUD | null = null;
     private pauseButton: Phaser.GameObjects.Text | null = null;
 
     private enemyManager: EnemyManager | null = null;
+    private waves: WaveManager | null = null;
+    private doors: DoorController | null = null;
 
     private isChangingRoom = false;
 
@@ -55,10 +60,7 @@ export class GameScene extends Phaser.Scene {
 
     private lineOfSight: LineOfSight | null = null;
 
-    private readonly rooms = [
-        testRoom,
-        testRoom2
-    ];
+    private readonly levels = new LevelManager();
 
     private walls: 
         Phaser.Physics.Arcade.StaticGroup | null = null;
@@ -99,13 +101,16 @@ export class GameScene extends Phaser.Scene {
             // Arcade and the display list destroy bodies/groups on shutdown.
             // Group shutdown listeners run first; do not clear destroyed groups.
             this.enemyManager?.destroy();
+            this.waves?.stop(); this.waves = null;
+            this.doors = null;
             this.specialAbilities?.destroy();
             this.specialAbilities = null;
             this.enemyManager = null;
             this.player = null;
             this.walls = null;
             this.lineOfSight = null;
-            this.roomLabel = null;
+            this.hud?.destroy();
+            this.hud = null;
             this.pauseButton = null;
             this.scale.off(Phaser.Scale.Events.RESIZE, this.layoutRoom, this);
             this.input.keyboard?.off("keydown-ESC", this.pauseGame, this);
@@ -113,17 +118,13 @@ export class GameScene extends Phaser.Scene {
 
         const tileSize = 64;
 
-        const roomMatrix =
-            this.rooms[this.roomIndex];
-
-        const room = new Room(
-            roomMatrix,
-            tileSize
-        );
+        const config = this.levels.getLevel(this.roomIndex);
+        const room = this.levels.createRoom(this.roomIndex, tileSize);
 
         const builder = new RoomBuilder(this);
 
-        builder.build(room);
+        builder.build(room, config.exits, config.presentation);
+        this.doors = builder.getDoors();
 
         createPlayerAnimations(this);
         this.createEnemyAnimations();
@@ -185,8 +186,8 @@ export class GameScene extends Phaser.Scene {
         this.physics.add.overlap(
             this.player.physicsSprite,
             exits,
-            () => {
-                this.changeRoom();
+            (_player, exit) => {
+                this.changeRoom(exit as Phaser.GameObjects.GameObject);
             }
         );
 
@@ -199,19 +200,6 @@ export class GameScene extends Phaser.Scene {
             throw new Error(
                 `Room must contain exactly one PlayerSpawn. Found: ${playerSpawnCount}`
             );
-        }
-
-        // Spawn only at RobotSpawn tiles; no hard-coded world coordinates.
-        for (let row = 0; row < room.height; row++) {
-            for (let column = 0; column < room.width; column++) {
-                if (room.matrix[row][column] !== TileType.RobotSpawn) continue;
-                const enemy = new Enemy(this,
-                    column * tileSize + tileSize / 2,
-                    row * tileSize + tileSize / 2, "robot-red",
-                    { patrol: GameSettings.enemyPatrol });
-                this.enemyManager.add(enemy);
-                enemy.playIdle();
-            }
         }
 
         this.physics.add.collider(this.enemies, this.walls);
@@ -234,14 +222,25 @@ export class GameScene extends Phaser.Scene {
             projectile.getData("projectile")?.destroy();
             this.player.die();
         });
-        this.roomLabel = this.add.text(16, 48, "", { fontFamily: UITheme.font, fontSize: "14px", color: UITheme.muted }).setScrollFactor(0).setDepth(100);
+        this.hud = new GameHUD(this, { level: this.roomIndex + 1, totalLevels: this.levels.count,
+            score: getArcadeRun(this.game).getScore(this.runId), enemies: this.enemyManager.aliveCount }, this.character);
         this.pauseButton = this.add.text(0, 16, "PAUSA · ESC", { fontFamily: UITheme.font, fontSize: "14px", color: UITheme.text, backgroundColor: UITheme.overlay, padding: { x: 12, y: 10 } })
             .setScrollFactor(0).setDepth(100).setOrigin(1, 0).setInteractive({ useHandCursor: true }).on("pointerdown", this.pauseGame, this);
-        this.events.on(CombatEvents.ROOM_CLEARED, this.roomCleared, this);
-        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.events.off(CombatEvents.ROOM_CLEARED, this.roomCleared, this));
-        this.enemyManager.start();
-        this.specialAbilities = new SpecialAbilityManager(this, this.player, this.character, this.enemyManager, this.abilityCooldownMs);
-        this.roomLabel.setText(`Habitación ${this.roomIndex + 1} / ${this.rooms.length} · ${this.enemyManager.isCleared ? "Salida disponible" : "Elimina a los robots para salir"}`);
+        this.events.on(CombatEvents.ENEMY_DEFEATED, this.enemyDefeated, this);
+        this.events.on(CombatEvents.ENEMY_COUNT_CHANGED, this.updateHUD, this);
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.events.off(CombatEvents.ENEMY_DEFEATED, this.enemyDefeated, this);
+            this.events.off(CombatEvents.ENEMY_COUNT_CHANGED, this.updateHUD, this);
+        });
+        this.specialAbilities = new SpecialAbilityManager(this, this.player, this.character, this.enemyManager, this.runId);
+        this.waves = new WaveManager(config.id, getWaves(config), {
+            spawn: (wave, index) => this.spawnWave(room, wave, index),
+            canSpawn: () => this.combatState === "playing" && !this.isChangingRoom && !!this.player && !this.player.isDead() && !this.specialAbilities?.ability.performing,
+            changed: () => this.updateHUD(), completed: () => this.roomCleared(),
+            started: index => this.events.emit(CombatEvents.WAVE_STARTED, index),
+            ended: index => this.events.emit(CombatEvents.WAVE_COMPLETED, index)
+        });
+        this.waves.start();
         this.input.keyboard?.on("keydown-ESC", this.pauseGame, this);
         this.scale.on(Phaser.Scale.Events.RESIZE, this.layoutRoom, this);
         this.layoutRoom();
@@ -249,7 +248,10 @@ export class GameScene extends Phaser.Scene {
 
     update(time: number, delta = 1000 / 60): void {
         if (this.combatState !== "playing" || !this.player || !this.lineOfSight || this.isChangingRoom) return;
+        const abilityState = this.specialAbilities?.ability.state;
         this.specialAbilities?.update(delta);
+        if (this.specialAbilities?.ability.state !== abilityState) this.updateHUD();
+        this.waves?.update(delta);
         this.player.update();
 
         for (const child of this.enemies.getChildren()) {
@@ -268,6 +270,7 @@ export class GameScene extends Phaser.Scene {
     private beginDefeat(): void {
         if (this.combatState !== "playing") return;
         this.combatState = "defeat";
+        this.waves?.stop();
         getArcadeRun(this.game).defeat(this.runId);
         this.specialAbilities?.cancel();
         // Pause only physics. Animation updates must continue until defeat ends.
@@ -414,45 +417,52 @@ export class GameScene extends Phaser.Scene {
         new Projectile(this, spawn.x, spawn.y, direction, "player", this.playerProjectiles);
     }
 
-    private changeRoom(): void {
+    private changeRoom(exit?: Phaser.GameObjects.GameObject): void {
           if (this.combatState !== "playing" || this.isChangingRoom || !this.player || this.player.isDead()) {
             return;
         }
 
-        if (!this.enemyManager?.isCleared) return;
-        if (this.roomIndex === this.rooms.length - 1) {
+        if (!this.waves?.isComplete || !this.doors?.canUse(exit)) return;
+        const nextRoomIndex = this.levels.nextIndex(this.roomIndex);
+        if (nextRoomIndex === null) {
             if (!getArcadeRun(this.game).finish(this.runId, this.roomIndex)) return;
             this.combatState = "victory";
             this.isChangingRoom = true;
-            this.specialAbilities?.cancel();
-            startNarrative(this, { route: this.character, sequenceId: `${this.character}_ending`, resume: false,
-                destination: { kind: "completion", runId: this.runId } });
+            this.doors.beginTransition(exit);
+            this.prepareRoomExit();
+            this.scene.start("CompletionScene", { character: this.character, runId: this.runId });
             return;
         }
 
+        if (!getArcadeRun(this.game).advance(this.runId, this.roomIndex)) return;
         this.isChangingRoom = true;
-        const abilityCooldownMs = this.specialAbilities?.cancel() ?? 0;
-
-        const nextRoomIndex =
-            (this.roomIndex + 1) %
-            this.rooms.length;
+        this.doors.beginTransition(exit);
+        this.prepareRoomExit();
 
         this.scene.restart({
             roomIndex: nextRoomIndex,
-            abilityCooldownMs,
             runId: this.runId,
             character: this.character
         });
     }
 
-    init(data: { roomIndex?: number; character?: PlayerCharacter; abilityCooldownMs?: number; runId?: number } = {}): void {
-        this.abilityCooldownMs = typeof data.abilityCooldownMs === "number" && Number.isFinite(data.abilityCooldownMs) ?
-            Math.max(0, data.abilityCooldownMs) : 0;
+    private prepareRoomExit(): void {
+        this.specialAbilities?.cancel();
+        this.waves?.stop();
+        this.input.keyboard?.resetKeys();
+        this.player?.physicsSprite.setVelocity(0, 0);
+        for (const child of this.enemies.getChildren()) (child as Enemy).stop();
+        this.playerProjectiles.clear(true, true);
+        this.enemyProjectiles.clear(true, true);
+        this.physics.pause();
+    }
+
+    init(data: { roomIndex?: number; character?: PlayerCharacter; runId?: number } = {}): void {
         this.roomIndex =
             data.roomIndex ?? 0;
 
         this.selectionValid = getCharacterUnlocks(this.game).isUnlocked(data.character);
-        this.selectionValid = this.selectionValid && Number.isInteger(this.roomIndex) && this.roomIndex >= 0 && this.roomIndex < this.rooms.length;
+        this.selectionValid = this.selectionValid && isLevelIndex(this.roomIndex);
         if (this.selectionValid && (data.character === "alex" || data.character === "lua")) {
             this.character = data.character;
         }
@@ -460,15 +470,62 @@ export class GameScene extends Phaser.Scene {
         this.isChangingRoom = false;
         this.pausedDuration = 0;
         const runs = getArcadeRun(this.game);
-        this.runId = this.selectionValid && runs.continue(data.runId, this.character) ? data.runId! :
-            this.selectionValid ? runs.begin(this.character) : 0;
+        if (this.selectionValid && runs.continue(data.runId, this.character, this.roomIndex)) this.runId = data.runId!;
+        else {
+            this.roomIndex = 0;
+            this.runId = this.selectionValid ? runs.begin(this.character) : 0;
+        }
     }
 
     get selectedCharacter(): PlayerCharacter { return this.character; }
 
     private roomCleared(): void {
+        if (this.combatState !== "playing" || this.isChangingRoom) return;
         getArcadeRun(this.game).clearRoom(this.runId, this.roomIndex);
-        this.roomLabel?.setText(`Habitación ${this.roomIndex + 1} / ${this.rooms.length} · Salida disponible`);
+        this.playerProjectiles.clear(true, true);
+        this.enemyProjectiles.clear(true, true);
+        this.doors?.unlock();
+        this.events.emit(CombatEvents.ROOM_CLEARED);
+    }
+
+    private enemyDefeated(enemy: Enemy): void {
+        if (this.combatState !== "playing" || this.isChangingRoom) return;
+        const enemyId: unknown = enemy.getData("level-enemy-id");
+        if (typeof enemyId === "string" && this.waves?.canDefeat(enemyId)) {
+            getArcadeRun(this.game).awardKill(this.runId, this.roomIndex, enemyId, this.levels.getLevel(this.roomIndex).scorePerEnemy);
+            this.waves.defeat(enemyId);
+            // Residual bullets must not interfere with the next wave's preparation.
+            if (this.waves.state !== "active") {
+                this.playerProjectiles.clear(true, true); this.enemyProjectiles.clear(true, true);
+            }
+        }
+        this.updateHUD();
+    }
+
+    private spawnWave(room: Room, wave: WaveConfig, waveIndex: number): boolean {
+        if (!this.player || !this.enemyManager || !this.waves || this.enemyManager.aliveCount !== 0) return false;
+        const config = this.levels.getLevel(this.roomIndex);
+        const positions = planWaveSpawns(room, wave.enemies.spawns, this.player, config.difficulty.detectionRange);
+        if (!positions) return false;
+        for (const [index, position] of positions.entries()) {
+            const enemy = new Enemy(this, (position.column + 0.5) * room.tileSize,
+                (position.row + 0.5) * room.tileSize, wave.enemies.spawns[index]!.type, config.difficulty);
+            enemy.setData("level-enemy-id", this.waves.enemyId(waveIndex, index));
+            this.enemyManager.add(enemy); enemy.playIdle();
+        }
+        this.enemyManager.start();
+        return true;
+    }
+
+    private updateHUD(): void {
+        const config = this.levels.getLevel(this.roomIndex);
+        const notice = this.waves?.isComplete ? "SALIDA DISPONIBLE" : this.waves?.waitingForSpace ? "LIBERA LA ZONA DE APARICIÓN" :
+            this.waves?.state === "starting" ? "PREPARANDO OLEADA" : config.encounter === "special" ? "ENCUENTRO ESPECIAL" : config.encounter === "final" ? "ENCUENTRO FINAL" : "";
+        this.hud?.update({ level: this.roomIndex + 1, totalLevels: this.levels.count,
+            score: getArcadeRun(this.game).getScore(this.runId), enemies: this.enemyManager?.aliveCount ?? 0,
+            wave: this.waves?.waveNumber, totalWaves: this.waves?.totalWaves,
+            special: getArcadeRun(this.game).getSpecialCharge(this.runId), specialRequired: SpecialAbilityConfig[this.character].killsRequired,
+            specialState: this.specialAbilities?.ability.state, notice });
     }
 
     private pauseGame(event?: KeyboardEvent): void {
@@ -486,14 +543,12 @@ export class GameScene extends Phaser.Scene {
 
     private layoutRoom(): void {
         const camera = this.cameras.main;
-        const zoom = Math.max(0.1, Math.min((this.scale.width - 24) / this.roomWidth, (this.scale.height - 112) / this.roomHeight));
-        camera.setZoom(zoom).centerOn(this.roomWidth / 2, this.roomHeight / 2 - 32 / zoom);
+        const zoom = Math.max(0.1, Math.min((this.scale.width - 24) / this.roomWidth, (this.scale.height - 160) / this.roomHeight));
+        camera.setZoom(zoom).centerOn(this.roomWidth / 2, this.roomHeight / 2 - 48 / zoom);
         const positionHUD = (text: Phaser.GameObjects.Text | null, x: number, y: number) => {
             text?.setScale(1 / zoom).setPosition(camera.width / 2 + (x - camera.width / 2) / zoom, camera.height / 2 + (y - camera.height / 2) / zoom);
         };
-        this.roomLabel?.setWordWrapWidth(this.scale.width - 32).setFontSize(this.scale.width < 650 ? 12 : 14);
-        positionHUD(this.roomLabel, 16, 58);
+        this.hud?.layout();
         positionHUD(this.pauseButton, this.scale.width - 16, this.scale.width < 650 ? this.scale.height - 56 : 16);
-        this.specialAbilities?.layoutHUD();
     }
 }

@@ -1,168 +1,54 @@
-import Phaser from "phaser";
-import { Room } from "./Room";
-import { TileType } from "../types/RoomTypes";
+import type Phaser from "phaser";
+import type { Room } from "./Room";
 import { GameSettings } from "../config/GameSettings";
+import { DoorController, type DoorEntry } from "./DoorController";
+import type { ExitConfig } from "../levels/WaveConfig";
+import { createRoomLayout, type RoomLayout, type RoomPresentation } from "./RoomLayout";
+import { GeometryRoomRenderer, type RoomRenderer } from "./RoomRenderer";
 
+/** Builds collision zones and triggers independently from the replaceable visual renderer. */
 export class RoomBuilder {
-
     private readonly scene: Phaser.Scene;
+    private readonly walls: Phaser.Physics.Arcade.StaticGroup;
+    private readonly exits: Phaser.Physics.Arcade.StaticGroup;
+    private readonly renderer: RoomRenderer;
+    private doors: DoorController | null = null;
+    private layout: RoomLayout | null = null;
 
-    private readonly walls:
-        Phaser.Physics.Arcade.StaticGroup;
-
-    private readonly exits:
-        Phaser.Physics.Arcade.StaticGroup;
-
-    constructor(
-        scene: Phaser.Scene
-    ) {
-        this.scene = scene;
-
-        this.exits =
-            scene.physics.add.staticGroup();
-
-        this.walls = 
-            scene.physics.add.staticGroup();
+    constructor(scene: Phaser.Scene, renderer: RoomRenderer = new GeometryRoomRenderer(scene)) {
+        this.scene = scene; this.renderer = renderer;
+        this.walls = scene.physics.add.staticGroup(); this.exits = scene.physics.add.staticGroup();
     }
-
-    build(room: Room): void {
-
-        for (let row = 0; row < room.height; row++) {
-
-            for (let column = 0; column < room.width; column++) {
-
-                const tile = room.matrix[row][column];
-
-                const x =
-                    column * room.tileSize +
-                    room.tileSize / 2;
-
-                const y =
-                    row * room.tileSize +
-                    room.tileSize / 2;
-
-                this.drawTile(
-                    tile,
-                    x,
-                    y,
-                    room.tileSize
-                );
-            }
+    build(room: Room, exitConfigs: readonly ExitConfig[] = [], presentation?: RoomPresentation): void {
+        if (this.layout) throw new Error("RoomBuilder already built this room");
+        const layout = createRoomLayout(room, exitConfigs);
+        this.layout = layout; this.renderer.begin(layout, presentation);
+        for (const floor of layout.floors) this.renderer.floor(floor);
+        for (const wall of layout.walls) {
+            this.renderer.wall(wall);
+            const zone = this.scene.add.zone(wall.x, wall.y, wall.size, wall.size).setVisible(false).setName("wall-collider");
+            this.scene.physics.add.existing(zone, true); this.walls.add(zone);
+        }
+        const entries: DoorEntry[] = [];
+        for (const door of layout.doors) {
+            const zone = this.scene.add.zone(door.x, door.y, door.size * .65, door.size * .65)
+                .setVisible(false).setName("door-trigger").setData("door-id", door.config.id);
+            this.scene.physics.add.existing(zone, true); this.exits.add(zone);
+            entries.push({ id: door.config.id, trigger: zone, view: this.renderer.door(door) });
+        }
+        this.doors = new DoorController(entries);
+        if (GameSettings.physicsDebug) for (const spawn of layout.enemyMarkers) {
+            this.scene.add.rectangle(spawn.x, spawn.y, spawn.size * .55, spawn.size * .55, 0xff3333);
         }
     }
-
-    getWalls():
-        Phaser.Physics.Arcade.StaticGroup {
-            return this.walls;
-        }
-
-    getExits():
-        Phaser.Physics.Arcade.StaticGroup {
-        return this.exits;
+    getWalls(): Phaser.Physics.Arcade.StaticGroup { return this.walls; }
+    getExits(): Phaser.Physics.Arcade.StaticGroup { return this.exits; }
+    getDoors(): DoorController {
+        if (!this.doors) throw new Error("Build the room before accessing doors");
+        return this.doors;
     }
-
-    private drawTile(
-        tile: TileType,
-        x: number,
-        y: number,
-        size: number
-    ): void {
-
-        switch (tile) {
-
-            case TileType.Floor:
-                this.drawFloor(x, y, size);
-                break;
-
-            case TileType.Wall:
-                this.drawWall(x, y, size);
-                break;
-
-            case TileType.RobotSpawn:
-                this.drawFloor(x, y, size);
-                if (GameSettings.physicsDebug) this.drawRobotSpawn(x, y, size);
-                break;
-
-            case TileType.Exit:
-                this.drawFloor(x, y, size);
-                this.drawExit(x, y, size);
-                break;
-        }
-    }
-
-    private drawFloor(
-        x: number,
-        y: number,
-        size: number
-    ): void {
-
-        this.scene.add.rectangle(
-            x,
-            y,
-            size,
-            size,
-            0x181818
-        );
-    }
-
-    private drawWall(
-        x: number,
-        y: number,
-        size: number
-    ): void {
-
-        const wall =
-            this.scene.add.rectangle(
-                x,
-                y,
-                size,
-                size,
-                0x777777
-            )
-        
-        this.scene.physics.add.existing(
-            wall,
-            true
-        );
-
-        this.walls.add(wall);
-    }
-
-    private drawRobotSpawn(
-        x: number,
-        y: number,
-        size: number
-    ): void {
-
-        this.scene.add.rectangle(
-            x,
-            y,
-            size * 0.55,
-            size * 0.55,
-            0xff3333
-        );
-    }
-
-    private drawExit(
-         x: number,
-        y: number,
-        size: number
-    ): void {
-
-        const exit =
-            this.scene.add.rectangle(
-                x,
-                y,
-                size * 0.65,
-                size * 0.65,
-                0x33ff66
-            );
-
-        this.scene.physics.add.existing(
-            exit,
-            true
-        );
-
-        this.exits.add(exit);
+    getLayout(): RoomLayout {
+        if (!this.layout) throw new Error("Build the room before accessing its layout");
+        return this.layout;
     }
 }

@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "viewport": [
+    1920,
+    1080
+  ],
+  "canvas": [
+    1920,
+    1080
+  ],
+  "menu": [
+    1920,
+    1080
+  ],
+  "menuButtons": 2,
+  "backgroundLoaded": true,
+  "generatedAt": "2026-10-21T04:51:47.092Z",
+  "renderer": "Canvas",
+  "consoleErrors": [],
+  "scope": "Production menu startup only; full integration suite runs against Vite development server"
+}

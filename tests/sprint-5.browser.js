@@ -33,6 +33,7 @@ const select = async character => {
     await until(()=>active('VisualNovelScene') && document.querySelector('.intro-next'));
 };
 const pause = async () => { scene().pauseGame(); await until(()=>game.scene.isPaused('GameScene') && document.querySelector('.pause-screen')); await delay(30); };
+const prime = gameplay => { for(let i=0;i<10;i++)getArcadeRun(game).awardKill(gameplay.runId,gameplay.roomIndex,`fixture-${i}`,0); };
 
 async function run() {
     await main();
@@ -67,7 +68,7 @@ async function run() {
         gameplay.player.physicsSprite.body.reset(352,352);
         gameplay.player.wasd.D.isDown=true;
         const shot=new Projectile(gameplay,352,352,new Phaser.Math.Vector2(1,0),'player',gameplay.playerProjectiles);
-        gameplay.specialAbilities.ability.activate();
+        prime(gameplay); gameplay.specialAbilities.ability.activate();
         await pause();
         const snapshot={ player:gameplay.player.x, robot:gameplay.enemies.getChildren()[0].x, shot:shot.physicsBody.x,
             state:gameplay.specialAbilities.ability.state, elapsed:gameplay.specialAbilities.ability.elapsed, timer:shot.expiration.elapsed };
@@ -78,16 +79,22 @@ async function run() {
         check(`${character}: continuar libera entrada sin arrastre ni eventos duplicados`, !document.querySelector('.pause-screen') && !gameplay.player.wasd.D.isDown && gameplay.input.keyboard.listenerCount('keydown-ESC')===1);
         await pause(); button('.pause-screen','Reiniciar partida').click();
         await until(()=>active('GameScene') && scene().runId!==initialRun); gameplay=await entered();
-        check(`${character}: reiniciar pausa crea partida nueva en primera habitación`, gameplay.character===character && gameplay.roomIndex===0 && gameplay.enemyManager.aliveCount===2 && gameplay.specialAbilities.ability.state==='ready' && !active('PauseScene'));
+        check(`${character}: reiniciar pausa crea partida nueva en primera habitación`, gameplay.character===character && gameplay.roomIndex===0 && gameplay.enemyManager.aliveCount===3 && gameplay.specialAbilities.ability.state==='locked' && !active('PauseScene'));
         const manager=gameplay.specialAbilities;
+        prime(gameplay);
         manager.ability.activate(); manager.update(SpecialAbilityConfig[character].chargeMs);
         check(`${character}: especial sigue siendo letal de habitación sin balas especiales`, gameplay.enemyManager.isCleared && gameplay.playerProjectiles.getLength()===0);
         gameplay.changeRoom(); await until(()=>scene().roomIndex===1 && scene().player && scene().specialAbilities!==manager); gameplay=await entered();
-        check(`${character}: segunda habitación conserva personaje y sesión`, gameplay.character===character && gameplay.enemyManager.isCleared);
+        check(`${character}: segunda habitación conserva personaje y sesión`, gameplay.character===character && gameplay.enemyManager.aliveCount===4 && !gameplay.enemyManager.isCleared);
         const introProgress=saves.get(character);
-        gameplay.changeRoom(); await until(()=>active('VisualNovelScene') && game.scene.getScene('VisualNovelScene').sequence?.id===`${character}_ending`);
-        check(`${character}: solo victoria válida activa cierre y detiene gameplay`, !active('GameScene') && getArcadeRun(game).canComplete(character,gameplay.runId));
-        document.querySelector('.vn-skip').click(); await until(()=>active('CompletionScene') && document.querySelector('.completion-screen'));
+        for(let index=1;index<5;index++) {
+            while(!gameplay.waves.isComplete) { gameplay.enemyManager.defeatLivingEnemies(); gameplay.waves.update(1000); }
+            const player=gameplay.player;
+            gameplay.changeRoom();
+            if(index<4) { await until(()=>scene().roomIndex===index+1 && scene().player && scene().player!==player); gameplay=await entered(); }
+        }
+        await until(()=>active('CompletionScene') && document.querySelector('.completion-screen'));
+        check(`${character}: solo victoria válida activa conclusión y detiene gameplay`, !active('GameScene') && !active('VisualNovelScene') && getArcadeRun(game).canComplete(character,gameplay.runId));
         check(`${character}: conclusión identifica ruta y botones funcionan`, document.querySelector('.completion-screen .presentation-eyebrow').textContent.toLowerCase().includes(character) && document.querySelectorAll('.completion-screen button').length===2);
         check(`${character}: cierre no sobrescribe progreso de introducción`, JSON.stringify(saves.get(character))===JSON.stringify(introProgress));
         const validRun=gameplay.runId;
@@ -113,9 +120,9 @@ async function run() {
     }
     await pause(); button('.pause-screen','Volver al menú principal').click(); await main();
     check('Menú desde pausa destruye gameplay y conserva desbloqueos', !active('GameScene') && !active('PauseScene') && !scene().player && unlocks.isUnlocked('alex') && unlocks.isUnlocked('lua'));
-    const run=new ArcadeRunService(); const id=run.begin('alex'); run.clearRoom(id,1);
+    const run=new ArcadeRunService(2); const id=run.begin('alex'); run.clearRoom(id,1);
     check('No gana al omitir primera habitación', !run.finish(id,1)); run.clearRoom(id,0); run.defeat(id);
-    check('Estado derrotado no puede ganar', !run.finish(id,1)); run.continue(id,'alex');
+    check('Estado derrotado no puede ganar', !run.finish(id,1)); run.continue(id,'alex'); run.clearRoom(id,0); run.advance(id,0); run.clearRoom(id,1);
     check('Victoria exige salida final, no solo habitación despejada', !run.finish(id,0) && run.finish(id,1));
     check('Identidad de victoria no se mezcla entre personajes', run.canComplete('alex',id) && !run.canComplete('lua',id));
     // Safe gameplay for native Escape and viewport checks in the Node runner.

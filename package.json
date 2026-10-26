@@ -8,7 +8,16 @@
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "test:sprint4": "node tests/run-all.mjs",
-    "test:sprint5": "node tests/run-all.mjs --sprint5"
+    "test:sprint5": "node tests/run-all.mjs --sprint5",
+    "test:sprint6:config": "node --test tests/level-config.test.mjs",
+    "test:sprint6:levels": "node tests/run-sprint-6-levels.mjs",
+    "test:sprint6:difficulty": "node tests/run-sprint-6-levels.mjs --difficulty",
+    "test:sprint6:progression": "node tests/run-sprint-7.mjs",
+    "test:sprint6:hud": "node tests/run-sprint-7.mjs",
+    "test:sprint6": "node tests/run-all.mjs --sprint7",
+    "test:sprint7:unit": "node --test tests/level-config.test.mjs tests/waves.test.mjs tests/special-charge.test.mjs",
+    "test:sprint7:integration": "node tests/run-sprint-7.mjs",
+    "test:sprint7": "node tests/run-all.mjs --sprint7"
   },
   "dependencies": {
     "phaser": "^4.2.1",
