@@ -9,6 +9,8 @@ export abstract class SpecialAbility {
     private phase: "charging" | "active" | "recovering" | null = null;
     elapsed = 0;
     private destroyed = false;
+    private discharged: (()=>void) | undefined;
+    onDischarged(listener:()=>void):void {this.discharged=listener;}
 
     protected readonly player: Player;
     protected readonly timing: AbilityTiming;
@@ -41,7 +43,7 @@ export abstract class SpecialAbility {
             if (this.phase === "active") this.onActiveUpdate(this.elapsed);
             if (this.elapsed < duration) break;
             this.elapsed = 0;
-            if (this.phase === "charging") { this.phase = "active"; this.onDischarge(); }
+            if (this.phase === "charging") { this.phase = "active"; this.onDischarge(); this.discharged?.(); }
             else if (this.phase === "active") this.phase = "recovering";
             else this.phase = null;
         }
@@ -52,7 +54,7 @@ export abstract class SpecialAbility {
         this.elapsed = 0;
     }
 
-    destroy(): void { this.cancel(); this.destroyed = true; }
+    destroy(): void { this.cancel(); this.destroyed = true; this.discharged=undefined; }
     protected abstract onDischarge(): void;
     protected onActiveUpdate(_elapsed: number): void {}
 }

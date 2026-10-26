@@ -12,9 +12,10 @@ interface RoomScenario {
     readonly environmentStyle: EnvironmentStyle;
     readonly zones: readonly RoomAnchor[];
     readonly reserved?: boolean;
+    readonly boss?: boolean;
 }
 
-/** Four combat identities followed by an explorable arena reserved for a future boss. */
+/** Four combat identities followed by Quimera's reactor arena. */
 export const roomScenarios: readonly RoomScenario[] = [
     { roomId: "open-room", title: "Sector de cuarentena", hint: "Robots rojos · Usá las coberturas entre las líneas de tiro.", robots: ["robot-red"],
         theme: "industrial", environmentStyle: "quarantine-red",
@@ -28,7 +29,7 @@ export const roomScenarios: readonly RoomScenario[] = [
     { roomId: "maze", title: "Hangar industrial", hint: "Robots naranjas · Sus proyectiles atraviesan las divisiones del hangar.", robots: ["robot-orange"],
         theme: "industrial", environmentStyle: "hangar-amber",
         zones: [[.20,.34],[.67,.34],[.37,.65],[.85,.65],[.25,.90],[.67,.90],[.65,.18],[.86,.40],[.16,.70],[.48,.42],[.86,.84],[.50,.77],[.86,.18],[.50,.18]] },
-    { roomId: "combat-arena", title: "Núcleo energético", hint: "Área reservada: el jefe está pendiente. Podés recorrerla y volver al menú con Esc.", robots: [],reserved:true,
+    { roomId: "combat-arena", title: "Núcleo energético", hint: "E.X.P.-01 Quimera · Observá sus señales y aprovechá la recuperación del núcleo.", robots: [],boss:true,
         theme: "laboratory", environmentStyle: "reactor-cyan",
         zones: [[.16,.25],[.38,.22],[.22,.48],[.60,.40],[.40,.66],[.72,.68],[.18,.78],[.78,.23],[.52,.86],[.84,.48],[.46,.46],[.68,.86],[.85,.80],[.18,.92]] }
 ];

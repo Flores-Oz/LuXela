@@ -8,19 +8,20 @@ Los patrones de ataque del Sprint 9 también están conectados: disparo rojo, r�
 
 Los niveles 1–4 ahora presentan exclusivamente rojo, azul, amarillo y naranja, con mapas diseñados para sus patrones. Ver `docs/sprint-9-mapas.md`.
 
-## Jefe del nivel 5 — pendiente de definir
+## Jefe del nivel 5 — Sprint 11 implementado
 
-- [ ] Definir concepto, apariencia y recursos del jefe.
-- [ ] Definir ataques y reglas del encuentro, compatibles con las reglas de combate que se acuerden.
-- [ ] Diseñar su mapa definitivo e integrarlo en la progresión.
-- [ ] Habilitar el encuentro y la conclusión de campaña cuando exista un jefe definido e implementado.
+- [x] Integrar E.X.P.-01 Quimera y las 53 poses del recurso aportado.
+- [x] Implementar tres fases, cuatro módulos, recuperación, daño configurable y barra de vida exclusiva.
+- [x] Integrar el encuentro en la arena del Núcleo energético mediante el gestor actual.
+- [x] Habilitar la destrucción y los finales existentes de Alex y Lua tras una victoria válida.
+- [ ] Ajustar el balance final mediante partidas libres y comprobar otros navegadores/dispositivos.
 
-El Sprint 10 reserva el nivel 5 como «Núcleo energético»: arena explorable, sin robots ni oleadas, con el aviso «JEFE PENDIENTE». Se puede volver al menú desde la pausa. No activa victoria ni cierre narrativo. No se implementan comandantes ni ventanas de vulnerabilidad. Ver `docs/sprint-10.md` y sus capturas.
+El Sprint 11 habilita el nivel 5 con Quimera, sin oleadas mixtas ni enemigos auxiliares. El jefe recibe daño durante el combate y daño adicional al recuperar energía. Su destrucción completa activa la ruta final del personaje; llegar a la arena no otorga victoria. Ver `docs/sprint-11.md`, sus pruebas y capturas.
 
 ## Diálogos definitivos
 
 - [ ] Sustituir los textos provisionales de las introducciones de Alex y Lua por la narrativa definitiva.
-- [ ] Sustituir los textos provisionales de los finales de ambos personajes y revisar el texto de la pantalla de conclusión.
+- [ ] Sustituir los textos provisionales de los finales de ambos personajes y revisar el texto de la pantalla de conclusión. Los finales existentes ya se ejecutan tras Quimera; algunas líneas todavía hacen referencia al antiguo recorrido de dos habitaciones.
 - [ ] Ajustar las expresiones y los tiempos de presentación al texto definitivo.
 - [ ] Revisar ortografía, coherencia de cada personaje y lectura en distintos tamaños de pantalla.
 
@@ -38,11 +39,11 @@ Estos pendientes corresponden al acabado final de contenido; los fondos y las ve
 
 ## Validaciones finales de publicación
 
-- [ ] Realizar partidas manuales de los cuatro niveles de combate y sus siete oleadas con Alex y Lua para ajustar el balance con combate libre; revisar también la arena reservada.
+- [ ] Realizar partidas manuales de los cuatro niveles de robots y sus siete oleadas con Alex y Lua para ajustar el balance con combate libre; revisar también el enfrentamiento con Quimera.
 - [ ] Validar WebGL y otros navegadores/dispositivos; la suite automatizada actual usa Edge/Canvas.
 - [ ] Ajustar mediante partidas manuales el recorrido, la distribución y el balance de las salas grandes con las cuatro variantes de robots.
 
-El Sprint 6 incluye niveles, dificultad progresiva, transiciones, puntuación y HUD. La pantalla de conclusión sigue disponible para campañas completas y se verifica con fixtures aislados, pero la campaña actual no la activa mientras el nivel 5 esté reservado. Los guiones de finales narrativos se conservan para el trabajo posterior de contenido.
+El Sprint 6 incluye niveles, dificultad progresiva, transiciones, puntuación y HUD. Desde el Sprint 11 la campaña activa el final individual y la pantalla de conclusión después de destruir a Quimera. Los guiones siguen siendo provisionales y quedan para el trabajo posterior de contenido.
 
 ## Sprint 8 — escenarios visuales
 
@@ -55,4 +56,4 @@ El Sprint 6 incluye niveles, dificultad progresiva, transiciones, puntuación y 
 
 El informe y los resultados del Sprint 8 están en `docs/sprint-8.md`. Las colisiones siguen usando los grupos estáticos existentes; importar física desde Tilemaps sería una ampliación opcional, no un requisito pendiente de este sprint.
 
-El Sprint 7 incluye oleadas, encuentros especiales, carga de habilidades mediante diez bajas configurables, puertas funcionales y separación de gráficos y física. El balance conserva 45 segundos entre usos de la ulti, además de las diez bajas; el tiempo se congela al pausar y se conserva al cambiar de sala. El Sprint 10 mantiene las siete oleadas de los primeros cuatro niveles: 64 robots y hasta 6400 puntos. Las tres oleadas mixtas provisionales del quinto nivel se retiraron por la reserva expresa del jefe.
+El Sprint 7 incluye oleadas, encuentros especiales, carga de habilidades mediante diez bajas configurables, puertas funcionales y separación de gráficos y física. El balance conserva 45 segundos entre usos de la ulti, además de las diez bajas; el tiempo se congela al pausar y se conserva al cambiar de sala. Hay siete oleadas en los primeros cuatro niveles: 64 robots y 6400 puntos. Quimera añade 1000 puntos, hasta 7400 por campaña; el quinto nivel no tiene oleadas normales ni recarga especial automática.

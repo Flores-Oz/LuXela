@@ -1,0 +1,90 @@
+{
+  "status": "passed",
+  "generatedAt": "2026-10-26T22:36:47.049Z",
+  "node": "v22.16.0",
+  "browser": "Edg/156.0.4314.42",
+  "renderer": "Canvas",
+  "suites": [
+    {
+      "name": "level-config",
+      "status": "passed",
+      "checks": 162,
+      "consoleErrors": 0
+    },
+    {
+      "name": "selection",
+      "status": "passed",
+      "checks": 147,
+      "consoleErrors": 0
+    },
+    {
+      "name": "combat",
+      "status": "passed",
+      "checks": 69,
+      "consoleErrors": 0
+    },
+    {
+      "name": "abilities",
+      "status": "passed",
+      "checks": 57,
+      "consoleErrors": 0
+    },
+    {
+      "name": "sprint-4",
+      "status": "passed",
+      "checks": 44,
+      "consoleErrors": 0,
+      "cycles": 12,
+      "baseline": {
+        "bodies": 7,
+        "walls": 205,
+        "colliders": 7,
+        "keys": 9,
+        "children": 268
+      }
+    },
+    {
+      "name": "sprint-5",
+      "status": "passed",
+      "checks": 60,
+      "consoleErrors": 0
+    },
+    {
+      "name": "sprint-6-levels",
+      "status": "passed",
+      "checks": 185,
+      "consoleErrors": 0
+    },
+    {
+      "name": "sprint-7",
+      "status": "passed",
+      "checks": 262,
+      "consoleErrors": 0
+    },
+    {
+      "name": "sprint-8",
+      "status": "passed",
+      "checks": 159,
+      "consoleErrors": 0
+    },
+    {
+      "name": "sprint-9",
+      "status": "passed",
+      "checks": 102,
+      "consoleErrors": 0
+    },
+    {
+      "name": "robot-attacks",
+      "status": "passed",
+      "checks": 103,
+      "consoleErrors": 0
+    },
+    {
+      "name": "sprint-11",
+      "status": "passed",
+      "checks": 125,
+      "consoleErrors": 0
+    }
+  ],
+  "totalChecks": 1475
+}

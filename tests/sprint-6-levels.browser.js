@@ -59,7 +59,7 @@ try {
     await until(() => game.scene.getScene('GameScene')?.readyGeneration > 0);
     check('Five valid configurations', levels.length === 5 && validateLevelCatalog(levels, arcadeRooms).length === 0);
     check('Five distinct distributions', new Set(levels.map(level => JSON.stringify(arcadeRooms[level.roomId]))).size === 5);
-    check('Four combat levels and one reserved arena', levels.map(level => level.enemies.count).join() === '6,8,10,12,0');
+    check('Four normal robot levels and one boss arena', levels.map(level => level.enemies.count).join() === '6,8,10,12,0');
     check('No duplicate robot spawn source in maps', Object.values(arcadeRooms).every(matrix => matrix.flat().every(tile => tile !== TileType.RobotSpawn)));
     if (testDifficulty) {
         check('Movement speed increases at every level', levels.every((level, index) => index === 0 || level.difficulty.moveSpeed > levels[index - 1].difficulty.moveSpeed));
@@ -96,8 +96,8 @@ try {
             check(`${label}: no duplicated colliders`, scene.physics.world.colliders.getActive().length === 2);
             // Drive each robot toward the left boundary with actual Arcade physics.
             let robot = scene.testEnemies.getChildren()[0];
-            if(config.availability==='reserved') {
-                check(`${label}: reserved arena has no enemies or waves`, !robot && config.waves.length===0);
+            if(config.availability==='reserved'||config.boss) {
+                check(`${label}: final arena has no normal robots or waves`, !robot && config.waves.length===0);
                 continue;
             }
             robot.setPosition(87, 160); robot.body.reset(87, 160); robot.moveLeft();

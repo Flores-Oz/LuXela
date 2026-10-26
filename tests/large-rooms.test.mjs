@@ -48,10 +48,11 @@ test('rooms 1-4 introduce red, blue, yellow and orange separately in every wave'
         assert.ok(catalog[index].presentation.title&&catalog[index].presentation.hint);
     }
 });
-test('the fifth room reserves the reactor without inventing a boss or ordinary combat',()=>{
+test('the fifth room hosts Quimera without ordinary robot waves',()=>{
     const arena=createLevelCatalog()[4];
     assert.equal(arena.presentation.title,'Núcleo energético');
-    assert.equal(arena.availability,'reserved');
+    assert.equal(arena.availability,'available');
+    assert.equal(arena.boss.type,'quimera');
     assert.equal(arena.enemies.count,0);
     assert.deepEqual(arena.enemies.types,[]);
     assert.deepEqual(arena.waves,[]);

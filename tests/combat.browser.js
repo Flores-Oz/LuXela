@@ -323,7 +323,7 @@ async function run() {
         reset(scene.player.physicsSprite, (exit.column+.5)*64, (exit.row+.5)*64); tick(4);
         if (index < levels.length - 1) scene.sys.sceneUpdate = () => {};
     }
-    check('Reactor reservado conserva exploración sin falsa conclusión', scene.roomIndex===4 && scene.waves===null && scene.enemyManager.aliveCount===0 && !game.scene.isActive('CompletionScene') && !game.scene.isActive('VisualNovelScene'));
+    check('Reactor con jefe exige derrotarlo antes de la conclusión', scene.roomIndex===4 && scene.waves===null && scene.enemyManager.aliveCount===0 && !!scene.bossEncounter && !game.scene.isActive('CompletionScene') && !game.scene.isActive('VisualNovelScene'));
     scene.scene.restart({ character: 'alex', roomIndex: 0 });
     tick(4);
     scene.sys.sceneUpdate = () => {};

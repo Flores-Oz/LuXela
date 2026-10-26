@@ -1,0 +1,17 @@
+{
+  "status": "captured",
+  "generatedAt": "2026-10-26T22:38:13.758Z",
+  "renderer": "Canvas",
+  "consoleErrors": [],
+  "files": [
+    "phase-1.png",
+    "animation-frames.png",
+    "phase-2-pulse-warning.png",
+    "orange-module-charge.png",
+    "orange-module-volley.png",
+    "phase-3-critical-warning.png",
+    "boss-mobile.png",
+    "destruction.png",
+    "alex-ending.png"
+  ]
+}

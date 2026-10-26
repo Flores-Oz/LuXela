@@ -28,6 +28,10 @@ import { loadEnvironmentAssets } from "../world/environment/EnvironmentTiles";
 import { layoutRoomCamera } from "../world/RoomCamera";
 import { loadRobotAssets,createRobotAnimations } from "../systems/RobotAssets";
 import { fireEnemyShots } from "../systems/EnemyProjectiles";
+import {loadQuimeraAssets,createQuimeraAnimations} from '../systems/QuimeraAnimations';
+import {QuimeraEncounter} from '../systems/QuimeraEncounter';
+import {QuimeraConfig} from '../config/QuimeraConfig';
+import {startNarrative} from '../narrative/startNarrative';
 
 
 
@@ -42,7 +46,8 @@ export class GameScene extends Phaser.Scene {
 
     private selectionValid = false;
 
-    private combatState: "playing" | "defeat" | "game-over" | "victory" = "playing";
+    private combatState: "playing" | "boss-destruction" | "defeat" | "game-over" | "victory" = "playing";
+    private bossEncounter:QuimeraEncounter|null=null;
     private runId = 0;
     private pausedAt = 0;
     private pausedDuration = 0;
@@ -81,6 +86,7 @@ export class GameScene extends Phaser.Scene {
         loadSpecialAssets(this);
 
         loadRobotAssets(this);
+        loadQuimeraAssets(this);
     }
 
     create(): void {
@@ -97,6 +103,7 @@ export class GameScene extends Phaser.Scene {
         this.playerProjectiles = this.physics.add.group();
         this.enemyProjectiles = this.physics.add.group();
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.bossEncounter?.destroy();this.bossEncounter=null;
             // Arcade and the display list destroy bodies/groups on shutdown.
             // Group shutdown listeners run first; do not clear destroyed groups.
             this.enemyManager?.destroy();
@@ -238,8 +245,12 @@ export class GameScene extends Phaser.Scene {
             this.events.off(CombatEvents.ENEMY_DEFEATED, this.enemyDefeated, this);
             this.events.off(CombatEvents.ENEMY_COUNT_CHANGED, this.updateHUD, this);
         });
-        this.specialAbilities = new SpecialAbilityManager(this, this.player, this.character, this.enemyManager, this.runId);
-        this.waves = config.availability === "reserved" ? null : new WaveManager(config.id, getWaves(config), {
+        if(config.boss){
+            createQuimeraAnimations(this);
+            this.bossEncounter=new QuimeraEncounter(this,config.boss.spawn,room.tileSize,this.player,this.walls!,this.playerProjectiles,this.enemyProjectiles,this.lineOfSight!,()=>this.bossDying(),()=>this.bossDestroyed());
+        }
+        this.specialAbilities = new SpecialAbilityManager(this, this.player, this.character, this.enemyManager, this.runId,()=>this.bossEncounter?.specialHit(this.character)??null);
+        this.waves = config.availability === "reserved" || config.boss ? null : new WaveManager(config.id, getWaves(config), {
             spawn: (wave, index) => this.spawnWave(room, wave, index),
             canSpawn: () => this.combatState === "playing" && !this.isChangingRoom && !!this.player && !this.player.isDead() && !this.specialAbilities?.ability.performing,
             changed: () => this.updateHUD(), completed: () => this.roomCleared(),
@@ -262,6 +273,8 @@ export class GameScene extends Phaser.Scene {
         if (this.specialAbilities?.ability.state !== abilityState || cooldownSeconds !== Math.ceil((this.specialAbilities?.ability.cooldownRemaining ?? 0) / 1000)) this.updateHUD();
         this.waves?.update(delta);
         this.player.update();
+        this.bossEncounter?.update(delta);
+        if(this.combatState!=='playing')return;
 
         for (const child of this.enemies.getChildren()) {
             const enemy = child as Enemy;
@@ -276,6 +289,7 @@ export class GameScene extends Phaser.Scene {
     private beginDefeat(): void {
         if (this.combatState !== "playing") return;
         this.combatState = "defeat";
+        this.bossEncounter?.stop();
         this.waves?.stop();
         getArcadeRun(this.game).defeat(this.runId);
         this.specialAbilities?.cancel();
@@ -340,6 +354,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     private prepareRoomExit(): void {
+        this.bossEncounter?.stop();
         this.specialAbilities?.cancel();
         this.waves?.stop();
         this.input.keyboard?.resetKeys();
@@ -372,8 +387,28 @@ export class GameScene extends Phaser.Scene {
 
     get selectedCharacter(): PlayerCharacter { return this.character; }
 
+    private bossDying():void {
+        if(this.combatState!=='playing')return;
+        this.combatState='boss-destruction';
+        this.updateHUD();
+        this.specialAbilities?.cancel();this.input.keyboard?.resetKeys();
+        this.player?.physicsSprite.setVelocity(0,0);
+        this.playerProjectiles.clear(true,true);this.enemyProjectiles.clear(true,true);
+        // Leave animations running until the final destruction frame completes.
+        this.physics.pause();
+    }
+    private bossDestroyed():void {
+        if(this.combatState!=='boss-destruction'||this.isChangingRoom)return;
+        const runs=getArcadeRun(this.game);
+        runs.awardKill(this.runId,this.roomIndex,'quimera',QuimeraConfig.score);
+        runs.clearRoom(this.runId,this.roomIndex);
+        if(!runs.finish(this.runId,this.roomIndex))return;
+        this.combatState='victory';this.isChangingRoom=true;this.prepareRoomExit();
+        startNarrative(this,{route:this.character,sequenceId:`${this.character}_ending`,resume:false,destination:{kind:'completion',runId:this.runId}});
+    }
+
     private roomCleared(): void {
-        if (this.combatState !== "playing" || this.isChangingRoom || this.levels.getLevel(this.roomIndex).availability === "reserved") return;
+        if (this.combatState !== "playing" || this.isChangingRoom || this.levels.getLevel(this.roomIndex).availability === "reserved" || this.levels.getLevel(this.roomIndex).boss) return;
         getArcadeRun(this.game).clearRoom(this.runId, this.roomIndex);
         this.playerProjectiles.clear(true, true);
         this.enemyProjectiles.clear(true, true);
@@ -412,10 +447,10 @@ export class GameScene extends Phaser.Scene {
 
     private updateHUD(): void {
         const config = this.levels.getLevel(this.roomIndex);
-        const notice = config.availability === "reserved" ? "JEFE PENDIENTE" : this.waves?.isComplete ? "SALIDA DISPONIBLE" : this.waves?.waitingForSpace ? "LIBERA LA ZONA DE APARICIÓN" :
+        const notice = config.boss ? 'E.X.P.-01 QUIMERA' : config.availability === "reserved" ? "JEFE PENDIENTE" : this.waves?.isComplete ? "SALIDA DISPONIBLE" : this.waves?.waitingForSpace ? "LIBERA LA ZONA DE APARICIÓN" :
             this.waves?.state === "starting" ? "PREPARANDO OLEADA" : config.encounter === "special" ? "ENCUENTRO ESPECIAL" : config.encounter === "final" ? "ENCUENTRO FINAL" : "";
         this.hud?.update({ level: this.roomIndex + 1, totalLevels: this.levels.count,
-            score: getArcadeRun(this.game).getScore(this.runId), enemies: this.enemyManager?.aliveCount ?? 0,
+            score: getArcadeRun(this.game).getScore(this.runId), enemies: (this.enemyManager?.aliveCount ?? 0)+(this.bossEncounter&&!this.bossEncounter.boss.isDead()?1:0),bossEncounter:!!config.boss,
             wave: this.waves?.waveNumber ?? 0, totalWaves: this.waves?.totalWaves ?? 0,
             special: getArcadeRun(this.game).getSpecialCharge(this.runId), specialRequired: SpecialAbilityConfig[this.character].killsRequired,
             specialState: this.specialAbilities?.ability.state, specialCooldown: this.specialAbilities?.ability.cooldownRemaining, notice });
@@ -443,6 +478,7 @@ export class GameScene extends Phaser.Scene {
         };
         this.hud?.layout();
         this.briefing?.layout();
+        if(this.bossEncounter)this.bossEncounter.healthBar.update(this.bossEncounter.boss.controller,0);
         positionHUD(this.pauseButton, this.scale.width - 16, this.scale.width < 650 ? this.scale.height - 56 : 16);
     }
 }

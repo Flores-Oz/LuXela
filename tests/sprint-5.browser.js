@@ -94,8 +94,8 @@ async function run() {
             gameplay.changeRoom();
             if(index<4) { await until(()=>scene().roomIndex===index+1 && scene().player && scene().player!==player); gameplay=await entered(); }
         }
-        check(`${character}: reserved production arena cannot finish the campaign`,gameplay.waves===null&&!getArcadeRun(game).canComplete(character,gameplay.runId));
-        // Isolate presentation regression from the unfinished production boss content.
+        check(`${character}: entering the boss arena alone cannot finish the campaign`,gameplay.waves===null&&!getArcadeRun(game).canComplete(character,gameplay.runId));
+        // Isolate presentation regression from the full boss integration tested in Sprint 11.
         const completedFixture=new ArcadeRunService(1),fixtureId=completedFixture.begin(character);
         completedFixture.clearRoom(fixtureId,0);completedFixture.finish(fixtureId,0);
         game.registry.set('arcade-run-service',completedFixture);

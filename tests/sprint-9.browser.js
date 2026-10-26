@@ -101,10 +101,10 @@ async function run(){
         s=await load(character);const runId=s.runId;
         for(let index=0;index<levels.length;index++){
             const config=levels[index],current=s,oldCaches=caches(s).map(image=>({image,key:image.texture.key}));
-            if(config.availability==='reserved') {
-                check(`${character}: reserved arena has no waves or provisional robots`,s.roomIndex===index&&s.waves===null&&s.enemyManager.aliveCount===0);
+            if(config.availability==='reserved'||config.boss) {
+                check(`${character}: final arena has no normal waves or provisional robots`,s.roomIndex===index&&s.waves===null&&s.enemyManager.aliveCount===0&&!!s.bossEncounter);
                 s.roomCleared();s.changeRoom();await delay(50);
-                check(`${character}: reserved arena never completes the narrative`,s.doors.currentState==='locked'&&!s.isChangingRoom&&!game.scene.isActive('CompletionScene')&&!runs.canComplete(character,runId)&&runs.getScore(runId)===campaignScore);
+                check(`${character}: final arena cannot complete before boss destruction`,s.doors.currentState==='locked'&&!s.isChangingRoom&&!game.scene.isActive('CompletionScene')&&!runs.canComplete(character,runId)&&runs.getScore(runId)===campaignScore);
                 break;
             }
             check(`${character} room ${index+1}: large world and configured wave load`,s.roomIndex===index&&s.physics.world.bounds.width===2560&&s.enemyManager.aliveCount===config.waves[0].enemies.count);
@@ -122,7 +122,7 @@ async function run(){
             if(index<levels.length-1){
                 await until(()=>generation>before&&scene().player);s=scene();await delay(40);
                 check(`${character} transition ${index+1}: old caches and bullets are released`,oldCaches.every(({image,key})=>!image.scene&&!s.textures.exists(key))&&current.playerProjectiles.getLength()===0);
-                check(`${character} transition ${index+1}: one bounds listener and seven group colliders`,s.physics.world.listenerCount('worldbounds')===1&&s.physics.world.colliders.getActive().length===7);
+                check(`${character} transition ${index+1}: one bounds listener and stable colliders`,s.physics.world.listenerCount('worldbounds')===1&&s.physics.world.colliders.getActive().length===(s.bossEncounter?9:7));
             }else{
                 await until(()=>game.scene.isActive('CompletionScene'));
                 check(`${character}: completion and score survive the enlarged campaign`,runs.canComplete(character,runId)&&runs.getScore(runId)===campaignScore);

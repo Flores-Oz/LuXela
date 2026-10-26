@@ -35,7 +35,7 @@ Las asignaciones actuales son:
 | Centro de datos | data-blue | maintenance-teal |
 | Almacén y mantenimiento | cargo-olive | assembly-amber |
 | Hangar industrial | hangar-amber | assembly-amber |
-| Núcleo energético, reservado | reactor-cyan | industrial-green |
+| Núcleo energético, Quimera | reactor-cyan | industrial-green |
 
 Todas las láminas aportan piezas visibles. `sheetFunctions` clasifica pisos, paredes, obstáculos, decoración y piezas temáticas. `EnvironmentComposition.ts` agrupa las celdas sólidas conectadas en bancos de maquinaria; `EnvironmentPlan.ts` les asigna un material coherente y un terminal, con piso secundario en su zona de servicio. Las marcas, rejillas y señales se sitúan junto a esas estructuras; el piso principal permanece limpio y uniforme. La decoración no crea colisiones ni daño.
 

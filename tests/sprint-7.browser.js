@@ -47,10 +47,10 @@ async function run() {
         current.specialAbilities.update(100000); check(`${character}: no timed recharge`, runs.getSpecialCharge(runId) === 0 && current.specialAbilities.ability.state === 'locked');
         for (let roomIndex = 0; roomIndex < levels.length; roomIndex++) {
             current = scene(); const config = levels[roomIndex], label = `${character} room ${roomIndex + 1}`;
-            if(config.availability==='reserved') {
-                check(`${label}: explorable arena without combat or victory`,current.waves===null&&current.enemyManager.aliveCount===0&&!runs.canComplete(character,runId)&&runs.getScore(runId)===campaignScore&&JSON.stringify(saves.get(character))===narrative);
+            if(config.availability==='reserved'||config.boss) {
+                check(`${label}: boss arena without normal waves or premature victory`,current.waves===null&&current.enemyManager.aliveCount===0&&!runs.canComplete(character,runId)&&runs.getScore(runId)===campaignScore&&JSON.stringify(saves.get(character))===narrative);
                 current.roomCleared();current.changeRoom();
-                check(`${label}: reserved exit remains locked and clearly identified`,current.doors.currentState==='locked'&&!current.isChangingRoom&&current.hud.text.text.includes('JEFE PENDIENTE'));
+                check(`${label}: boss exit remains locked and clearly identified`,current.doors.currentState==='locked'&&!current.isChangingRoom&&current.hud.text.text.includes('QUIMERA'));
                 await pause();button('.pause-screen','Volver al menú principal').click();
                 await until(()=>active('MainMenuScene')&&document.querySelector('.main-screen'));
                 break;
@@ -148,7 +148,7 @@ async function run() {
                 current = await entered(roomIndex + 1, oldPlayer);
                 check(`${label}: one transition preserves score and character`, current.runId === runId && current.character === character && runs.getScore(runId) === score);
                 check(`${label}: previous door and effects stopped`, doors.currentState === 'transitioning' && !doors.beginTransition() && oldManager.destroyed && !oldPlayer.physicsSprite.active);
-                check(`${label}: stable collision and event registrations`, current.physics.world.colliders.getActive().length === 7 && current.input.keyboard.listenerCount('keydown-ESC') === 1 && current.events.listenerCount(CombatEvents.ENEMY_DEFEATED) === 1);
+                check(`${label}: stable collision and event registrations`, current.physics.world.colliders.getActive().length === (current.bossEncounter?9:7) && current.input.keyboard.listenerCount('keydown-ESC') === 1 && current.events.listenerCount(CombatEvents.ENEMY_DEFEATED) === 1);
             } else {
                 await until(() => active('CompletionScene') && document.querySelector('.completion-screen'));
                 check(`${character}: all configured eliminations recorded`, score === campaignScore && runs.getScore(runId) === campaignScore);

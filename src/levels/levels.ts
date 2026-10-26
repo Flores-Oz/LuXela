@@ -15,17 +15,17 @@ export function createLevelCatalog(rooms:LevelRoomCatalog=arcadeRooms):readonly 
     return roomSeeds.map((seed,index)=>{
         const matrix=rooms[seed.roomId]!;
         const scenario=roomScenarios[index]!;
-        const enemyCount=scenario.reserved?0:CombatBalance.enemiesPerWave[index]!;
+        const enemyCount=scenario.reserved||scenario.boss?0:CombatBalance.enemiesPerWave[index]!;
         const enemiesForWave=(waveIndex:number)=>{
             const zones=scenario.zones.slice(0,enemyCount).map(([row,column])=>[Math.min(.9,Math.max(.12,row+(waveIndex===1?.07:waveIndex===2?-.07:0))),Math.min(.9,Math.max(.12,column+(waveIndex===1?-.07:waveIndex===2?.07:0)))] as const);
             const spawns:readonly LevelEnemySpawn[]=placeRoomPoints(matrix,zones,3,Math.ceil((seed.difficulty.detectionRange+64)/64)).map((position,spawnIndex)=>({...position,type:scenario.robots[(spawnIndex+waveIndex)%scenario.robots.length]!}));
             return {count:enemyCount,types:scenario.robots,spawns};
         };
-        const next=roomSeeds[index+1]?.id??null,count=scenario.reserved?0:[1,2,3,1,3][index]!;
+        const next=roomSeeds[index+1]?.id??null,count=scenario.reserved||scenario.boss?0:[1,2,3,1,3][index]!;
         const waves=Array.from({length:count},(_,waveIndex)=>({id:`wave-${waveIndex+1}`,enemies:enemiesForWave(waveIndex),completion:"eliminate-all-enemies" as const}));
         const {theme,environmentStyle,title,hint}=scenario;
         const decorations=composeRoomDecorations(matrix,environmentStyle);
-        return {...seed,availability:scenario.reserved?"reserved":"available",enemies:waves[0]?.enemies??{count:0,types:[],spawns:[]},order:index+1,encounter:index===4?"final":index===2?"special":count>1?"multiwave":"normal",waves,next,
+        return {...seed,availability:scenario.reserved?"reserved":"available",boss:scenario.boss?{type:'quimera' as const,spawn:{row:Math.floor(matrix.length/2),column:Math.floor(matrix[0]!.length/2)}}:undefined,enemies:waves[0]?.enemies??{count:0,types:[],spawns:[]},order:index+1,encounter:index===4?"final":index===2?"special":count>1?"multiwave":"normal",waves,next,
             presentation:{scenarioId:seed.roomId,theme,environmentStyle,title,hint,decorations,layers:{floor:"floor",walls:"walls",collision:"collision",decoration:"decoration"}},
             exits:[{id:"progression-exit",position:findRoomTile(matrix,TileType.Exit),next,requiresClear:true}]};
     });

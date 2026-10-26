@@ -47,7 +47,7 @@ export class SpecialAbilityManager {
     private readonly player: Player;
     private readonly character: PlayerCharacter;
     constructor(scene: Phaser.Scene, player: Player,
-        character: PlayerCharacter, enemies: EnemyManager, runId: number) {
+        character: PlayerCharacter, enemies: EnemyManager, runId: number, specialTarget?:()=>{x:number;y:number}|null) {
         this.scene = scene;
         this.player = player;
         this.character = character;
@@ -58,6 +58,10 @@ export class SpecialAbilityManager {
             this.impactPositions = positions;
             this.impactStartedAt = this.visualClock;
         }, charge);
+        if(specialTarget)this.ability.onDischarged(()=>{
+            const point=specialTarget();
+            if(character==='alex'&&point){this.impactPositions=[...this.impactPositions,point];this.impactStartedAt=this.visualClock;}
+        });
         this.key = scene.input.keyboard!.addKey(SpecialAbilityConfig.key);
         this.pose = scene.add.sprite(player.x, player.y, `${character}-special`, "0")
             .setOrigin(0.5, 480 / 544).setScale(0.25).setDepth(10).setVisible(false);

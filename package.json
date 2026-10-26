@@ -31,7 +31,11 @@
     "test:sprint10": "node tests/run-all.mjs --sprint10",
     "test:sprint10:maps": "node --test tests/map-composition.test.mjs tests/large-rooms.test.mjs",
     "test:sprint10:visual": "node tests/capture-sprint-10.mjs",
-    "test:sprint10:performance": "node tests/run-sprint-9-performance.mjs --sprint10"
+    "test:sprint10:performance": "node tests/run-sprint-9-performance.mjs --sprint10",
+    "test:sprint11": "node tests/run-all.mjs --sprint11",
+    "test:sprint11:unit": "node --test tests/quimera.test.mjs tests/enemy-attacks.test.mjs tests/level-config.test.mjs tests/waves.test.mjs tests/special-charge.test.mjs tests/environment.test.mjs tests/map-composition.test.mjs tests/large-rooms.test.mjs",
+    "test:sprint11:boss": "node tests/run-sprint-11.mjs",
+    "test:sprint11:visual": "node tests/capture-sprint-11.mjs"
   },
   "dependencies": {
     "phaser": "^4.2.1",

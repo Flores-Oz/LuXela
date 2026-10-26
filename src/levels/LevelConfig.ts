@@ -19,6 +19,7 @@ export interface LevelEnemySpawn extends Readonly<TilePosition> {
 export interface LevelConfig {
     readonly id: string;
     readonly availability?: "available" | "reserved";
+    readonly boss?: {readonly type:'quimera';readonly spawn:Readonly<TilePosition>};
     readonly roomId: string;
     readonly enemies: {
         readonly count: number;

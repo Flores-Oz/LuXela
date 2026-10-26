@@ -11,7 +11,7 @@ const {obstacleGroups,composeRoomDecorations}=await load('../src/world/environme
 const {environmentSheets,sheetFunctions,detailedEnvironmentAtlas}=await load('../src/world/environment/EnvironmentSheets.ts');
 const {validateLevelCatalog}=await load('../src/levels/validateLevelConfig.ts');
 
-test('campaign pairs its four robots with their intended dominant sheets, reserving the reactor',()=>{
+test('campaign pairs its four robots with their intended dominant sheets and Quimera with the reactor',()=>{
     assert.deepEqual(levels.map(level=>level.presentation.environmentStyle),['quarantine-red','data-blue','cargo-olive','hangar-amber','reactor-cyan']);
     assert.deepEqual(levels.map(level=>level.enemies.types),[['robot-red'],['robot-blue'],['robot-yellow'],['robot-orange'],[]]);
     assert.deepEqual(levels.map(level=>level.waves.length),[1,2,3,1,0]);
@@ -60,10 +60,11 @@ test('hangar bays form open L-shaped shielding rather than scattered isolated pi
     assert.equal(obstacleGroups(40,24,layout.walls).filter(group=>group.cells.length===22).length,4);
 });
 
-test('reactor keeps a large clear central arena without provisional enemy content',()=>{
+test('reactor keeps a large clear central arena for Quimera without normal waves',()=>{
     const matrix=arcadeRooms['combat-arena'];
     for(let row=6;row<=17;row++)for(let column=11;column<=29;column++)assert.notEqual(matrix[row][column],1);
-    assert.equal(levels[4].availability,'reserved');
+    assert.equal(levels[4].availability,'available');
+    assert.equal(levels[4].boss.type,'quimera');
     assert.deepEqual(levels[4].enemies,{count:0,types:[],spawns:[]});
 });
 
