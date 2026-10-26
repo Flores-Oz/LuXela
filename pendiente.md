@@ -2,6 +2,10 @@
 
 Los sprints 5, 6, 7 y 8 tienen su integración funcional terminada. Los siguientes ajustes de contenido se dejan pendientes para el acabado final del juego.
 
+La ampliación del Sprint 9 también está implementada: salas físicas de 40 × 24 tiles, cámara con seguimiento, pantalla cubierta por el escenario y cuatro variantes de robots. Ver `docs/sprint-9.md` para las verificaciones y los límites de la validación.
+
+Los patrones de ataque del Sprint 9 también están conectados: disparo rojo, ráfaga azul, persecución amarilla y carga con abanico naranja. Se pueden revisar por separado en `/robots.html`; los tiempos, archivos y pruebas están en `docs/sprint-9-ataques.md`. El balance manual sigue pendiente en las validaciones finales.
+
 ## Diálogos definitivos
 
 - [ ] Sustituir los textos provisionales de las introducciones de Alex y Lua por la narrativa definitiva.
@@ -25,6 +29,7 @@ Estos pendientes corresponden al acabado final de contenido; los fondos y las ve
 
 - [ ] Realizar partidas manuales de las cinco habitaciones y diez oleadas con Alex y Lua para ajustar el balance con combate libre.
 - [ ] Validar WebGL y otros navegadores/dispositivos; la suite automatizada actual usa Edge/Canvas.
+- [ ] Ajustar mediante partidas manuales el recorrido, la distribución y el balance de las salas grandes con las cuatro variantes de robots.
 
 El Sprint 6 ya incluye los cinco niveles, dificultad progresiva, transiciones, puntuación y HUD. Su conclusión es «Niveles de prueba completados»; los guiones de finales narrativos se conservan para el trabajo posterior de contenido.
 
@@ -39,4 +44,4 @@ El Sprint 6 ya incluye los cinco niveles, dificultad progresiva, transiciones, p
 
 El informe y los resultados del Sprint 8 están en `docs/sprint-8.md`. Las colisiones siguen usando los grupos estáticos existentes; importar física desde Tilemaps sería una ampliación opcional, no un requisito pendiente de este sprint.
 
-El Sprint 7 ya incluye oleadas, encuentros especiales, carga de habilidades mediante diez bajas configurables, puertas funcionales y separación de gráficos y física. No usa cooldown temporal para habilidades. Las diez oleadas contienen 53 robots y permiten obtener 5300 puntos.
+El Sprint 7 ya incluye oleadas, encuentros especiales, carga de habilidades mediante diez bajas configurables, puertas funcionales y separación de gráficos y física. El balance actual añade 45 segundos de espera entre usos de la ulti, además de las diez bajas; el tiempo se congela al pausar y se conserva al cambiar de sala. Con las salas grandes del Sprint 9, las diez oleadas contienen 106 robots y permiten obtener 10600 puntos.

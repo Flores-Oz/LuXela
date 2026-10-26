@@ -1,3 +1,4 @@
+import { levels } from '../src/levels/levels';
 import Phaser from 'phaser';
 import { gameConfig } from '../src/config/gameConfig';
 import { CharacterUnlockService } from '../src/systems/CharacterUnlockService';
@@ -72,7 +73,7 @@ async function run() {
         const over = game.scene.getScene('GameOverScene');
         over.children.list.find(child => child.text === '[ REINTENTAR ]').emit('pointerdown');
         scene = await enterGameplay();
-        check(`${character}: reintento conserva personaje y restablece combate`, scene.character === character && scene.roomIndex === 0 && !scene.player.isDead() && scene.enemyManager.aliveCount === 3 && scene.specialAbilities.ability.state === 'locked');
+        check(`${character}: reintento conserva personaje y restablece combate`, scene.character === character && scene.roomIndex === 0 && !scene.player.isDead() && scene.enemyManager.aliveCount === levels[0].enemies.count && scene.specialAbilities.ability.state === 'locked');
         check(`${character}: reintento no reproduce narrativa ni acumula atajos`, !active('VisualNovelScene') && over.input.keyboard.listenerCount('keydown-ENTER') === 0);
         scene.scene.start('CharacterSelectScene');
         await until(() => active('CharacterSelectScene') && selector());

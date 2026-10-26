@@ -2,6 +2,7 @@ import { TileType } from "../types/RoomTypes";
 import type { LevelConfig, LevelRoomCatalog } from "./LevelConfig";
 import { roomThemeIds } from "../world/environment/RoomTheme";
 import { environmentStyleIds } from "../world/environment/EnvironmentSheets";
+import { robotTypes } from "../config/RobotConfig";
 
 type RecordValue = Record<string, unknown>;
 const isRecord = (value: unknown): value is RecordValue =>
@@ -56,8 +57,8 @@ export function validateLevelCatalog(catalog: unknown, rooms: unknown): string[]
         else {
             if (!coordinate(enemies.count)) error("enemies.count must be a non-negative safe integer");
             if (!Array.isArray(enemies.types) || enemies.types.length === 0 ||
-                enemies.types.some(type => type !== "robot-red") || new Set(enemies.types).size !== enemies.types.length) {
-                error("enemies.types must contain unique supported types (robot-red)");
+                enemies.types.some(type => !robotTypes.some(robot=>robot===type)) || new Set(enemies.types).size !== enemies.types.length) {
+                error("enemies.types must contain unique supported types");
             }
             if (!Array.isArray(enemies.spawns)) error("enemies.spawns must be an array");
             else if (enemies.spawns.length !== enemies.count) error("enemies.count must match enemies.spawns.length");
@@ -159,7 +160,7 @@ export function validateLevelCatalog(catalog: unknown, rooms: unknown): string[]
             if (!isRecord(spawn) || !coordinate(spawn.row) || !coordinate(spawn.column)) {
                 error(`${label} must have non-negative integer row and column`); return;
             }
-            if (spawn.type !== "robot-red" || !Array.isArray(enemies.types) || !enemies.types.includes(spawn.type)) {
+            if (!robotTypes.some(robot=>robot===spawn.type) || !Array.isArray(enemies.types) || !enemies.types.includes(spawn.type)) {
                 error(`${label} uses an unavailable enemy type`);
             }
             const key = `${spawn.row},${spawn.column}`;

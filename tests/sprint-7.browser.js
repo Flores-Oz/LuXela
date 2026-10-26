@@ -12,6 +12,7 @@ import { RoomBuilder } from '../src/world/RoomBuilder';
 import { LevelManager } from '../src/levels/LevelManager';
 import { LineOfSight } from '../src/systems/LineOfSight';
 
+const campaignScore=levels.reduce((sum,level)=>sum+level.waves.reduce((n,wave)=>n+wave.enemies.count*level.scorePerEnemy,0),0);
 const checks = [];
 const check = (name, condition) => { if (!condition) throw Error(name); checks.push(name); };
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -86,6 +87,10 @@ async function run() {
                 const residual = new Projectile(current, 160, 160, new Phaser.Math.Vector2(0, 1), 'enemy', current.enemyProjectiles);
                 if (useSpecial) {
                     const manager = current.specialAbilities;
+                    if (manager.ability.cooldownRemaining > 0) {
+                        check(`${waveLabel}: ten kills alone do not bypass the cooldown`,!manager.ability.activate());
+                        manager.update(manager.ability.cooldownRemaining);
+                    }
                     const targets = current.enemyManager.getLivingEnemies().map(enemy => ({ x: enemy.x, y: enemy.y }));
                     check(`${waveLabel}: special consumes charge once`, manager.ability.activate() && runs.getSpecialCharge(runId) === 0 && !manager.ability.activate());
                     manager.update(SpecialAbilityConfig[character].chargeMs);
@@ -95,7 +100,7 @@ async function run() {
                     current.waves.update(100000);
                     check(`${waveLabel}: no wave spawns during special animation`, current.waves.state === 'starting' && current.enemyManager.aliveCount === 0);
                     manager.update(SpecialAbilityConfig[character].durationMs + SpecialAbilityConfig[character].recoveryMs);
-                    check(`${waveLabel}: special kills refill only by actual count`, runs.getSpecialCharge(runId) === wave.enemies.count);
+                    check(`${waveLabel}: special kills refill to the configured charge cap`, runs.getSpecialCharge(runId) === Math.min(SpecialAbilityConfig[character].killsRequired,wave.enemies.count));
                 } else {
                     const enemies = current.enemyManager.getLivingEnemies();
                     for (const enemy of enemies.slice(0, -1)) enemy.die();
@@ -128,7 +133,8 @@ async function run() {
             const doors = current.doors, oldPlayer = current.player, oldManager = current.specialAbilities;
             // A real exit overlap starts the first and final transitions; repeated calls exercise the others.
             if (roomIndex === 0 || roomIndex === levels.length - 1) {
-                oldPlayer.physicsSprite.body.reset(864, 608);
+                const exit=config.exits[0].position;
+                oldPlayer.physicsSprite.body.reset((exit.column+.5)*64,(exit.row+.5)*64);
             } else { current.changeRoom(); current.changeRoom(); }
             if (roomIndex < levels.length - 1) {
                 current = await entered(roomIndex + 1, oldPlayer);
@@ -137,7 +143,7 @@ async function run() {
                 check(`${label}: stable collision and event registrations`, current.physics.world.colliders.getActive().length === 7 && current.input.keyboard.listenerCount('keydown-ESC') === 1 && current.events.listenerCount(CombatEvents.ENEMY_DEFEATED) === 1);
             } else {
                 await until(() => active('CompletionScene') && document.querySelector('.completion-screen'));
-                check(`${character}: all 53 eliminations recorded`, score === 5300 && runs.getScore(runId) === 5300);
+                check(`${character}: all configured eliminations recorded`, score === campaignScore && runs.getScore(runId) === campaignScore);
                 check(`${character}: final completion belongs to correct route`, runs.canComplete(character, runId) && document.querySelector('.completion-screen .presentation-eyebrow').textContent.toLowerCase().includes(character));
                 check(`${character}: no new narrative or residual game`, !active('GameScene') && !active('VisualNovelScene') && JSON.stringify(saves.get(character)) === narrative && !oldPlayer.physicsSprite.active);
                 button('.completion-screen', 'Volver al menú principal').click(); await until(() => active('MainMenuScene') && document.querySelector('.main-screen'));
@@ -151,15 +157,15 @@ async function run() {
     const runs = getArcadeRun(game), oldId = current.runId;
     current.enemyManager.defeatLivingEnemies();
     const pending = current.waves, deadPlayer = current.player;
-    check('Death fixture has pending next wave and seven charge points', pending.state === 'starting' && runs.getSpecialCharge(oldId) === 7);
+    check('Death fixture has a pending wave and capped kill charge', pending.state === 'starting' && runs.getSpecialCharge(oldId) === Math.min(10,levels[0].enemies.count+levels[1].enemies.count));
     current.player.die(); await until(() => active('GameOverScene'));
     pending.update(100000);
     check('Death between waves cancels all scheduled spawns', pending.state === 'stopped' && !scene().player && !active('CompletionScene'));
     game.scene.getScene('GameOverScene').input.keyboard.emit('keydown-ENTER'); current = await entered(1, deadPlayer);
-    check('Retry begins first wave with room entry charge and score', current.waves.waveNumber === 1 && current.enemyManager.aliveCount === 4 && runs.getSpecialCharge(oldId) === 3 && runs.getScore(oldId) === 300);
+    check('Retry begins first wave with room entry charge and score', current.waves.waveNumber === 1 && current.enemyManager.aliveCount === levels[1].enemies.count && runs.getSpecialCharge(oldId) === levels[0].enemies.count && runs.getScore(oldId) === levels[0].enemies.count*levels[0].scorePerEnemy);
     const restartedPlayer = current.player, restartedWaves = current.waves;
     await pause(); button('.pause-screen', 'Reiniciar partida').click(); current = await entered(0, restartedPlayer);
-    check('Restart from advanced room resets room, wave, score and charge', current.runId !== oldId && current.waves.waveNumber === 1 && current.enemyManager.aliveCount === 3 && runs.getScore(current.runId) === 0 && runs.getSpecialCharge(current.runId) === 0);
+    check('Restart from advanced room resets room, wave, score and charge', current.runId !== oldId && current.waves.waveNumber === 1 && current.enemyManager.aliveCount === levels[0].enemies.count && runs.getScore(current.runId) === 0 && runs.getSpecialCharge(current.runId) === 0);
     check('Restart stops previous encounter and releases pause overlay', restartedWaves.state === 'stopped' && !active('PauseScene') && !document.querySelector('.pause-screen'));
     current.enemyManager.getLivingEnemies()[0].die(); const abandonedId = current.runId;
     await pause(); button('.pause-screen', 'Volver al menú principal').click(); await until(() => active('MainMenuScene') && document.querySelector('.main-screen'));
@@ -174,7 +180,8 @@ async function run() {
                 const builder = new RoomBuilder(this, renderer); builder.build(room, config.exits, config.presentation);
                 check('Renderer receives reusable physical layout and future layer references', metadata.layout.walls.length > 0 && metadata.presentation.layers.collision === 'collision');
                 check('Invisible wall bodies do not depend on any texture', builder.getWalls().getChildren().every(wall => wall.type === 'Zone' && wall.body.enable && !wall.visible));
-                check('No visual renderer still has wall occlusion', !new LineOfSight(builder.getWalls()).hasLineOfSight({ x: 352, y: 288 }, { x: 480, y: 288 }));
+                const wall=builder.getWalls().getChildren().find(wall=>!wall.getData('room-perimeter'));
+                check('No visual renderer still has wall occlusion', !new LineOfSight(builder.getWalls()).hasLineOfSight({ x: wall.x-80, y: wall.y }, { x: wall.x+80, y: wall.y }));
                 const doors = builder.getDoors(); doors.unlock(); doors.beginTransition();
                 check('Door visual states are independent from trigger body', colors.join() === 'locked,unlocked,transitioning' && builder.getExits().getChildren()[0].body.enable);
                 let duplicate = false; try { builder.build(room); } catch { duplicate = true; }

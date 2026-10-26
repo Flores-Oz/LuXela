@@ -3,6 +3,8 @@ import { EnemyState } from "./EnemyState";
 import type { Player } from "../Player";
 import type { LineOfSight } from "../../systems/LineOfSight";
 import { CombatEvents } from "../../systems/CombatEvents";
+import { robotAttacks,robotMovementScale,robotDefinitions,robotTypes,type RobotType,type EnemyAttackConfig } from "../../config/RobotConfig";
+import { EnemyAttackController, type EnemyShot } from "./EnemyAttackController";
 
 export type EnemyConfig = {
     moveSpeed?: number;
@@ -10,9 +12,12 @@ export type EnemyConfig = {
     shootCooldown?: number;
     animationPrefix?: string;
     patrol?: boolean;
+    piercesInteriorWalls?: boolean;
 };
 
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
+    readonly piercesInteriorWalls:boolean;
+    readonly attack: EnemyAttackController;
 
     private dead = false;
 
@@ -20,11 +25,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     private readonly detectionRange: number;
 
-    private readonly shootCooldown: number;
+    readonly shootCooldown: number;
 
     private readonly animationPrefix: string;
 
-    private lastShotTime = -Infinity;
+    private chargeWarning?: Phaser.GameObjects.Arc;
+    private flashUntil = -Infinity;
 
     private readonly patrolEnabled: boolean;
 
@@ -48,15 +54,27 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         scene.add.existing(this);
         scene.physics.add.existing(this);
 
-        this.moveSpeed = config.moveSpeed ?? 80;
+        const variant = robotTypes.some(type => type === texture) ? texture as RobotType : "robot-red";
+        this.moveSpeed = (config.moveSpeed ?? 80) * robotMovementScale[variant];
         this.detectionRange = config.detectionRange ?? 200;
-        this.shootCooldown = config.shootCooldown ?? 1000;
-        this.animationPrefix = config.animationPrefix ?? "robot";
+        const attackConfig: EnemyAttackConfig = { ...robotAttacks[variant] };
+        // The existing level cadence scales the basic soldier; other patterns retain their timings.
+        if (variant === "robot-red" && config.shootCooldown !== undefined) attackConfig.attackInterval = config.shootCooldown;
+        this.shootCooldown = attackConfig.attackInterval;
+        const definition=robotTypes.some(type=>type===texture)?robotDefinitions[texture as RobotType]:undefined;
+        this.animationPrefix = config.animationPrefix ?? definition?.prefix ?? "robot";
+        this.piercesInteriorWalls=config.piercesInteriorWalls??definition?.piercesInteriorWalls??false;
+        attackConfig.piercingWalls = this.piercesInteriorWalls;
+        this.attack = new EnemyAttackController(attackConfig);
         this.patrolEnabled = config.patrol ?? false;
         this.setSize(44, 52);
         this.setOffset(10, 10);
 
         this.setCollideWorldBounds(true);
+        this.once(Phaser.GameObjects.Events.DESTROY, () => this.cancelAttack());
+        this.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+            if (!this.dead && this.attack.phase !== "charging" && (this.currentState === EnemyState.ATTACK_READY || this.currentState === EnemyState.RECOVERY || this.currentState === EnemyState.BURST)) this.playIdle();
+        });
     }
 
     public playIdle(): void {
@@ -122,6 +140,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
         this.dead = true;
         this.playerDetected = false;
+        this.cancelAttack();
 
         this.setVelocity(0, 0);
 
@@ -182,12 +201,22 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         }
 
         if (Math.abs(dx) > Math.abs(dy)) {
+            const blocked=(this.body as Phaser.Physics.Arcade.Body).blocked;
+            if(dx>0?blocked.right:blocked.left){
+                if((dy<0&&!blocked.up)||blocked.down)this.moveUp();else this.moveDown();
+                return;
+            }
             if (dx > 0) {
                 this.moveRight();
             } else {
                 this.moveLeft();
             }
         } else {
+            const blocked=(this.body as Phaser.Physics.Arcade.Body).blocked;
+            if(dy>0?blocked.down:blocked.up){
+                if((dx<0&&!blocked.left)||blocked.right)this.moveLeft();else this.moveRight();
+                return;
+            }
             if (dy > 0) {
                 this.moveDown();
             } else {
@@ -241,17 +270,47 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
-    /** Advances AI and returns a fixed firing direction only when ready. */
+    public cancelAttack(): void {
+        this.attack.cancel();
+        this.chargeWarning?.destroy();
+        this.chargeWarning = undefined;
+        this.clearTint();
+    }
+
+    private updateAttackVisuals(time: number, shots: EnemyShot[] | null): void {
+        if (this.attack.phase === "charging") {
+            if (!this.chargeWarning) {
+                this.chargeWarning = this.scene.add.circle(this.x, this.y, 43, 0xff941a, .1).setStrokeStyle(3, 0xffb34d).setDepth(this.depth + 1);
+            }
+            this.chargeWarning.setPosition(this.x, this.y).setAlpha(.4 + .6 * Math.abs(Math.sin(time / 110)));
+            this.setTint(Math.sin(time / 110) > 0 ? 0xffb34d : 0xffffff);
+            const key = `${this.animationPrefix}-special-a1`;
+            if (this.scene.anims.exists(key)) this.play({ key, repeat: -1 }, true);
+            return;
+        }
+        this.chargeWarning?.destroy();
+        this.chargeWarning = undefined;
+        if (shots) {
+            this.flashUntil = time + 100;
+            const key = `${this.animationPrefix}-special-b1`;
+            const walkingShot = this.attack.config.type === "rapid" && (this.body as Phaser.Physics.Arcade.Body).velocity.lengthSq() > 0;
+            if (!walkingShot && this.scene.anims.exists(key)) this.play({ key, repeat: 0 }, true);
+        }
+        if (time < this.flashUntil) this.setTint(0xffedb0); else this.clearTint();
+    }
+
+    /** Advances movement and the shared attack clock; a spread is one atomic volley. */
     public updateBehavior(
         player: Player,
         lineOfSight: LineOfSight,
         time: number
-    ): Phaser.Math.Vector2 | null {
+    ): EnemyShot[] | null {
         if (this.dead || !this.active) {
             return null;
         }
 
         if (player.isDead() || !player.physicsSprite.active) {
+            this.cancelAttack();
             this.playerDetected = false;
             this.setState(EnemyState.IDLE);
             this.stop();
@@ -259,28 +318,24 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         }
 
         const detected = this.detectPlayer(player.physicsSprite);
-        const visible = detected && lineOfSight.hasLineOfSight(this, player);
-        this.setState(!detected ? (this.patrolEnabled ? EnemyState.PATROL : EnemyState.IDLE) :
-            visible ? EnemyState.ATTACK_READY : EnemyState.CHASE);
-
-        if (this.currentState === EnemyState.PATROL) {
-            this.patrol(time);
-        }
-
-        if (this.currentState === EnemyState.CHASE) {
-            this.chasePlayer(player.physicsSprite);
-        }
-
-        if (this.currentState !== EnemyState.ATTACK_READY ||
-            time - this.lastShotTime < this.shootCooldown) {
-            return null;
-        }
-
-        const direction = new Phaser.Math.Vector2(player.x - this.x, player.y - this.y);
-        if (direction.lengthSq() === 0) {
-            return null;
-        }
-        this.lastShotTime = time;
-        return direction.normalize();
+        const visible = detected && lineOfSight.hasLineOfSight(this, player, this.piercesInteriorWalls);
+        const distance = Math.hypot(player.x - this.x, player.y - this.y);
+        const shots = this.attack.update(time, visible && distance <= this.attack.config.attackRange, this, player);
+        const charging = this.attack.phase === "charging";
+        const recovering = this.attack.config.type === "piercing-spread" && this.attack.phase === "recovering";
+        let state: EnemyState;
+        if (charging || recovering) state = charging ? EnemyState.CHARGING : EnemyState.RECOVERY;
+        else if (!detected) state = this.patrolEnabled ? EnemyState.PATROL : EnemyState.IDLE;
+        else if (!visible || distance > this.attack.config.attackRange || this.attack.config.type === "rapid") state = EnemyState.CHASE;
+        else if (this.attack.config.type === "burst" && distance < 160) state = EnemyState.RETREAT;
+        else if (this.attack.config.type === "burst" && distance > 300) state = EnemyState.CHASE;
+        else state = this.attack.phase === "burst" ? EnemyState.BURST : EnemyState.ATTACK_READY;
+        this.setState(state);
+        if (state === EnemyState.PATROL) this.patrol(time);
+        else if (state === EnemyState.CHASE) this.chasePlayer(player.physicsSprite);
+        else if (state === EnemyState.RETREAT) this.chasePlayer({ x: this.x * 2 - player.x, y: this.y * 2 - player.y } as Phaser.GameObjects.Components.Transform);
+        else this.setVelocity(0, 0);
+        this.updateAttackVisuals(time, shots);
+        return shots;
     }
 }

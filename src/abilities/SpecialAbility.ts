@@ -1,10 +1,10 @@
 import type { Player } from "../entities/Player";
 
-export type AbilityState = "locked" | "ready" | "charging" | "active" | "recovering";
+export type AbilityState = "locked" | "cooldown" | "ready" | "charging" | "active" | "recovering";
 export interface AbilityTiming { chargeMs: number; durationMs: number; recoveryMs: number; killsRequired: number }
-export interface AbilityCharge { count: () => number; consume: () => boolean }
+export interface AbilityCharge { count: () => number; consume: () => boolean; cooldownRemaining?: () => number }
 
-/** Time advances animation only. Availability comes from validated eliminations. */
+/** Availability requires validated eliminations and the session's gameplay cooldown. */
 export abstract class SpecialAbility {
     private phase: "charging" | "active" | "recovering" | null = null;
     elapsed = 0;
@@ -14,7 +14,8 @@ export abstract class SpecialAbility {
     protected readonly timing: AbilityTiming;
     private readonly charge: AbilityCharge;
     constructor(player: Player, timing: AbilityTiming, charge: AbilityCharge) { this.player = player; this.timing = timing; this.charge = charge; }
-    get state(): AbilityState { return this.phase ?? (!this.destroyed && this.charge.count() >= this.timing.killsRequired ? "ready" : "locked"); }
+    get cooldownRemaining(): number { return this.charge.cooldownRemaining?.() ?? 0; }
+    get state(): AbilityState { return this.phase ?? (this.destroyed ? "locked" : this.cooldownRemaining > 0 ? "cooldown" : this.charge.count() >= this.timing.killsRequired ? "ready" : "locked"); }
 
     get performing(): boolean {
         return this.phase !== null;

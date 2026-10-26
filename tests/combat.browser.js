@@ -44,7 +44,7 @@ async function run() {
     tick(2);
     let player = scene.player;
     let enemy = scene.enemies.getChildren()[0];
-    check('Tres robots creados desde configuración del nivel', scene.enemies.getLength() === 3);
+    check('Tres robots creados desde configuración del nivel', scene.enemies.getLength() === levels[0].enemies.count);
     check('Spawns sin solapamiento con paredes', scene.enemies.getChildren().every(e =>
         !scene.walls.getChildren().some(w => Phaser.Geom.Intersects.RectangleToRectangle(e.body, w.body))));
     enemy.stop();
@@ -59,10 +59,13 @@ async function run() {
         check(`Movimiento y animación ${method}`, enemy.body.velocity.x === vx &&
             enemy.body.velocity.y === vy && enemy.anims.currentAnim.key === `robot-walk-${animation}`);
     }
-    reset(enemy, 480, 288);
+    const interiorWalls=scene.walls.getChildren().filter(wall=>!wall.getData('room-perimeter'));
+    const wall=interiorWalls.find(candidate=>!interiorWalls.some(other=>other.y===candidate.y&&other.x===candidate.x+64));
+    const wallRight=wall.body.right,wallY=wall.y,wallLeft=Math.min(...interiorWalls.filter(candidate=>candidate.y===wallY).map(candidate=>candidate.body.left));
+    reset(enemy, wallRight+36, wallY);
     enemy.moveLeft();
     tick(90);
-    check('Robot detenido por pared', enemy.body.left >= 448 - 0.01);
+    check('Robot detenido por pared', enemy.body.left >= wallRight - 0.01);
     enemy.stop();
 
     reset(player.physicsSprite, 160, 160);
@@ -76,7 +79,7 @@ async function run() {
     check('Patrulla desplaza robot sin detectar jugador', enemy.x > patrolX);
     enemy.updateBehavior(player, scene.lineOfSight, now + 1500);
     check('Patrulla gira por tiempo', enemy.body.velocity.y === 80);
-    reset(enemy, 872, 352);
+    reset(enemy, scene.physics.world.bounds.width-88, 352);
     enemy.patrolDirection = 0;
     enemy.nextPatrolTurn = now + 10000;
     enemy.moveRight();
@@ -84,9 +87,9 @@ async function run() {
         tick();
         enemy.updateBehavior(player, scene.lineOfSight, now);
     }
-    check('Patrulla gira al chocar sin atravesar pared', enemy.body.right <= 896 + 0.01 && enemy.body.velocity.y === 80);
-    reset(enemy, 480, 288);
-    reset(player.physicsSprite, 352, 288);
+    check('Patrulla gira al chocar sin atravesar pared', enemy.body.right <= scene.physics.world.bounds.width-64 + 0.01 && enemy.body.velocity.y === 80);
+    reset(enemy, wallRight+24, wallY);
+    reset(player.physicsSprite, wallRight-152, wallY);
     check('Proximidad detecta a través de pared', enemy.detectPlayer(player.physicsSprite));
     check('Pared bloquea visión', !scene.lineOfSight.hasLineOfSight(enemy, player));
     check('Visión bloqueada: CHASE sin disparo', enemy.updateBehavior(player, scene.lineOfSight, now) === null &&
@@ -95,7 +98,7 @@ async function run() {
     reset(player.physicsSprite, 160, 160);
     const shotTime = 10000;
     const aim = enemy.updateBehavior(player, scene.lineOfSight, shotTime);
-    check('Visión despejada: ATTACK_READY y disparo dirigido', aim?.x === -1 && aim.y === 0 &&
+    check('Visión despejada: ATTACK_READY y disparo dirigido', aim?.length === 1 && aim[0].direction.x === -1 && aim[0].direction.y === 0 &&
         enemy.getState() === EnemyState.ATTACK_READY && enemy.body.velocity.lengthSq() === 0);
     check('Recarga bloquea disparos prematuros', enemy.updateBehavior(player, scene.lineOfSight, shotTime + levels[0].difficulty.shootCooldown - 1) === null);
     check('Recarga usa milisegundos', enemy.updateBehavior(player, scene.lineOfSight, shotTime + levels[0].difficulty.shootCooldown) !== null);
@@ -109,7 +112,7 @@ async function run() {
 
     reset(player.physicsSprite, 160, 160);
     reset(enemy, 224, 160);
-    enemy.lastShotTime = -Infinity;
+    enemy.attack.cancel(-Infinity);
     player.shootingKeys.RIGHT.isDown = true;
     normalUpdate.call(scene, now + 2000);
     player.shootingKeys.RIGHT.isDown = false;
@@ -122,7 +125,7 @@ async function run() {
 
     reset(player.physicsSprite, 160, 160);
     for (const [owner, group] of [['player', scene.playerProjectiles], ['enemy', scene.enemyProjectiles]]) {
-        const shot = new Projectile(scene, 352, 288, new Phaser.Math.Vector2(1, 0), owner, group);
+        const shot = new Projectile(scene, wallLeft-48, wallY, new Phaser.Math.Vector2(1, 0), owner, group);
         tick(15);
         check(`Bala ${owner} destruida por pared`, !shot.physicsBody.active);
     }
@@ -169,7 +172,7 @@ async function run() {
     check('Disparo del jugador conserva controles', player.consumeShootRequest()?.x === 1);
     player.shootingKeys.RIGHT.isDown = false;
     // Muzzle is 58 px away: ensure it cannot skip a solid wall.
-    reset(player.physicsSprite, 368, 288);
+    reset(player.physicsSprite, wallLeft-16, wallY);
     const shotsBeforeMuzzle = scene.playerProjectiles.getLength();
     scene.createProjectile(new Phaser.Math.Vector2(1, 0));
     check('Muzzle no permite disparar a través de pared', scene.playerProjectiles.getLength() === shotsBeforeMuzzle);
@@ -220,7 +223,7 @@ async function run() {
     scene.sys.sceneUpdate = () => {};
     check('T-07: reinicio por Enter restaura habitación', game.scene.isActive('GameScene') && scene.roomIndex === 0 &&
         !scene.player.isDead() && scene.player.physicsSprite.body.enable && !scene.physics.world.isPaused &&
-        scene.enemies.getLength() === 3 && scene.enemyProjectiles.getLength() === 0 && scene.combatState === 'playing');
+        scene.enemies.getLength() === levels[0].enemies.count && scene.enemyProjectiles.getLength() === 0 && scene.combatState === 'playing');
     check('Game Over libera listeners al salir', gameOver.input.keyboard.listenerCount('keydown-ENTER') === 0 &&
         gameOver.input.keyboard.listenerCount('keydown-R') === 0);
     scene.player.wasd.D.isDown = true;
@@ -259,7 +262,7 @@ async function run() {
         tick(4);
         scene.sys.sceneUpdate = () => {};
         check(`T-08 reinicio ${index}: sin acumulación y personaje conservado`, scene.character === character &&
-            !scene.player.isDead() && scene.enemies.getLength() === 3 && scene.enemyManager.aliveCount === 3 &&
+            !scene.player.isDead() && scene.enemies.getLength() === levels[0].enemies.count && scene.enemyManager.aliveCount === levels[0].enemies.count &&
             scene.physics.world.colliders.getActive().length === colliderCount &&
             scene.events.listenerCount('update') === updateListeners && scene.anims.anims.size === animationCount);
     }
@@ -295,33 +298,36 @@ async function run() {
     const onEmptyClear = () => { if (scene.roomIndex === 1) emptyRoomClears++; };
     scene.events.on(CombatEvents.ROOM_CLEARED, onEmptyClear);
     const oldShot = new Projectile(scene, 352, 352, new Phaser.Math.Vector2(0, 0), 'enemy', scene.enemyProjectiles);
-    reset(scene.player.physicsSprite, 864, 608);
+    const exit=levels[scene.roomIndex].exits[0].position;
+    reset(scene.player.physicsSprite, (exit.column+.5)*64, (exit.row+.5)*64);
     tick(4);
     check('Salida cambia a segunda habitación', scene.roomIndex === 1);
     check('Cambio limpia robots, balas y referencias', oldEnemies.every(e => !e.active) && !oldShot.physicsBody.active &&
-        scene.enemies.getLength() === 4 && scene.enemyProjectiles.getLength() === 0);
+        scene.enemies.getLength() === levels[1].enemies.count && scene.enemyProjectiles.getLength() === 0);
+    const nextWall=scene.walls.getChildren().find(wall=>!wall.getData('room-perimeter'));
     check('T-14: paredes y visión se actualizan tras combate', scene.walls !== oldWalls &&
         scene.lineOfSight.obstacles === scene.walls &&
-        !scene.lineOfSight.hasLineOfSight({ x: 160, y: 160 }, { x: 352, y: 160 }));
+        !scene.lineOfSight.hasLineOfSight({ x: nextWall.x-80, y: nextWall.y }, { x: nextWall.x+80, y: nextWall.y }));
     check('Segunda habitación espera eliminar sus cuatro robots', emptyRoomClears === 0 && !scene.enemyManager.isCleared);
     scene.player.die();
     tick(70);
     gameOver.input.keyboard.emit('keydown-ENTER');
     tick(4);
     check('Reintento conserva segunda habitación y personaje', scene.roomIndex === 1 && scene.character === 'alex' &&
-        !scene.player.isDead() && scene.enemyManager.aliveCount === 4 && !scene.enemyManager.isCleared && emptyRoomClears === 0);
+        !scene.player.isDead() && scene.enemyManager.aliveCount === levels[1].enemies.count && !scene.enemyManager.isCleared && emptyRoomClears === 0);
     scene.events.off(CombatEvents.ROOM_CLEARED, onEmptyClear);
     scene.sys.sceneUpdate = () => {};
     for (let index = 1; index < levels.length; index++) {
         while (!scene.waves.isComplete) { scene.enemyManager.defeatLivingEnemies(); scene.waves.update(1000); }
-        reset(scene.player.physicsSprite, 864, 608); tick(4);
+        const exit=levels[scene.roomIndex].exits[0].position;
+        reset(scene.player.physicsSprite, (exit.column+.5)*64, (exit.row+.5)*64); tick(4);
         if (index < levels.length - 1) scene.sys.sceneUpdate = () => {};
     }
     check('Salida final conduce a conclusión de niveles de prueba', game.scene.isActive('CompletionScene') && !game.scene.isActive('VisualNovelScene'));
     game.scene.getScene('CompletionScene').scene.start('GameScene', { character: 'alex', roomIndex: 0 });
     tick(4);
     scene.sys.sceneUpdate = () => {};
-    check('Nueva partida reconstruye primera habitación', scene.roomIndex === 0 && scene.enemies.getLength() === 3);
+    check('Nueva partida reconstruye primera habitación', scene.roomIndex === 0 && scene.enemies.getLength() === levels[0].enemies.count);
     check('Personaje se conserva entre habitaciones', scene.character === 'alex' && scene.player.physicsSprite.texture.key === 'alex-walk');
     check('Colliders estables tras cambios', scene.physics.world.colliders.getActive().length === colliderCount);
     scene.sys.sceneUpdate = normalUpdate;

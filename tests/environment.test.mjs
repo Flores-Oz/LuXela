@@ -25,7 +25,7 @@ test('every room has complete floor, exact wall coverage and bounded decoration 
     for (let index=0;index<manager.count;index++) {
         const config=manager.getLevel(index), layout=createRoomLayout(manager.createRoom(index),config.exits), plan=buildEnvironmentPlan(layout,config.presentation);
         const atlas=detailedEnvironmentAtlas(config.presentation.environmentStyle);
-        assert.equal(plan.floor.length,11); assert.ok(plan.floor.every(row=>row.length===15 && row.every(tile=>atlas.floors.includes(tile))));
+        assert.equal(plan.floor.length,layout.height/layout.tileSize); assert.ok(plan.floor.every(row=>row.length===layout.width/layout.tileSize && row.every(tile=>atlas.floors.includes(tile))));
         assert.equal(plan.walls.flat().filter(tile=>tile>=0).length,layout.walls.length);
         for(const cell of layout.walls) assert.ok(plan.walls[cell.row][cell.column]>=0 && plan.walls[cell.row][cell.column]<atlas.columns*atlas.rows);
         assert.equal([...plan.decoration.flat(),...plan.decorationOverlay.flat()].filter(tile=>tile>=0).length,config.presentation.decorations.length);
@@ -44,7 +44,7 @@ test('three themes change only appearance and keep the same room data', () => {
 });
 test('decorations cannot overlay walls, player start or exit even in unvalidated render input', () => {
     const layout=createRoomLayout(new LevelManager().createRoom(0));
-    const plan=buildEnvironmentPlan(layout,{scenarioId:'test',decorations:[{row:0,column:0,kind:'grate'},{row:1,column:1,kind:'panel'},{row:9,column:13,kind:'warning'},{row:99,column:99,kind:'circuit'}]});
+    const plan=buildEnvironmentPlan(layout,{scenarioId:'test',decorations:[{row:0,column:0,kind:'grate'},{...layout.playerSpawns[0],kind:'panel'},{...layout.doors[0],kind:'warning'},{row:99,column:99,kind:'circuit'}]});
     assert.ok(plan.decoration.flat().every(tile=>tile===-1));
     assert.ok(plan.decorationOverlay.flat().every(tile=>tile===-1));
 });
@@ -64,7 +64,7 @@ for(const [name,mutate] of [
     ['unknown theme',d=>{d[0].presentation.theme='unknown';}],
     ['overlapping layers',d=>{d[0].presentation.layers.walls='floor';}],
     ['decoration in wall',d=>{d[0].presentation.decorations[0].row=0;}],
-    ['decoration on exit',d=>{d[0].presentation.decorations[0]={row:9,column:13,kind:'panel'};}],
+    ['decoration on exit',d=>{d[0].presentation.decorations[0]={...d[0].exits[0].position,kind:'panel'};}],
     ['duplicate decoration',d=>{d[0].presentation.decorations.push(structuredClone(d[0].presentation.decorations[0]));}],
     ['unknown decoration',d=>{d[0].presentation.decorations[0].kind='blocking-crate';}]
 ]) test(`rejects ${name}`,()=>{const data=structuredClone(levels);mutate(data);assert.ok(validateLevelCatalog(data,arcadeRooms).length>0);});
@@ -85,7 +85,7 @@ test('all detailed styles preserve physical geometry and keep fixtures confined 
     const manager=new LevelManager(),layout=createRoomLayout(manager.createRoom(0)),before=structuredClone(layout);
     for(const style of environmentStyleIds){
         const atlas=detailedEnvironmentAtlas(style),plan=buildEnvironmentPlan(layout,{scenarioId:'check',environmentStyle:style});
-        assert.equal(plan.floor.flat().filter(index=>index>=0).length,165);
+        assert.equal(plan.floor.flat().filter(index=>index>=0).length,layout.width/layout.tileSize*layout.height/layout.tileSize);
         assert.equal(plan.walls.flat().filter(index=>index>=0).length,layout.walls.length);
         for(const cell of layout.floors)assert.equal(plan.walls[cell.row][cell.column],-1);
         assert.ok([...atlas.floors,...atlas.walls,...atlas.wallVariants,...atlas.wallDetails,...Object.values(atlas.decoration),...Object.values(atlas.edgeWalls),...Object.values(atlas.door)].every(index=>index>=0&&index<64));

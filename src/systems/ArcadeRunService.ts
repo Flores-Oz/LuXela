@@ -6,14 +6,14 @@ import { SpecialAbilityConfig } from "../config/SpecialAbilityConfig";
 /** Session-only arcade result. Narrative/UI cannot manufacture a victory by scene data alone. */
 export class ArcadeRunService {
     private serial = 0;
-    private run: { id: number; character: PlayerCharacter; roomIndex: number; cleared: Set<number>; score: number; entryScore: number; specialCharge: number; entryCharge: number; awarded: Set<string>; status: "playing" | "defeat" | "victory" } | null = null;
+    private run: { id: number; character: PlayerCharacter; roomIndex: number; cleared: Set<number>; score: number; entryScore: number; specialCharge: number; entryCharge: number; specialCooldown: number; entryCooldown: number; awarded: Set<string>; status: "playing" | "defeat" | "victory" } | null = null;
     readonly roomCount: number;
     constructor(roomCount = levels.length) {
         if (!Number.isSafeInteger(roomCount) || roomCount < 1) throw new RangeError("Invalid room count");
         this.roomCount = roomCount;
     }
     begin(character: PlayerCharacter): number {
-        this.run = { id: ++this.serial, character, roomIndex: 0, cleared: new Set(), score: 0, entryScore: 0, specialCharge: 0, entryCharge: 0, awarded: new Set(), status: "playing" };
+        this.run = { id: ++this.serial, character, roomIndex: 0, cleared: new Set(), score: 0, entryScore: 0, specialCharge: 0, entryCharge: 0, specialCooldown: 0, entryCooldown: 0, awarded: new Set(), status: "playing" };
         return this.run.id;
     }
     continue(id: unknown, character: PlayerCharacter, roomIndex = this.run?.roomIndex): boolean {
@@ -22,6 +22,7 @@ export class ArcadeRunService {
         this.run.cleared.delete(this.run.roomIndex);
         this.run.score = this.run.entryScore;
         this.run.specialCharge = this.run.entryCharge;
+        this.run.specialCooldown = this.run.entryCooldown;
         this.run.awarded.clear();
         this.run.status = "playing";
         return true;
@@ -35,6 +36,7 @@ export class ArcadeRunService {
         this.run.roomIndex++;
         this.run.entryScore = this.run.score;
         this.run.entryCharge = this.run.specialCharge;
+        this.run.entryCooldown = this.run.specialCooldown;
         this.run.awarded.clear();
         return true;
     }
@@ -50,9 +52,16 @@ export class ArcadeRunService {
     }
     getScore(id: number): number { return this.run?.id === id ? this.run.score : 0; }
     getSpecialCharge(id: number): number { return this.run?.id === id ? this.run.specialCharge : 0; }
+    getSpecialCooldown(id: number): number { return this.run?.id === id ? this.run.specialCooldown : 0; }
+    advanceSpecialCooldown(id: number, delta: number): void {
+        if (this.run?.id !== id || this.run.status !== "playing" || !Number.isFinite(delta) || delta <= 0) return;
+        this.run.specialCooldown = Math.max(0, this.run.specialCooldown - delta);
+    }
     consumeSpecial(id: number): boolean {
-        if (!this.run || this.run.id !== id || this.run.status !== "playing" || this.run.specialCharge < SpecialAbilityConfig[this.run.character].killsRequired) return false;
-        this.run.specialCharge = 0; return true;
+        if (!this.run || this.run.id !== id || this.run.status !== "playing" || this.run.specialCooldown > 0 || this.run.specialCharge < SpecialAbilityConfig[this.run.character].killsRequired) return false;
+        this.run.specialCharge = 0;
+        this.run.specialCooldown = SpecialAbilityConfig.cooldownMs;
+        return true;
     }
     defeat(id: number): void { if (this.run?.id === id && this.run.status === "playing") this.run.status = "defeat"; }
     finish(id: number, roomIndex: number): boolean {

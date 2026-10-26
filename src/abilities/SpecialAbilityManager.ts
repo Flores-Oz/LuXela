@@ -41,6 +41,7 @@ export class SpecialAbilityManager {
     private visualClock = 0;
     private impactPositions: readonly { x: number; y: number }[] = [];
     private impactStartedAt = 0;
+    private readonly advanceCooldown: (delta: number) => void;
 
     private readonly scene: Phaser.Scene;
     private readonly player: Player;
@@ -51,7 +52,8 @@ export class SpecialAbilityManager {
         this.player = player;
         this.character = character;
         const runs = getArcadeRun(scene.game);
-        const charge = { count: () => runs.getSpecialCharge(runId), consume: () => runs.consumeSpecial(runId) };
+        const charge = { count: () => runs.getSpecialCharge(runId), consume: () => runs.consumeSpecial(runId), cooldownRemaining: () => runs.getSpecialCooldown(runId) };
+        this.advanceCooldown = delta => runs.advanceSpecialCooldown(runId, delta);
         this.ability = character === "lua" ? new LuaSpecial(player, enemies, charge) : new AlexSpecial(player, enemies, positions => {
             this.impactPositions = positions;
             this.impactStartedAt = this.visualClock;
@@ -67,7 +69,8 @@ export class SpecialAbilityManager {
     }
 
     update(delta: number): void {
-        if (this.destroyed) return;
+        if (this.destroyed || !Number.isFinite(delta) || delta <= 0) return;
+        this.advanceCooldown(delta);
         this.visualClock += delta;
         this.ability.update(delta);
         if (Phaser.Input.Keyboard.JustDown(this.key)) this.ability.activate();
@@ -102,7 +105,7 @@ export class SpecialAbilityManager {
                 }
             } else this.impactPositions = [];
         }
-        const status = ability.state === "ready" ? "LISTA" : ability.state === "locked" ? "ELIMINA ROBOTS" : ability.state === "charging" ? "CARGANDO" : "ACTIVA";
+        const status = ability.state === "ready" ? "LISTA" : ability.state === "cooldown" ? `ESPERA ${Math.ceil(ability.cooldownRemaining / 1000)} s` : ability.state === "locked" ? "ELIMINA ROBOTS" : ability.state === "charging" ? "CARGANDO" : "ACTIVA";
         this.hud.setText(`[${SpecialAbilityConfig.key}] ${characters[this.character].abilityName} · ${status}`);
     }
 

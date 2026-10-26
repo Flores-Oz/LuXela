@@ -49,30 +49,40 @@ export class ModularRoomRenderer implements RoomRenderer {
     /** Canvas otherwise culls and draws every static tile on every frame. WebGL keeps its batched Tilemaps. */
     private cacheCanvasLayers(): void {
         if (this.scene.game.renderer.type !== Phaser.CANVAS || !this.map) return;
-        // Bound allocations: larger rooms retain normal Tilemap culling instead of a huge surface.
-        if (this.map.widthInPixels * this.map.heightInPixels > 1024 * 1024) return;
+        // Large rooms use bounded 512px chunks instead of one room-sized allocation.
+        const chunkTiles=this.map.widthInPixels*this.map.heightInPixels>1024*1024?Math.max(1,Math.floor(512/this.map.tileWidth)):Math.max(this.map.width,this.map.height);
         const source = this.scene.textures.get(this.textureKey).getSourceImage() as HTMLImageElement | HTMLCanvasElement;
         const size = this.map.tileWidth;
         const columns = Math.floor(source.width / size);
         for (const layer of this.layers) {
             const tiles = layer.layer.data.flat().filter(tile => tile.index >= 0);
-            const left = tiles.length ? Math.min(...tiles.map(tile => tile.x)) : 0;
-            const top = tiles.length ? Math.min(...tiles.map(tile => tile.y)) : 0;
-            const right = tiles.length ? Math.max(...tiles.map(tile => tile.x)) : 0;
-            const bottom = tiles.length ? Math.max(...tiles.map(tile => tile.y)) : 0;
-            const key = `room-cache-${++nextCacheId}`;
-            const texture = this.scene.textures.createCanvas(key, (right - left + 1) * size, (bottom - top + 1) * size);
-            if (!texture) continue;
-            const context = texture.getContext();
-            context.imageSmoothingEnabled = false;
-            for (const tile of tiles) context.drawImage(source, (tile.index % columns) * size, Math.floor(tile.index / columns) * size,
-                size, size, (tile.x - left) * size, (tile.y - top) * size, size, size);
-            texture.refresh().setFilter(Phaser.Textures.FilterMode.NEAREST);
-            const image = this.scene.add.image(left * size * layer.scaleX, top * size * layer.scaleY, key).setOrigin(0)
-                .setScale(layer.scaleX, layer.scaleY).setDepth(layer.depth).setAlpha(layer.alpha).setBlendMode(layer.blendMode)
-                .setName(`${layer.name}-cache`);
-            layer.setVisible(false).setData("environment-cache", image);
-            this.cachedLayers.push({ image, key });
+            const chunks=new Map<string,Phaser.Tilemaps.Tile[]>();
+            for(const tile of tiles){
+                const key=`${Math.floor(tile.x/chunkTiles)},${Math.floor(tile.y/chunkTiles)}`;
+                const group=chunks.get(key)??[];group.push(tile);chunks.set(key,group);
+            }
+            if(!chunks.size)chunks.set("empty",[]);
+            const images:Phaser.GameObjects.Image[]=[];
+            for(const tiles of chunks.values()){
+                const left = tiles.length ? Math.min(...tiles.map(tile => tile.x)) : 0;
+                const top = tiles.length ? Math.min(...tiles.map(tile => tile.y)) : 0;
+                const right = tiles.length ? Math.max(...tiles.map(tile => tile.x)) : 0;
+                const bottom = tiles.length ? Math.max(...tiles.map(tile => tile.y)) : 0;
+                const key = `room-cache-${++nextCacheId}`;
+                const texture = this.scene.textures.createCanvas(key, (right - left + 1) * size, (bottom - top + 1) * size);
+                if (!texture) continue;
+                const context = texture.getContext();
+                context.imageSmoothingEnabled = false;
+                for (const tile of tiles) context.drawImage(source, (tile.index % columns) * size, Math.floor(tile.index / columns) * size,
+                    size, size, (tile.x - left) * size, (tile.y - top) * size, size, size);
+                texture.refresh().setFilter(Phaser.Textures.FilterMode.NEAREST);
+                const image = this.scene.add.image(left * size * layer.scaleX, top * size * layer.scaleY, key).setOrigin(0)
+                    .setScale(layer.scaleX, layer.scaleY).setDepth(layer.depth).setAlpha(layer.alpha).setBlendMode(layer.blendMode)
+                    .setName(`${layer.name}-cache`);
+                images.push(image);
+                this.cachedLayers.push({ image, key });
+            }
+            layer.setVisible(false).setData("environment-cache",images[0]).setData("environment-caches",images);
         }
     }
     // Data was placed in batches in begin; callbacks keep the existing builder contract.

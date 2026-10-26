@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Berzerk · Prueba de robots</title>
+</head>
+<body>
+  <main class="lab">
+    <header><div><p class="eyebrow">BERZERK / PRUEBAS DE COMBATE</p><h1>Un robot. Todos sus movimientos.</h1></div><a href="/">Volver al juego ↗</a></header>
+    <div class="workspace">
+      <aside>
+        <h2>Elegí un robot</h2>
+        <div class="robots" role="group" aria-label="Robot">
+          <button data-robot="robot-red" aria-pressed="true"><i style="--color:#ff6868"></i>Rojo</button>
+          <button data-robot="robot-blue" aria-pressed="false"><i style="--color:#659dff"></i>Azul</button>
+          <button data-robot="robot-yellow" aria-pressed="false"><i style="--color:#f5d766"></i>Amarillo</button>
+          <button data-robot="robot-orange" aria-pressed="false"><i style="--color:#ffac59"></i>Naranja</button>
+        </div>
+        <label for="mode">Qué querés ver</label>
+        <select id="mode">
+          <option value="combat">Patrón de ataque</option>
+          <option value="special-a1">Animación especial A1</option>
+          <option value="special-a2">Animación especial A2</option>
+          <option value="special-b1">Animación especial B1</option>
+          <option value="special-b2">Animación especial B2</option>
+        </select>
+        <p id="description">Cargando recursos…</p>
+        <label class="check"><input id="wall" type="checkbox" /> Poner una pared interior</label>
+        <div class="actions"><button id="pause">Pausar</button><button id="reset">Reiniciar prueba</button></div>
+        <div class="note"><strong>Cuatro patrones diferentes</strong><p>Rojo: disparo individual. Azul: ráfaga de cinco. Amarillo: persecución rápida. Naranja: carga y abanico perforante. Las opciones A1–B2 permiten revisar las animaciones por separado.</p></div>
+      </aside>
+      <section class="stage" aria-label="Área de prueba">
+        <div class="stage-header"><span id="status" role="status">Preparando prueba</span><span>WASD · mover a Alex</span></div>
+        <div id="robot-arena"></div>
+        <div class="stage-footer"><span>Alex es invulnerable en esta prueba.</span><span id="counts">Disparos: 0 · Impactos: 0</span></div>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="/src/robot-lab.ts"></script>
+</body>
+</html>

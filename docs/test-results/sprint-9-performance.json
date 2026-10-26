@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "renderer": "Canvas",
+  "viewport": [
+    1920,
+    1080
+  ],
+  "room": [
+    40,
+    24
+  ],
+  "chunkCount": 45,
+  "cachePixelBytes": 29507584,
+  "timingsMsPerFrame": {
+    "uncached": [
+      1.6516666666759798,
+      1.6158333333364376,
+      1.8316666666728756,
+      1.409999999993791
+    ],
+    "cached": [
+      0.19666666666356225,
+      0.27416666665424905,
+      0.19916666666977106,
+      0.21666666666666667
+    ]
+  },
+  "tilemapDrawsPerFrame": {
+    "uncached": 4,
+    "cached": 0
+  },
+  "maxPixelDifference": 1,
+  "scope": "Local static Canvas draw comparison at native scale, not a device FPS guarantee",
+  "consoleErrors": [],
+  "generatedAt": "2026-10-26T08:16:59.529Z"
+}

@@ -21,7 +21,13 @@
     "test:sprint8:unit": "node --test tests/level-config.test.mjs tests/waves.test.mjs tests/special-charge.test.mjs tests/environment.test.mjs",
     "test:sprint8:environment": "node tests/run-sprint-8.mjs",
     "test:sprint8:performance": "node tests/run-sprint-8-performance.mjs",
-    "test:sprint8": "node tests/run-all.mjs --sprint8"
+    "test:sprint8": "node tests/run-all.mjs --sprint8",
+    "test:sprint9:unit": "node --test tests/large-rooms.test.mjs tests/enemy-attacks.test.mjs tests/level-config.test.mjs tests/waves.test.mjs tests/special-charge.test.mjs tests/environment.test.mjs",
+    "test:sprint9:attacks": "node tests/run-robot-attacks.mjs",
+    "test:robot-lab": "node tests/run-robot-lab.mjs",
+    "test:sprint9:rooms": "node tests/run-sprint-9.mjs",
+    "test:sprint9:performance": "node tests/run-sprint-9-performance.mjs",
+    "test:sprint9": "node tests/run-all.mjs --sprint9"
   },
   "dependencies": {
     "phaser": "^4.2.1",

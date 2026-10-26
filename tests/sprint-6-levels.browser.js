@@ -12,6 +12,7 @@ import { Enemy } from '../src/entities/enemies/Enemy';
 import { EnemyManager } from '../src/systems/EnemyManager';
 import { LineOfSight } from '../src/systems/LineOfSight';
 import { createPlayerAnimations } from '../src/systems/PlayerAnimations';
+import { createRobotAnimations } from '../src/systems/RobotAssets';
 
 const checks = [];
 const check = (name, value) => { if (!value) throw Error(name); checks.push(name); };
@@ -32,7 +33,7 @@ class LevelLoadScene extends GameScene {
         const builder = new RoomBuilder(this); builder.build(this.testRoom);
         this.testWalls = builder.getWalls(); this.testExits = builder.getExits();
         this.physics.world.setBounds(0, 0, this.testRoom.widthInPixels, this.testRoom.heightInPixels);
-        createPlayerAnimations(this); this.createEnemyAnimations();
+        createPlayerAnimations(this); createRobotAnimations(this);
         const spawn = this.testRoom.findTile(TileType.PlayerSpawn);
         this.testPlayer = new Player(this, spawn.column * 64 + 32, spawn.row * 64 + 32, this.testCharacter);
         this.testEnemies = this.physics.add.group();
@@ -58,7 +59,7 @@ try {
     await until(() => game.scene.getScene('GameScene')?.readyGeneration > 0);
     check('Five valid configurations', levels.length === 5 && validateLevelCatalog(levels, arcadeRooms).length === 0);
     check('Five distinct distributions', new Set(levels.map(level => JSON.stringify(arcadeRooms[level.roomId]))).size === 5);
-    check('Expected counts 3, 4, 5, 6, 7', levels.map(level => level.enemies.count).join() === '3,4,5,6,7');
+    check('Expected large-room counts 6, 8, 10, 12, 14', levels.map(level => level.enemies.count).join() === '6,8,10,12,14');
     check('No duplicate robot spawn source in maps', Object.values(arcadeRooms).every(matrix => matrix.flat().every(tile => tile !== TileType.RobotSpawn)));
     if (testDifficulty) {
         check('Movement speed increases at every level', levels.every((level, index) => index === 0 || level.difficulty.moveSpeed > levels[index - 1].difficulty.moveSpeed));
@@ -69,8 +70,8 @@ try {
         let rejected = false; try { manager.getLevel(index); } catch { rejected = true; }
         check(`Reject invalid index ${index}`, rejected);
     }
-    const independent = manager.createRoom(0); independent.matrix[1][1] = TileType.Wall;
-    check('Room load does not mutate original map', manager.createRoom(0).matrix[1][1] === TileType.PlayerSpawn);
+    const independent = manager.createRoom(0),originalSpawn=independent.findTile(TileType.PlayerSpawn); independent.matrix[originalSpawn.row][originalSpawn.column] = TileType.Wall;
+    check('Room load does not mutate original map', manager.createRoom(0).matrix[originalSpawn.row][originalSpawn.column] === TileType.PlayerSpawn);
     for (const tileSize of [0, -1, Infinity]) {
         let rejected = false; try { manager.createRoom(0, tileSize); } catch { rejected = true; }
         check(`Reject invalid tile size ${tileSize}`, rejected);
@@ -90,11 +91,11 @@ try {
             const overlaps = body => obstacles.some(wall => Phaser.Geom.Intersects.RectangleToRectangle(body, wall));
             check(`${label}: bodies outside walls`, !overlaps(scene.testPlayer.physicsSprite.body) && scene.testEnemies.getChildren().every(enemy => !overlaps(enemy.body)));
             check(`${label}: spawn outside initial detection`, scene.testEnemies.getChildren().every(enemy => !enemy.detectPlayer(scene.testPlayer.physicsSprite)));
-            check(`${label}: exit and complete room loaded`, scene.testExits.getLength() === 1 && scene.physics.world.bounds.width === 960 && scene.physics.world.bounds.height === 704);
+            check(`${label}: exit and complete room loaded`, scene.testExits.getLength() === 1 && scene.physics.world.bounds.width === scene.testRoom.widthInPixels && scene.physics.world.bounds.height === scene.testRoom.heightInPixels);
             check(`${label}: no residual dynamic bodies`, scene.physics.world.bodies.size === config.enemies.count + 1);
             check(`${label}: no duplicated colliders`, scene.physics.world.colliders.getActive().length === 2);
             // Drive each robot toward the left boundary with actual Arcade physics.
-            const robot = scene.testEnemies.getChildren()[0];
+            const robot = scene.testEnemies.getChildren().find(enemy => enemy.texture.key === 'robot-red');
             robot.setPosition(87, 160); robot.body.reset(87, 160); robot.moveLeft();
             await delay(180);
             check(`${label}: wall blocks robot movement`, robot.body.left >= 63.9);
@@ -114,7 +115,7 @@ try {
                 player.physicsSprite.body.reset(224, 160);
                 const time = 10000;
                 const firstShot = robot.updateBehavior(player, sight, time);
-                check(`${label}: visible player produces normalized shot`, firstShot && firstShot.x === 1 && firstShot.y === 0);
+                check(`${label}: visible player produces normalized shot`, firstShot?.length === 1 && firstShot[0].direction.x === 1 && firstShot[0].direction.y === 0);
                 check(`${label}: no shot before configured cooldown`, robot.updateBehavior(player, sight, time + difficulty.shootCooldown - 1) === null);
                 check(`${label}: shot resumes at configured cooldown`, robot.updateBehavior(player, sight, time + difficulty.shootCooldown) !== null);
                 player.physicsSprite.body.reset(32, 160);

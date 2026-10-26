@@ -16,14 +16,15 @@ export function planWaveSpawns(room: Room, spawns: readonly LevelEnemySpawn[],
         }
     }
     const clearance = Math.max(room.tileSize * 2, detectionRange + room.tileSize);
+    const exits=queue.filter(({row,column})=>room.matrix[row]![column]===TileType.Exit);
     const available = queue.filter(({ row, column }) => {
         const tile = room.matrix[row]![column];
-        return (tile === TileType.Floor || tile === TileType.RobotSpawn) &&
+        return (tile === TileType.Floor || tile === TileType.RobotSpawn) && exits.every(exit=>Math.hypot(row-exit.row,column-exit.column)>=2) &&
             Math.hypot((column + 0.5) * room.tileSize - player.x, (row + 0.5) * room.tileSize - player.y) >= clearance;
     });
     const chosen = new Set<string>(), result: TilePosition[] = [];
     for (const spawn of spawns) {
-        const candidate = available.filter(tile => !chosen.has(`${tile.row},${tile.column}`))
+        const candidate = available.filter(tile => !chosen.has(`${tile.row},${tile.column}`)&&result.every(other=>Math.hypot(tile.row-other.row,tile.column-other.column)>=2))
             .sort((a, b) => Math.abs(a.row - spawn.row) + Math.abs(a.column - spawn.column) -
                 Math.abs(b.row - spawn.row) - Math.abs(b.column - spawn.column))[0];
         if (!candidate) return null;

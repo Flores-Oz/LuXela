@@ -24,6 +24,9 @@ import type { Room } from "../world/Room";
 import type { DoorController } from "../world/DoorController";
 import { SpecialAbilityConfig } from "../config/SpecialAbilityConfig";
 import { loadEnvironmentAssets } from "../world/environment/EnvironmentTiles";
+import { layoutRoomCamera } from "../world/RoomCamera";
+import { loadRobotAssets,createRobotAnimations } from "../systems/RobotAssets";
+import { fireEnemyShots } from "../systems/EnemyProjectiles";
 
 
 
@@ -75,15 +78,7 @@ export class GameScene extends Phaser.Scene {
         loadPlayerAssets(this);
         loadSpecialAssets(this);
 
-        if (!this.textures.exists("robot-red")) this.load.spritesheet(
-            "robot-red",
-            "assets/sprites/enemies/RobotRed-fixed.png",
-            {
-                frameWidth: 64,
-                frameHeight: 64,
-                endFrame: 65
-            }
-        );
+        loadRobotAssets(this);
     }
 
     create(): void {
@@ -129,7 +124,7 @@ export class GameScene extends Phaser.Scene {
         this.doors = builder.getDoors();
 
         createPlayerAnimations(this);
-        this.createEnemyAnimations();
+        createRobotAnimations(this);
 
         this.walls = builder.getWalls();
         this.lineOfSight = new LineOfSight(this.walls);
@@ -209,8 +204,12 @@ export class GameScene extends Phaser.Scene {
         for (const projectiles of [this.playerProjectiles, this.enemyProjectiles]) {
             this.physics.add.collider(projectiles, this.walls, (shot) => {
                 (shot as Phaser.Physics.Arcade.Image).getData("projectile")?.destroy();
-            });
+            },(shot,wall)=>!(shot as Phaser.Physics.Arcade.Image).getData("projectile")?.piercesInteriorWalls||!!(wall as Phaser.GameObjects.GameObject).getData("room-perimeter"));
         }
+        const projectileBounds=(body:Phaser.Physics.Arcade.Body)=>body.gameObject.getData("projectile")?.destroy();
+        const world=this.physics.world;
+        world.on(Phaser.Physics.Arcade.Events.WORLD_BOUNDS,projectileBounds);
+        this.events.once(Phaser.Scenes.Events.SHUTDOWN,()=>world.off(Phaser.Physics.Arcade.Events.WORLD_BOUNDS,projectileBounds));
         this.physics.add.overlap(this.playerProjectiles, this.enemies, (shot, target) => {
             const enemy = target as Enemy;
             const projectile = shot as Phaser.Physics.Arcade.Image;
@@ -251,18 +250,16 @@ export class GameScene extends Phaser.Scene {
     update(time: number, delta = 1000 / 60): void {
         if (this.combatState !== "playing" || !this.player || !this.lineOfSight || this.isChangingRoom) return;
         const abilityState = this.specialAbilities?.ability.state;
+        const cooldownSeconds = Math.ceil((this.specialAbilities?.ability.cooldownRemaining ?? 0) / 1000);
         this.specialAbilities?.update(delta);
-        if (this.specialAbilities?.ability.state !== abilityState) this.updateHUD();
+        if (this.specialAbilities?.ability.state !== abilityState || cooldownSeconds !== Math.ceil((this.specialAbilities?.ability.cooldownRemaining ?? 0) / 1000)) this.updateHUD();
         this.waves?.update(delta);
         this.player.update();
 
         for (const child of this.enemies.getChildren()) {
             const enemy = child as Enemy;
-            const direction = enemy.updateBehavior(this.player, this.lineOfSight, time - this.pausedDuration);
-            if (direction) {
-                // Spawn at the robot center so a muzzle offset cannot jump a wall.
-                new Projectile(this, enemy.x, enemy.y, direction, "enemy", this.enemyProjectiles);
-            }
+            const shots = enemy.updateBehavior(this.player, this.lineOfSight, time - this.pausedDuration);
+            fireEnemyShots(this, enemy, shots, this.enemyProjectiles);
         }
 
         const direction = this.player.consumeShootRequest();
@@ -277,7 +274,7 @@ export class GameScene extends Phaser.Scene {
         this.specialAbilities?.cancel();
         // Pause only physics. Animation updates must continue until defeat ends.
         this.physics.pause();
-        for (const child of this.enemies.getChildren()) (child as Enemy).stop();
+        for (const child of this.enemies.getChildren()) { (child as Enemy).cancelAttack(); (child as Enemy).stop(); }
         this.playerProjectiles.clear(true, true);
         this.enemyProjectiles.clear(true, true);
     }
@@ -286,119 +283,6 @@ export class GameScene extends Phaser.Scene {
         if (this.combatState !== "defeat") return;
         this.combatState = "game-over";
         this.scene.start("GameOverScene", { roomIndex: this.roomIndex, character: this.character, runId: this.runId });
-    }
-
-    private createEnemyAnimations(): void {
-
-        if (!this.anims.exists("robot-idle")) this.anims.create({
-            key: "robot-idle",
-            frames: this.anims.generateFrameNumbers(
-                "robot-red",
-                { start: 0, end: 3 }
-            ),
-            frameRate: 4,
-            repeat: -1
-        });
-
-        if (!this.anims.exists("robot-walk-up")) this.anims.create({
-            key: "robot-walk-up",
-            frames: this.anims.generateFrameNumbers(
-                "robot-red",
-                { start: 6, end: 11 }
-            ),
-            frameRate: 8,
-            repeat: -1
-        });
-
-        if (!this.anims.exists("robot-walk-down")) this.anims.create({
-            key: "robot-walk-down",
-            frames: this.anims.generateFrameNumbers(
-                "robot-red",
-                { start: 12, end: 17 }
-            ),
-            frameRate: 8,
-            repeat: -1
-        });
-
-        if (!this.anims.exists("robot-walk-right")) this.anims.create({
-            key: "robot-walk-right",
-            frames: this.anims.generateFrameNumbers(
-                "robot-red",
-                { start: 18, end: 23 }
-            ),
-            frameRate: 8,
-            repeat: -1
-        });
-
-        if (!this.anims.exists("robot-walk-left")) this.anims.create({
-            key: "robot-walk-left",
-            frames: this.anims.generateFrameNumbers(
-                "robot-red",
-                { start: 24, end: 29 }
-            ),
-            frameRate: 8,
-            repeat: -1
-        });
-
-        if (!this.anims.exists("robot-special-a1")) this.anims.create({
-            key: "robot-special-a1",
-            frames: this.anims.generateFrameNumbers(
-                "robot-red",
-                { start: 30, end: 33 }
-            ),
-            frameRate: 8,
-            repeat: 0
-        });
-
-        if (!this.anims.exists("robot-special-a2")) this.anims.create({
-            key: "robot-special-a2",
-            frames: this.anims.generateFrameNumbers(
-                "robot-red",
-                { start: 36, end: 39 }
-            ),
-            frameRate: 8,
-            repeat: 0
-        });
-
-        if (!this.anims.exists("robot-special-b1")) this.anims.create({
-            key: "robot-special-b1",
-            frames: this.anims.generateFrameNumbers(
-                "robot-red",
-                { start: 42, end: 45 }
-            ),
-            frameRate: 8,
-            repeat: 0
-        });
-
-        if (!this.anims.exists("robot-special-b2")) this.anims.create({
-            key: "robot-special-b2",
-            frames: this.anims.generateFrameNumbers(
-                "robot-red",
-                { start: 48, end: 51 }
-            ),
-            frameRate: 8,
-            repeat: 0
-        });
-
-        if (!this.anims.exists("robot-hit")) this.anims.create({
-            key: "robot-hit",
-            frames: this.anims.generateFrameNumbers(
-                "robot-red",
-                { start: 54, end: 56 }
-            ),
-            frameRate: 10,
-            repeat: 0
-        });
-
-        if (!this.anims.exists("robot-death")) this.anims.create({
-            key: "robot-death",
-            frames: this.anims.generateFrameNumbers(
-                "robot-red",
-                { start: 60, end: 65 }
-            ),
-            frameRate: 10,
-            repeat: 0
-        });
     }
 
     private createProjectile(
@@ -453,7 +337,7 @@ export class GameScene extends Phaser.Scene {
         this.waves?.stop();
         this.input.keyboard?.resetKeys();
         this.player?.physicsSprite.setVelocity(0, 0);
-        for (const child of this.enemies.getChildren()) (child as Enemy).stop();
+        for (const child of this.enemies.getChildren()) { (child as Enemy).cancelAttack(); (child as Enemy).stop(); }
         this.playerProjectiles.clear(true, true);
         this.enemyProjectiles.clear(true, true);
         this.physics.pause();
@@ -527,7 +411,7 @@ export class GameScene extends Phaser.Scene {
             score: getArcadeRun(this.game).getScore(this.runId), enemies: this.enemyManager?.aliveCount ?? 0,
             wave: this.waves?.waveNumber, totalWaves: this.waves?.totalWaves,
             special: getArcadeRun(this.game).getSpecialCharge(this.runId), specialRequired: SpecialAbilityConfig[this.character].killsRequired,
-            specialState: this.specialAbilities?.ability.state, notice });
+            specialState: this.specialAbilities?.ability.state, specialCooldown: this.specialAbilities?.ability.cooldownRemaining, notice });
     }
 
     private pauseGame(event?: KeyboardEvent): void {
@@ -545,8 +429,8 @@ export class GameScene extends Phaser.Scene {
 
     private layoutRoom(): void {
         const camera = this.cameras.main;
-        const zoom = Math.max(0.1, Math.min((this.scale.width - 24) / this.roomWidth, (this.scale.height - 160) / this.roomHeight));
-        camera.setZoom(zoom).centerOn(this.roomWidth / 2, this.roomHeight / 2 - 48 / zoom);
+        if(this.player)layoutRoomCamera(this,this.roomWidth,this.roomHeight,this.player.physicsSprite);
+        const zoom=camera.zoom;
         const positionHUD = (text: Phaser.GameObjects.Text | null, x: number, y: number) => {
             text?.setScale(1 / zoom).setPosition(camera.width / 2 + (x - camera.width / 2) / zoom, camera.height / 2 + (y - camera.height / 2) / zoom);
         };

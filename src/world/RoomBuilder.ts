@@ -28,6 +28,7 @@ export class RoomBuilder {
         for (const wall of layout.walls) {
             this.renderer.wall(wall);
             const zone = this.scene.add.zone(wall.x, wall.y, wall.size, wall.size).setVisible(false).setName("wall-collider");
+            zone.setData("room-perimeter",wall.row===0||wall.column===0||wall.row===layout.height/layout.tileSize-1||wall.column===layout.width/layout.tileSize-1);
             this.scene.physics.add.existing(zone, true); this.walls.add(zone);
         }
         const entries: DoorEntry[] = [];

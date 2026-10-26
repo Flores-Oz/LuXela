@@ -21,12 +21,12 @@ try {
             await new Promise(r => setTimeout(r, 150));
             const fits = await b.evaluate(`(()=>{
                 const s=window.sprint7Game.scene.getScene('GameScene'),c=s.cameras.main;
-                s.hud.update({level:5,totalLevels:5,score:5300,enemies:7,wave:3,totalWaves:3,special:10,specialRequired:10,specialState:'ready',notice:'ENCUENTRO FINAL'});
+                s.hud.update({level:5,totalLevels:5,score:10600,enemies:14,wave:3,totalWaves:3,special:10,specialRequired:10,specialState:'ready',notice:'ENCUENTRO FINAL'});
                 const r=s.hud.text.getBounds(),z=c.zoom,x=c.width/2+(r.x-c.width/2)*z,y=c.height/2+(r.y-c.height/2)*z;
-                return x>=0&&x+r.width*z<=innerWidth&&y>=0&&y+r.height*z<=120&&c.worldView.width>=s.physics.world.bounds.width&&c.worldView.height>=s.physics.world.bounds.height;
+                return x>=0&&x+r.width*z<=innerWidth&&y>=0&&y+r.height*z<=120&&c.worldView.left>=-.01&&c.worldView.top>=-.01&&c.worldView.right<=s.physics.world.bounds.width+.01&&c.worldView.bottom<=s.physics.world.bounds.height+.01;
             })()`);
             if (!fits) throw Error(`HUD or room does not fit ${width}x${height}`);
-            result.layoutTests.push(`${width}x${height}: HUD completo y habitación sin recortes`);
+            result.layoutTests.push(`${width}x${height}: HUD fijo y cámara dentro de la habitación`);
         }
         await b.send('Emulation.clearDeviceMetricsOverride');
         // Reach charged state through actual required kills in the first two rooms.
@@ -43,10 +43,13 @@ try {
         await key('q', 'KeyQ', 81, 'down');
         await b.waitUntil("window.sprint7Game.scene.getScene('GameScene').specialAbilities.ability.performing");
         await b.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'q', code: 'KeyQ', windowsVirtualKeyCode: 81, autoRepeat: true });
-        await b.waitUntil("window.sprint7Game.scene.getScene('GameScene').specialAbilities.ability.state === 'locked'");
+        await b.waitUntil("!window.sprint7Game.scene.getScene('GameScene').specialAbilities.ability.performing");
         await b.waitUntil("window.sprint7Game.scene.getScene('GameScene').waves.state === 'active'");
+        await b.evaluate("void window.sprint7Game.scene.getScene('GameScene').enemyManager.getLivingEnemies().forEach(enemy=>{enemy.stop();enemy.updateBehavior=()=>null;})");
         await b.evaluate("void window.sprint7Game.scene.getScene('GameScene').enemyManager.defeatLivingEnemies()");
         await new Promise(r => setTimeout(r, 150));
+        if (!(await b.evaluate("window.sprint7Game.scene.getScene('GameScene').specialAbilities.ability.state === 'cooldown'"))) throw Error('New kills bypassed the 45-second cooldown');
+        await b.evaluate("(()=>{const manager=window.sprint7Game.scene.getScene('GameScene').specialAbilities;manager.update(manager.ability.cooldownRemaining)})()");
         if (!(await b.evaluate("window.sprint7Game.scene.getScene('GameScene').specialAbilities.ability.state === 'ready'"))) throw Error('Held Q reactivated after charging again');
         await key('q', 'KeyQ', 81, 'up');
         result.nativeInput.push('Q activa tras diez bajas', 'Q mantenida no se reactiva tras nuevas bajas');

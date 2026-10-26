@@ -1,3 +1,4 @@
+import { levels } from '../src/levels/levels';
 import Phaser from 'phaser';
 import { gameConfig } from '../src/config/gameConfig';
 import { CharacterUnlockService } from '../src/systems/CharacterUnlockService';
@@ -79,13 +80,13 @@ async function run() {
         check(`${character}: continuar libera entrada sin arrastre ni eventos duplicados`, !document.querySelector('.pause-screen') && !gameplay.player.wasd.D.isDown && gameplay.input.keyboard.listenerCount('keydown-ESC')===1);
         await pause(); button('.pause-screen','Reiniciar partida').click();
         await until(()=>active('GameScene') && scene().runId!==initialRun); gameplay=await entered();
-        check(`${character}: reiniciar pausa crea partida nueva en primera habitación`, gameplay.character===character && gameplay.roomIndex===0 && gameplay.enemyManager.aliveCount===3 && gameplay.specialAbilities.ability.state==='locked' && !active('PauseScene'));
+        check(`${character}: reiniciar pausa crea partida nueva en primera habitación`, gameplay.character===character && gameplay.roomIndex===0 && gameplay.enemyManager.aliveCount===levels[0].enemies.count && gameplay.specialAbilities.ability.state==='locked' && !active('PauseScene'));
         const manager=gameplay.specialAbilities;
         prime(gameplay);
         manager.ability.activate(); manager.update(SpecialAbilityConfig[character].chargeMs);
         check(`${character}: especial sigue siendo letal de habitación sin balas especiales`, gameplay.enemyManager.isCleared && gameplay.playerProjectiles.getLength()===0);
         gameplay.changeRoom(); await until(()=>scene().roomIndex===1 && scene().player && scene().specialAbilities!==manager); gameplay=await entered();
-        check(`${character}: segunda habitación conserva personaje y sesión`, gameplay.character===character && gameplay.enemyManager.aliveCount===4 && !gameplay.enemyManager.isCleared);
+        check(`${character}: segunda habitación conserva personaje y sesión`, gameplay.character===character && gameplay.enemyManager.aliveCount===levels[1].enemies.count && !gameplay.enemyManager.isCleared);
         const introProgress=saves.get(character);
         for(let index=1;index<5;index++) {
             while(!gameplay.waves.isComplete) { gameplay.enemyManager.defeatLivingEnemies(); gameplay.waves.update(1000); }

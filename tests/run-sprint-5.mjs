@@ -20,9 +20,9 @@ try {
         for(const [width,height] of [[1920,1080],[1366,768],[800,600],[390,844]]) {
             await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:false});
             await new Promise(r=>setTimeout(r,150));
-            const fits=await evaluate(`(()=>{const g=window.sprint5Game,s=g.scene.getScene('GameScene'),c=s.cameras.main,b=s.physics.world.bounds;return g.canvas.width===innerWidth&&g.canvas.height===innerHeight&&c.worldView.width>=b.width&&c.worldView.height>=b.height;})()`);
+            const fits=await evaluate(`(()=>{const g=window.sprint5Game,s=g.scene.getScene('GameScene'),c=s.cameras.main,b=s.physics.world.bounds;return g.canvas.width===innerWidth&&g.canvas.height===innerHeight&&c.worldView.left>=-.01&&c.worldView.top>=-.01&&c.worldView.right<=b.width+.01&&c.worldView.bottom<=b.height+.01;})()`);
             if(!fits)throw new Error(`Viewport o habitación recortados: ${width}x${height}`);
-            result.layoutTests.push(`${width}x${height}: canvas completo y habitación íntegra`);
+            result.layoutTests.push(`${width}x${height}: canvas completo y cámara limitada al mapa`);
         }
     }
     console.log(JSON.stringify({...result,consoleErrors:errors},null,2));

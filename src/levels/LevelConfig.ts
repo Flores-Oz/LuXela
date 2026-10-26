@@ -3,9 +3,9 @@ import type { RoomMatrix } from "../types/RoomTypes";
 import type { TilePosition } from "../world/Room";
 import type { EncounterType, ExitConfig, WaveConfig } from "./WaveConfig";
 import type { RoomPresentation } from "../world/RoomLayout";
+import type { RobotType } from "../config/RobotConfig";
 
-/** Only the common robot already available in the game. */
-export type LevelEnemyType = "robot-red";
+export type LevelEnemyType = RobotType;
 
 export type LevelDifficulty = Readonly<Required<Pick<EnemyConfig,
     "moveSpeed" | "detectionRange" | "shootCooldown" | "patrol"

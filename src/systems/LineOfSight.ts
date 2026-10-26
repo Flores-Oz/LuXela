@@ -19,9 +19,10 @@ export class LineOfSight {
      */
     public hasLineOfSight(
         from: Point2D,
-        to: Point2D
+        to: Point2D,
+        ignoreInteriorWalls = false
     ): boolean {
-        return LineOfSight.hasClearLineOfSight(from, to, this.obstacles);
+        return LineOfSight.hasClearLineOfSight(from, to, this.obstacles,ignoreInteriorWalls);
     }
 
     /**
@@ -31,7 +32,8 @@ export class LineOfSight {
     public static hasClearLineOfSight(
         from: Point2D,
         to: Point2D,
-        obstacles: Phaser.Physics.Arcade.StaticGroup
+        obstacles: Phaser.Physics.Arcade.StaticGroup,
+        ignoreInteriorWalls = false
     ): boolean {
         const line = new Phaser.Geom.Line(from.x, from.y, to.x, to.y);
         const children = obstacles.getChildren();
@@ -42,6 +44,7 @@ export class LineOfSight {
             if (!child.active) {
                 continue;
             }
+            if(ignoreInteriorWalls&&child.getData("room-perimeter")===false)continue;
 
             const body = child.body as
                 | Phaser.Physics.Arcade.StaticBody

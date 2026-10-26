@@ -10,6 +10,7 @@ import { Projectile } from '../src/entities/Projectile';
 import { CombatEvents } from '../src/systems/CombatEvents';
 import { startNarrative } from '../src/narrative/startNarrative';
 import { SpecialAbilityConfig } from '../src/config/SpecialAbilityConfig';
+import { robotAttacks, robotMovementScale } from '../src/config/RobotConfig';
 
 const checks = [];
 const check = (name, value) => { if (!value) throw Error(name); checks.push(name); };
@@ -77,13 +78,13 @@ async function run() {
         check(`${character}: intro preserved`, game.scene.getScene('VisualNovelScene').sequence.id === `${character}_test`);
         document.querySelector('.vn-skip').click();
         let gameplay = await entered(0); const runId = gameplay.runId;
-        check(`${character}: starts with three robots`, gameplay.enemyManager.aliveCount === 3 && getArcadeRun(game).currentRunId(character) === runId);
+        check(`${character}: starts with three robots`, gameplay.enemyManager.aliveCount === levels[0].enemies.count && getArcadeRun(game).currentRunId(character) === runId);
         const narrativeSnapshot = JSON.stringify(saves.get(character));
         let completedScore = 0;
         for (let index = 0; index < levels.length; index++) {
             gameplay = scene(); const config = levels[index], label = `${character}, level ${index + 1}`;
             check(`${label}: correct count and character`, gameplay.enemyManager.aliveCount === config.enemies.count && gameplay.character === character && gameplay.runId === runId);
-            check(`${label}: exact configured AI`, gameplay.enemies.getChildren().every(enemy => enemy.moveSpeed === config.difficulty.moveSpeed && enemy.detectionRange === config.difficulty.detectionRange && enemy.shootCooldown === config.difficulty.shootCooldown));
+            check(`${label}: exact configured AI`, gameplay.enemies.getChildren().every(enemy => enemy.moveSpeed === config.difficulty.moveSpeed * robotMovementScale[enemy.texture.key] && enemy.detectionRange === config.difficulty.detectionRange && enemy.shootCooldown === (enemy.texture.key === 'robot-red' ? config.difficulty.shootCooldown : robotAttacks[enemy.texture.key].attackInterval)));
             check(`${label}: HUD has level, score and enemy count`, gameplay.hud.text.text.includes(`NIVEL ${index + 1} / 5`) && gameplay.hud.text.text.includes(`PUNTOS ${completedScore}`) && gameplay.hud.text.text.includes(`ENEMIGOS ${config.enemies.count}`) && getArcadeRun(game).getScore(runId) === completedScore && !gameplay.specialAbilities.hud.visible);
             gameplay.changeRoom(); gameplay.changeRoom(); await delay(30);
             check(`${label}: living robots block exit`, gameplay.roomIndex === index && !gameplay.isChangingRoom);
@@ -162,10 +163,10 @@ async function run() {
     check('Forged completion is rejected', !active('CompletionScene'));
     game.scene.getScene('MainMenuScene').scene.start('GameScene', { character: 'alex', roomIndex: 4 });
     let gameplay = await entered(0);
-    check('New run cannot enter fifth level by scene data', gameplay.roomIndex === 0 && gameplay.enemyManager.aliveCount === 3);
+    check('New run cannot enter fifth level by scene data', gameplay.roomIndex === 0 && gameplay.enemyManager.aliveCount === levels[0].enemies.count);
     const oldRun = gameplay.runId;
     await pause(); button('.pause-screen', 'Reiniciar partida').click(); gameplay = await entered(0, gameplay.player);
-    check('Pause restart creates new run at level one', gameplay.runId !== oldRun && gameplay.character === 'alex' && gameplay.enemyManager.aliveCount === 3);
+    check('Pause restart creates new run at level one', gameplay.runId !== oldRun && gameplay.character === 'alex' && gameplay.enemyManager.aliveCount === levels[0].enemies.count);
     const countBeforeDestroy = gameplay.enemyManager.aliveCount;
     gameplay.enemyManager.getLivingEnemies()[0].destroy();
     check('Destroying a live robot gives no score', getArcadeRun(game).getScore(gameplay.runId) === 0 && gameplay.enemyManager.aliveCount === countBeforeDestroy - 1 && gameplay.hud.text.text.includes(`ENEMIGOS ${countBeforeDestroy - 1}`));
@@ -179,7 +180,7 @@ async function run() {
         check(`${character}: existing special clears configured room`, gameplay.enemyManager.isCleared && gameplay.playerProjectiles.getLength() === 0);
         gameplay.changeRoom(); gameplay.changeRoom(); gameplay = await entered(1, oldPlayer);
         check(`${character}: special cooldown crosses one transition`, gameplay.specialAbilities.ability.state === 'cooldown' && gameplay.specialAbilities.ability.cooldownRemaining > 0 && gameplay.specialAbilities.ability.cooldownRemaining <= SpecialAbilityConfig[character].cooldownMs);
-        check(`${character}: old special cannot affect new enemies`, special.destroyed && gameplay.enemyManager.aliveCount === 4 && !gameplay.player.isDead());
+        check(`${character}: old special cannot affect new enemies`, special.destroyed && gameplay.enemyManager.aliveCount === levels[1].enemies.count && !gameplay.player.isDead());
         check(`${character}: special awards configured points once`, getArcadeRun(game).getScore(gameplay.runId) === levels[0].enemies.count * levels[0].scorePerEnemy);
         await pause(); button('.pause-screen', 'Volver al menú principal').click();
         await until(() => active('MainMenuScene') && document.querySelector('.main-screen'));
