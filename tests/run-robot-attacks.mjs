@@ -8,5 +8,5 @@ try{
     const report={...result,renderer:'Canvas',consoleErrors:browser.errors,generatedAt:new Date().toISOString()};
     console.log(JSON.stringify(report,null,2));
     if(result.status!=='passed'||browser.errors.length)process.exitCode=1;
-    else{mkdirSync('docs/test-results',{recursive:true});writeFileSync('docs/test-results/robot-attacks.json',JSON.stringify(report,null,2)+'\n');}
+    else{const directory=process.env.TEST_REPORT_DIR??'docs/test-results';mkdirSync(directory,{recursive:true});writeFileSync(`${directory}/robot-attacks.json`,JSON.stringify(report,null,2)+'\n');}
 }finally{browser.close();}

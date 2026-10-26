@@ -317,14 +317,14 @@ async function run() {
         !scene.player.isDead() && scene.enemyManager.aliveCount === levels[1].enemies.count && !scene.enemyManager.isCleared && emptyRoomClears === 0);
     scene.events.off(CombatEvents.ROOM_CLEARED, onEmptyClear);
     scene.sys.sceneUpdate = () => {};
-    for (let index = 1; index < levels.length; index++) {
+    for (let index = 1; index < levels.length - 1; index++) {
         while (!scene.waves.isComplete) { scene.enemyManager.defeatLivingEnemies(); scene.waves.update(1000); }
         const exit=levels[scene.roomIndex].exits[0].position;
         reset(scene.player.physicsSprite, (exit.column+.5)*64, (exit.row+.5)*64); tick(4);
         if (index < levels.length - 1) scene.sys.sceneUpdate = () => {};
     }
-    check('Salida final conduce a conclusión de niveles de prueba', game.scene.isActive('CompletionScene') && !game.scene.isActive('VisualNovelScene'));
-    game.scene.getScene('CompletionScene').scene.start('GameScene', { character: 'alex', roomIndex: 0 });
+    check('Reactor reservado conserva exploración sin falsa conclusión', scene.roomIndex===4 && scene.waves===null && scene.enemyManager.aliveCount===0 && !game.scene.isActive('CompletionScene') && !game.scene.isActive('VisualNovelScene'));
+    scene.scene.restart({ character: 'alex', roomIndex: 0 });
     tick(4);
     scene.sys.sceneUpdate = () => {};
     check('Nueva partida reconstruye primera habitación', scene.roomIndex === 0 && scene.enemies.getLength() === levels[0].enemies.count);

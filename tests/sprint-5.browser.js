@@ -88,12 +88,19 @@ async function run() {
         gameplay.changeRoom(); await until(()=>scene().roomIndex===1 && scene().player && scene().specialAbilities!==manager); gameplay=await entered();
         check(`${character}: segunda habitación conserva personaje y sesión`, gameplay.character===character && gameplay.enemyManager.aliveCount===levels[1].enemies.count && !gameplay.enemyManager.isCleared);
         const introProgress=saves.get(character);
-        for(let index=1;index<5;index++) {
+        for(let index=1;index<4;index++) {
             while(!gameplay.waves.isComplete) { gameplay.enemyManager.defeatLivingEnemies(); gameplay.waves.update(1000); }
             const player=gameplay.player;
             gameplay.changeRoom();
             if(index<4) { await until(()=>scene().roomIndex===index+1 && scene().player && scene().player!==player); gameplay=await entered(); }
         }
+        check(`${character}: reserved production arena cannot finish the campaign`,gameplay.waves===null&&!getArcadeRun(game).canComplete(character,gameplay.runId));
+        // Isolate presentation regression from the unfinished production boss content.
+        const completedFixture=new ArcadeRunService(1),fixtureId=completedFixture.begin(character);
+        completedFixture.clearRoom(fixtureId,0);completedFixture.finish(fixtureId,0);
+        game.registry.set('arcade-run-service',completedFixture);
+        gameplay.runId=fixtureId;
+        gameplay.scene.start('CompletionScene',{character,runId:fixtureId});
         await until(()=>active('CompletionScene') && document.querySelector('.completion-screen'));
         check(`${character}: solo victoria válida activa conclusión y detiene gameplay`, !active('GameScene') && !active('VisualNovelScene') && getArcadeRun(game).canComplete(character,gameplay.runId));
         check(`${character}: conclusión identifica ruta y botones funcionan`, document.querySelector('.completion-screen .presentation-eyebrow').textContent.toLowerCase().includes(character) && document.querySelectorAll('.completion-screen button').length===2);
@@ -102,6 +109,7 @@ async function run() {
         button('.completion-screen',character==='alex'?'Elegir otro personaje':'Volver al menú principal').click();
         await until(()=>character==='alex'?active('CharacterSelectScene'):active('MainMenuScene'));
         check(`${character}: navegación final invalida resultado consumido`, !getArcadeRun(game).canComplete(character,validRun));
+        game.registry.remove('arcade-run-service');
         if (character==='lua') await main();
     }
     game.scene.getScene('MainMenuScene').scene.start('CompletionScene',{character:'alex',runId:99999}); await delay(100); await main();

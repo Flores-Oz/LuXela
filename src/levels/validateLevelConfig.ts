@@ -22,6 +22,9 @@ export function validateLevelCatalog(catalog: unknown, rooms: unknown): string[]
         const path = `levels[${index}]`;
         const error = (message: string) => { errors.push(`${path}: ${message}`); };
         if (!isRecord(value)) { error("expected a level object"); return; }
+        const reserved=value.availability==="reserved";
+        if(value.availability!==undefined&&!['available','reserved'].includes(String(value.availability)))error('invalid availability');
+        if(reserved&&(index!==catalog.length-1||!isRecord(value.enemies)||value.enemies.count!==0||!Array.isArray(value.enemies.spawns)||value.enemies.spawns.length!==0||!Array.isArray(value.enemies.types)||value.enemies.types.length!==0||!Array.isArray(value.waves)||value.waves.length!==0))error('reserved room must be last and have no enemies or waves');
         if (!isId(value.id)) error("id must be a non-empty string");
         else if (ids.has(value.id)) error(`duplicate id '${value.id}'`);
         else ids.add(value.id);
@@ -56,7 +59,7 @@ export function validateLevelCatalog(catalog: unknown, rooms: unknown): string[]
         if (!enemies) error("enemies must be an object");
         else {
             if (!coordinate(enemies.count)) error("enemies.count must be a non-negative safe integer");
-            if (!Array.isArray(enemies.types) || enemies.types.length === 0 ||
+            if (!Array.isArray(enemies.types) || (!reserved&&enemies.types.length === 0) ||
                 enemies.types.some(type => !robotTypes.some(robot=>robot===type)) || new Set(enemies.types).size !== enemies.types.length) {
                 error("enemies.types must contain unique supported types");
             }
@@ -117,7 +120,7 @@ export function validateLevelCatalog(catalog: unknown, rooms: unknown): string[]
             error("encounter metadata requires explicit waves");
         }
         if (value.waves !== undefined) {
-            if (!Array.isArray(value.waves) || value.waves.length === 0) error("waves must be a non-empty array");
+            if (!Array.isArray(value.waves) || (!reserved&&value.waves.length === 0)) error("waves must be a non-empty array");
             else {
                 const waveIds = new Set<string>();
                 value.waves.forEach((wave: unknown, waveIndex: number) => {
@@ -128,7 +131,7 @@ export function validateLevelCatalog(catalog: unknown, rooms: unknown): string[]
                     const single = { ...value, waves: undefined, order: undefined, encounter: undefined, next: undefined, exits: undefined, enemies: wave.enemies, completion: wave.completion };
                     for (const problem of validateLevelCatalog([single], rooms)) error(`waves[${waveIndex}]: ${problem}`);
                 });
-                if (JSON.stringify(value.enemies) !== JSON.stringify(value.waves[0]?.enemies)) error("enemies must reference the first wave configuration");
+                if (!reserved&&JSON.stringify(value.enemies) !== JSON.stringify(value.waves[0]?.enemies)) error("enemies must reference the first wave configuration");
             }
             if (value.order !== index + 1) error("order must match the configured sequence");
             if (!["normal", "multiwave", "special", "final"].includes(String(value.encounter))) error("invalid encounter type");

@@ -7,7 +7,9 @@ export function resolveSheetTiles(scene: Phaser.Scene, theme: RoomTheme, style: 
     const key = `environment-detail-${theme}-${style}`, atlas = detailedEnvironmentAtlas(style);
     if (scene.textures.exists(key)) return { key, atlas, provisional:false };
     const styles = [style, environmentSheets[style].companion] as const;
-    if (styles.some(id=>!scene.textures.exists(sheetTextureKey(id)) || scene.textures.get(sheetTextureKey(id)).source[0]?.width !== 1254 || scene.textures.get(sheetTextureKey(id)).source[0]?.height !== 1254)) return null;
+    const required=[...styles,...(environmentSheets[style].neutral?[environmentSheets[style].neutral!]:[])];
+    const missing=required.find(id=>!scene.textures.exists(sheetTextureKey(id)) || scene.textures.get(sheetTextureKey(id)).source[0]?.width !== 1254 || scene.textures.get(sheetTextureKey(id)).source[0]?.height !== 1254);
+    if(missing)throw new Error(`Tileset requerido ausente o con dimensiones incorrectas: ${missing}`);
     const texture = scene.textures.createCanvas(key, atlas.columns * atlas.tileSize, atlas.rows * atlas.tileSize);
     if (!texture) return null;
     const context = texture.getContext(), size = atlas.tileSize;
@@ -17,6 +19,14 @@ export function resolveSheetTiles(scene: Phaser.Scene, theme: RoomTheme, style: 
         const source = scene.textures.get(sheetTextureKey(id)).getSourceImage() as HTMLImageElement;
         context.drawImage(source, rect.x + Math.floor((rect.width-side)/2), rect.y + Math.floor((rect.height-side)/2),side,side,
             frame % atlas.columns * size,Math.floor(frame / atlas.columns) * size,size,size);
+    }
+    const neutral=environmentSheets[style].neutral;
+    if(neutral){
+        const source=scene.textures.get(sheetTextureKey(neutral)).getSourceImage() as HTMLImageElement;
+        for(const [target,index]of [[53,0],[54,13],[55,11],[56,10]] as const){
+            const rect=sheetCell(neutral,index),side=Math.min(rect.width,rect.height);
+            context.drawImage(source,rect.x+Math.floor((rect.width-side)/2),rect.y+Math.floor((rect.height-side)/2),side,side,target%8*size,Math.floor(target/8)*size,size,size);
+        }
     }
     // Keep the first three supplied atlases available as secondary pieces as well as fallbacks.
     const base = environmentThemes[theme].textureKey;

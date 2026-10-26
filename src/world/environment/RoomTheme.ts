@@ -11,6 +11,11 @@ export interface EnvironmentTheme {
     readonly palette: { floor: string; floorLight: string; seam: string; wall: string; edge: string; inset: string; accent: string; warning: string };
 }
 export interface EnvironmentAtlas {
+    readonly materials?: {
+        readonly clean: number; readonly secondary: number; readonly worn: number;
+        readonly machine: number; readonly supportMachine: number; readonly console: number; readonly themed: number;
+    };
+    readonly corners?: { readonly northWest: number; readonly northEast: number; readonly southEast: number; readonly southWest: number };
     readonly tileSize: number; readonly columns: number; readonly rows: number;
     readonly floors: readonly number[]; readonly walls: readonly number[]; readonly wallVariants: readonly number[];
     readonly decoration: Readonly<Record<DecorationKind, number>>;

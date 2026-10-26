@@ -7,14 +7,15 @@ type Block = readonly [row:number,column:number,height:number,width:number];
 const blocks = (rectangles: readonly Block[]): readonly Block[] => rectangles.map(([r,c,h,w])=>[(r-1)/21,(c-1)/37,h/22,w/38]);
 const designs: Readonly<Record<string,readonly Block[]>> = {
     // Red: three long horizontal firing lanes separated by equipment banks.
-    "open-room":blocks([[6,8,2,6],[6,20,2,6],[6,31,2,5],[14,8,2,6],[14,20,2,6],[14,31,2,5],[2,28,2,5],[20,10,1,5],[20,25,1,5]]),
-    // Blue: staggered racks, medium-distance avenues and room to retreat.
-    corridors:blocks([[5,10,6,3],[15,10,5,3],[2,24,6,3],[12,24,6,3],[20,4,2,4],[20,31,2,5],[6,33,4,3],[14,33,3,3]]),
+    "open-room":blocks([[6,8,2,5],[6,20,2,5],[6,31,2,5],[14,8,2,5],[14,20,2,5],[14,31,2,5],[2,28,2,5],[20,10,1,5],[20,25,1,5]]),
+    // Blue: aligned rack banks with cross aisles, parallel avenues and lateral escape routes.
+    corridors:blocks([[5,10,6,2],[15,10,5,2],[5,24,6,2],[15,24,5,2],[5,34,6,2],[15,34,5,2],[20,4,2,3],[2,24,1,4]]),
     // Yellow: offset machinery islands create short turns and connected loops.
-    "mixed-room":blocks([[7,14,5,5],[12,22,5,5],[15,14,4,5],[5,22,4,5],[8,6,3,3],[16,6,3,3],[4,32,3,3],[13,32,3,3]]),
-    // Orange: freestanding shielding obstructs normal shots, but leaves escape routes.
-    maze:blocks([[3,10,6,2],[14,10,6,2],[6,22,7,2],[17,22,4,2],[3,32,6,2],[13,32,5,2],[10,4,2,4],[10,16,2,4],[10,27,2,3],[2,17,2,3],[19,4,2,3],[20,29,2,3],[15,16,2,3]]),
-    "combat-arena":[[.28,.30,.08,.05],[.28,.68,.08,.05],[.68,.30,.08,.05],[.68,.68,.08,.05],[.46,.16,.08,.05],[.46,.83,.08,.05],[.16,.48,.045,.08],[.82,.48,.045,.08]]
+    "mixed-room":blocks([[7,14,4,4],[12,22,4,4],[15,14,4,4],[5,22,4,4],[8,6,3,3],[16,6,3,3],[4,32,3,3],[13,32,3,3],[20,24,1,5],[2,14,1,4]]),
+    // Orange: four L-shaped operational bays, a central shield and connected escape aisles.
+    maze:blocks([[3,10,6,2],[3,10,2,7],[3,28,2,7],[3,33,6,2],[15,10,6,2],[19,10,2,7],[15,33,6,2],[19,28,2,7],[8,22,8,2],[11,4,2,3],[11,15,2,3],[11,28,2,3]]),
+    // Reserved reactor: all infrastructure stays at the edges of a large clear central arena.
+    "combat-arena":blocks([[3,8,3,3],[3,30,3,3],[18,8,3,3],[18,30,3,3],[2,18,2,4],[20,18,2,4]])
 };
 
 /** Physical tile matrices, with wide connected routes and dimension-relative authoring. */

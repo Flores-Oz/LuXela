@@ -25,19 +25,19 @@ Las ocho láminas de **1254 × 1254 px** están en `sources/`, con nombres legib
 
 `EnvironmentSheets.ts` registra los límites medidos de las dieciséis piezas de cada lámina, sus funciones y el ambiente complementario. `EnvironmentSheetTiles.ts` recorta la región cuadrada central de cada pieza y la presenta a 64 px con NEAREST. No se divide la lámina completa entre cuatro ni se incluyen sus separadores. La extracción ocurre en memoria al crear el atlas, sin escribir PNG derivados.
 
-Cada atlas detallado mide **512 × 512 px**, con 8 × 8 celdas: 0–15 son las piezas del ambiente principal, 16–31 las del complementario, 32–47 las del atlas pequeño del tema y 48–52 versiones rotadas de las paredes. Las demás celdas están reservadas. Los tres estados de puerta comparten el arte base y conservan su indicador independiente.
+Cada atlas detallado mide **512 × 512 px**, con 8 × 8 celdas: 0–15 son las piezas del ambiente principal, 16–31 las del complementario, 32–47 las del atlas pequeño del tema y 48–52 versiones rotadas de las paredes. Las celdas 53–56 permiten piezas neutras de mantenimiento cuando están declaradas. Los tres estados de puerta comparten el arte base y conservan su indicador independiente.
 
 Las asignaciones actuales son:
 
 | Habitación | Principal | Complementario |
 | --- | --- | --- |
-| Instalación inicial | industrial-green | maintenance-teal |
-| Pasillos | reactor-cyan | industrial-green |
-| Sala mixta | data-blue | maintenance-teal |
-| Laberinto | cargo-olive | assembly-amber |
-| Arena final | hangar-amber | quarantine-red |
+| Sector de cuarentena | quarantine-red | industrial-green, apoyo maintenance-teal |
+| Centro de datos | data-blue | maintenance-teal |
+| Almacén y mantenimiento | cargo-olive | assembly-amber |
+| Hangar industrial | hangar-amber | assembly-amber |
+| Núcleo energético, reservado | reactor-cyan | industrial-green |
 
-Todas las láminas aportan piezas visibles. Las consolas, cajas, servidores y equipos se sitúan sobre celdas de muro ya existentes; las ocho decoraciones de piso por habitación no crean colisiones. Las marcas y gráficos de los recursos son ambientales y no añaden daño, zonas peligrosas ni nuevas mecánicas.
+Todas las láminas aportan piezas visibles. `sheetFunctions` clasifica pisos, paredes, obstáculos, decoración y piezas temáticas. `EnvironmentComposition.ts` agrupa las celdas sólidas conectadas en bancos de maquinaria; `EnvironmentPlan.ts` les asigna un material coherente y un terminal, con piso secundario en su zona de servicio. Las marcas, rejillas y señales se sitúan junto a esas estructuras; el piso principal permanece limpio y uniforme. La decoración no crea colisiones ni daño.
 
 ## Sustituir o añadir recursos
 
@@ -47,7 +47,7 @@ Los bits de conexión de pared son norte **1**, este **2**, sur **4** y oeste **
 
 ## Respaldo provisional
 
-Si falta un recurso o sus dimensiones no coinciden con el contrato, se genera un atlas provisional sencillo con `EnvironmentTiles.ts`, bajo una clave `-fallback` cuando hay una imagen original. La imagen incorrecta no se modifica. Ese respaldo usa **256 × 192 px**, ocho columnas y seis filas de 32 px, escalados uniformemente al tile físico.
+Cuando se solicita explícitamente una lámina detallada, su ausencia o dimensiones incorrectas producen un error con el nombre del recurso; no se sustituye silenciosamente. Todos los ocho PNG detallados están disponibles y conservan sus hashes originales. Para temas genéricos sin lámina detallada sigue disponible el respaldo de `EnvironmentTiles.ts`, bajo una clave `-fallback` cuando hay una imagen original. Usa **256 × 192 px**, ocho columnas y seis filas de 32 px, escalados uniformemente al tile físico.
 
 | Frames | Meaning |
 |---|---|

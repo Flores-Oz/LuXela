@@ -1,6 +1,7 @@
 import type { RoomLayout, RoomPresentation } from "../RoomLayout";
 import { environmentThemes, placeholderAtlas, type EnvironmentAtlas, type RoomTheme } from "./RoomTheme";
 import { detailedEnvironmentAtlas } from "./EnvironmentSheets";
+import { obstacleGroups } from "./EnvironmentComposition";
 
 export interface EnvironmentPlan { readonly theme: RoomTheme; readonly floor: number[][]; readonly walls: number[][]; readonly decoration: number[][]; readonly decorationOverlay: number[][] }
 /** N=1, E=2, S=4, W=8: all sixteen connection patterns, including ends and junctions. */
@@ -19,7 +20,18 @@ export function buildEnvironmentPlan(layout: RoomLayout, presentation?: RoomPres
     let seed = 0;
     for (const char of presentation?.scenarioId ?? "room") seed = (Math.imul(seed, 31) + char.charCodeAt(0)) >>> 0;
     for (let row = 0; row < height; row++) for (let column = 0; column < width; column++) {
-        floor[row]![column] = atlas.floors[((row * 13 + column * 7 + seed) >>> 0) % atlas.floors.length]!;
+        floor[row]![column] = atlas.materials?.clean ?? atlas.floors[((row * 13 + column * 7 + seed) >>> 0) % atlas.floors.length]!;
+    }
+    const equipment=new Map<string,number>();
+    if(atlas.materials)for(const [index,group]of obstacleGroups(width,height,layout.walls).entries()){
+        const material=atlas.materials;
+        const frame=presentation?.environmentStyle==="data-blue"?material.machine:index%4===3?material.supportMachine:material.machine;
+        for(const cell of group.cells)equipment.set(`${cell.row},${cell.column}`,frame);
+        equipment.set(`${group.cells[0]!.row},${group.cells[0]!.column}`,presentation?.environmentStyle==="reactor-cyan"?material.themed:material.console);
+        for(let row=group.top-1;row<=group.bottom+1;row++)for(let column=group.left-1;column<=group.right+1;column++){
+            const key=`${row},${column}`;
+            if(ground.has(key)&&!reserved.has(key))floor[row]![column]=material.secondary;
+        }
     }
     for (const cell of layout.walls) {
         const frames = (cell.row + cell.column + seed) % 5 === 0 ? atlas.wallVariants : atlas.walls;
@@ -30,9 +42,17 @@ export function buildEnvironmentPlan(layout: RoomLayout, presentation?: RoomPres
             else if (cell.column === 0 && cell.row > 0 && cell.row < height-1) walls[cell.row]![cell.column] = atlas.edgeWalls.west;
             else if (cell.column === width-1 && cell.row > 0 && cell.row < height-1) walls[cell.row]![cell.column] = atlas.edgeWalls.east;
         }
-        if (atlas.wallDetails?.length && cell.row > 0 && cell.row < height-1 && cell.column > 0 && cell.column < width-1) {
+        if(atlas.corners){
+            if(cell.row===0&&cell.column===0)walls[cell.row]![cell.column]=atlas.corners.northWest;
+            else if(cell.row===0&&cell.column===width-1)walls[cell.row]![cell.column]=atlas.corners.northEast;
+            else if(cell.row===height-1&&cell.column===width-1)walls[cell.row]![cell.column]=atlas.corners.southEast;
+            else if(cell.row===height-1&&cell.column===0)walls[cell.row]![cell.column]=atlas.corners.southWest;
+        }
+        if(atlas.materials&&equipment.has(`${cell.row},${cell.column}`)){
+            walls[cell.row]![cell.column]=equipment.get(`${cell.row},${cell.column}`)!;
+        }else if (!atlas.materials&&atlas.wallDetails?.length && cell.row > 0 && cell.row < height-1 && cell.column > 0 && cell.column < width-1) {
             walls[cell.row]![cell.column] = atlas.wallDetails[(cell.row*7+cell.column*3+seed)%atlas.wallDetails.length]!;
-        } else if (atlas.wallDetails?.length && cell.column > 1 && cell.column < width-2 && (cell.column+seed)%4===0) {
+        } else if (!atlas.materials&&atlas.wallDetails?.length && cell.column > 1 && cell.column < width-2 && (cell.column+seed)%4===0) {
             walls[cell.row]![cell.column] = atlas.wallDetails[(cell.row+cell.column)%atlas.wallDetails.length]!;
         }
     }

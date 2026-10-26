@@ -36,7 +36,7 @@ for(const [width,height] of [[40,24],[48,30],[24,16],[20,14]])test(`${width}x${h
 });
 test('large-room combat density increases while wave progression and movement remain intact',()=>{
     const catalog=createLevelCatalog(),waves=catalog.flatMap(level=>level.waves),robots=waves.flatMap(wave=>wave.enemies.spawns);
-    assert.equal(waves.length,10);assert.equal(robots.length,106);assert.equal(robots.length*catalog[0].scorePerEnemy,10600);
+    assert.equal(waves.length,7);assert.equal(robots.length,64);assert.equal(robots.length*catalog[0].scorePerEnemy,6400);
     assert.deepEqual([...new Set(robots.map(robot=>robot.type))].sort(),['robot-blue','robot-orange','robot-red','robot-yellow']);
     assert.deepEqual(catalog.map(config=>config.difficulty.moveSpeed),[80,88,96,104,112]);
 });
@@ -48,19 +48,21 @@ test('rooms 1-4 introduce red, blue, yellow and orange separately in every wave'
         assert.ok(catalog[index].presentation.title&&catalog[index].presentation.hint);
     }
 });
-test('the fifth room remains a mixed placeholder without inventing a boss',()=>{
+test('the fifth room reserves the reactor without inventing a boss or ordinary combat',()=>{
     const arena=createLevelCatalog()[4];
-    assert.equal(arena.presentation.title,'Arena de entrenamiento');
-    assert.equal(arena.enemies.types.length,4);
-    assert.ok(arena.waves.every(wave=>wave.enemies.spawns.every(enemy=>enemy.type.startsWith('robot-'))));
+    assert.equal(arena.presentation.title,'Núcleo energético');
+    assert.equal(arena.availability,'reserved');
+    assert.equal(arena.enemies.count,0);
+    assert.deepEqual(arena.enemies.types,[]);
+    assert.deepEqual(arena.waves,[]);
 });
-test('the first four layouts use substantially more physical machinery and 128 safe floor details',()=>{
+test('the first four layouts group machinery with bounded contextual floor details',()=>{
     const catalog=createLevelCatalog();
     for(const config of catalog.slice(0,4)){
         const matrix=createArcadeRooms()[config.roomId];
         const walls=matrix.slice(1,-1).flatMap(row=>row.slice(1,-1)).filter(tile=>tile===1).length;
-        assert.ok(walls>=80&&walls<836*.22);
-        assert.equal(config.presentation.decorations.length,128);
+        assert.ok(walls>=70&&walls<836*.22);
+        assert.ok(config.presentation.decorations.length>20&&config.presentation.decorations.length<100);
     }
 });
 test('red firing lanes and blue retreat avenues remain continuous',()=>{

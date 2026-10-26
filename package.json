@@ -27,7 +27,11 @@
     "test:robot-lab": "node tests/run-robot-lab.mjs",
     "test:sprint9:rooms": "node tests/run-sprint-9.mjs",
     "test:sprint9:performance": "node tests/run-sprint-9-performance.mjs",
-    "test:sprint9": "node tests/run-all.mjs --sprint9"
+    "test:sprint9": "node tests/run-all.mjs --sprint9",
+    "test:sprint10": "node tests/run-all.mjs --sprint10",
+    "test:sprint10:maps": "node --test tests/map-composition.test.mjs tests/large-rooms.test.mjs",
+    "test:sprint10:visual": "node tests/capture-sprint-10.mjs",
+    "test:sprint10:performance": "node tests/run-sprint-9-performance.mjs --sprint10"
   },
   "dependencies": {
     "phaser": "^4.2.1",

@@ -18,6 +18,7 @@ export interface LevelEnemySpawn extends Readonly<TilePosition> {
 /** Positions are tile coordinates, not pixels. The map supplies player and exit tiles. */
 export interface LevelConfig {
     readonly id: string;
+    readonly availability?: "available" | "reserved";
     readonly roomId: string;
     readonly enemies: {
         readonly count: number;

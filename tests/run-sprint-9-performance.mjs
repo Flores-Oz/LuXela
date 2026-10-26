@@ -1,4 +1,4 @@
-import {writeFileSync} from 'node:fs';
+import {mkdirSync,writeFileSync} from 'node:fs';
 import {openBrowserSession} from './browser-session.mjs';
 const browser=await openBrowserSession();
 try{
@@ -41,5 +41,7 @@ try{
     })()`);
     if(browser.errors.length)throw Error(JSON.stringify(browser.errors));
     const report={...result,consoleErrors:browser.errors,generatedAt:new Date().toISOString()};
-    writeFileSync('docs/test-results/sprint-9-performance.json',JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));
+    const directory=process.argv.includes('--sprint10')?'docs/test-results/sprint-10':'docs/test-results';
+    mkdirSync(directory,{recursive:true});
+    writeFileSync(`${directory}/${process.argv.includes('--sprint10')?'performance':'sprint-9-performance'}.json`,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report,null,2));
 }finally{browser.close();}

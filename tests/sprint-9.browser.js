@@ -39,7 +39,7 @@ async function run(){
     check('Large Canvas rooms use bounded static chunks',caches(s).length>4&&caches(s).every(image=>image.texture.source[0].width<=512&&image.texture.source[0].height<=512)&&layers(s).every(layer=>!layer.visible));
     check('Only walls and the exit create static bodies',s.physics.world.staticBodies.size===s.walls.getLength()+1&&s.physics.world.staticBodies.size<960/4);
     check('Perimeter is marked separately from interior walls',s.walls.getChildren().some(wall=>wall.getData('room-perimeter'))&&s.walls.getChildren().some(wall=>!wall.getData('room-perimeter')));
-    check('Large rooms have denser waves and tactical scenery',s.enemyManager.aliveCount>=6&&levels[0].presentation.decorations.length===128&&s.walls.getChildren().filter(wall=>!wall.getData('room-perimeter')).length>=80);
+    check('Large rooms have denser waves and grouped tactical scenery',s.enemyManager.aliveCount>=6&&levels[0].presentation.decorations.length>20&&levels[0].presentation.decorations.length<100&&s.walls.getChildren().filter(wall=>!wall.getData('room-perimeter')).length>=70);
     const aggressive=new Enemy(s,300,200,'robot-red',{...levels[0].difficulty,patrol:false});
     const attackTarget={x:620,y:200,isDead:()=>false,physicsSprite:{x:620,y:200,active:true}};
     const clearSight={hasLineOfSight:()=>true};
@@ -101,6 +101,12 @@ async function run(){
         s=await load(character);const runId=s.runId;
         for(let index=0;index<levels.length;index++){
             const config=levels[index],current=s,oldCaches=caches(s).map(image=>({image,key:image.texture.key}));
+            if(config.availability==='reserved') {
+                check(`${character}: reserved arena has no waves or provisional robots`,s.roomIndex===index&&s.waves===null&&s.enemyManager.aliveCount===0);
+                s.roomCleared();s.changeRoom();await delay(50);
+                check(`${character}: reserved arena never completes the narrative`,s.doors.currentState==='locked'&&!s.isChangingRoom&&!game.scene.isActive('CompletionScene')&&!runs.canComplete(character,runId)&&runs.getScore(runId)===campaignScore);
+                break;
+            }
             check(`${character} room ${index+1}: large world and configured wave load`,s.roomIndex===index&&s.physics.world.bounds.width===2560&&s.enemyManager.aliveCount===config.waves[0].enemies.count);
             const door=s.children.list.find(object=>object.name==='door-visual');
             check(`${character} room ${index+1}: exit uses current map coordinates`,door.x===(config.exits[0].position.column+.5)*64&&door.y===(config.exits[0].position.row+.5)*64);

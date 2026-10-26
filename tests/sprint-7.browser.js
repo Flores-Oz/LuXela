@@ -47,6 +47,14 @@ async function run() {
         current.specialAbilities.update(100000); check(`${character}: no timed recharge`, runs.getSpecialCharge(runId) === 0 && current.specialAbilities.ability.state === 'locked');
         for (let roomIndex = 0; roomIndex < levels.length; roomIndex++) {
             current = scene(); const config = levels[roomIndex], label = `${character} room ${roomIndex + 1}`;
+            if(config.availability==='reserved') {
+                check(`${label}: explorable arena without combat or victory`,current.waves===null&&current.enemyManager.aliveCount===0&&!runs.canComplete(character,runId)&&runs.getScore(runId)===campaignScore&&JSON.stringify(saves.get(character))===narrative);
+                current.roomCleared();current.changeRoom();
+                check(`${label}: reserved exit remains locked and clearly identified`,current.doors.currentState==='locked'&&!current.isChangingRoom&&current.hud.text.text.includes('JEFE PENDIENTE'));
+                await pause();button('.pause-screen','Volver al menú principal').click();
+                await until(()=>active('MainMenuScene')&&document.querySelector('.main-screen'));
+                break;
+            }
             let cleared = 0, ended = 0;
             const onCleared = () => cleared++, onEnded = () => ended++;
             current.events.on(CombatEvents.ROOM_CLEARED, onCleared);

@@ -1,0 +1,66 @@
+{
+  "generatedAt": "2026-10-26T19:46:48.777Z",
+  "renderer": "Canvas",
+  "overviewZoom": 0.625,
+  "nativeZoom": 1,
+  "viewport": [
+    1600,
+    960
+  ],
+  "consoleErrors": [],
+  "rooms": [
+    {
+      "level": 1,
+      "title": "Sector de cuarentena",
+      "availability": "available",
+      "style": "quarantine-red",
+      "robots": [
+        "robot-red"
+      ],
+      "walls": 204,
+      "decorations": 46
+    },
+    {
+      "level": 2,
+      "title": "Centro de datos",
+      "availability": "available",
+      "style": "data-blue",
+      "robots": [
+        "robot-blue"
+      ],
+      "walls": 200,
+      "decorations": 49
+    },
+    {
+      "level": 3,
+      "title": "Almacén y mantenimiento",
+      "availability": "available",
+      "style": "cargo-olive",
+      "robots": [
+        "robot-yellow"
+      ],
+      "walls": 233,
+      "decorations": 81
+    },
+    {
+      "level": 4,
+      "title": "Hangar industrial",
+      "availability": "available",
+      "style": "hangar-amber",
+      "robots": [
+        "robot-orange"
+      ],
+      "walls": 246,
+      "decorations": 41
+    },
+    {
+      "level": 5,
+      "title": "Núcleo energético",
+      "availability": "reserved",
+      "style": "reactor-cyan",
+      "robots": [],
+      "walls": 176,
+      "decorations": 37
+    }
+  ]
+}

@@ -239,14 +239,15 @@ export class GameScene extends Phaser.Scene {
             this.events.off(CombatEvents.ENEMY_COUNT_CHANGED, this.updateHUD, this);
         });
         this.specialAbilities = new SpecialAbilityManager(this, this.player, this.character, this.enemyManager, this.runId);
-        this.waves = new WaveManager(config.id, getWaves(config), {
+        this.waves = config.availability === "reserved" ? null : new WaveManager(config.id, getWaves(config), {
             spawn: (wave, index) => this.spawnWave(room, wave, index),
             canSpawn: () => this.combatState === "playing" && !this.isChangingRoom && !!this.player && !this.player.isDead() && !this.specialAbilities?.ability.performing,
             changed: () => this.updateHUD(), completed: () => this.roomCleared(),
             started: index => this.events.emit(CombatEvents.WAVE_STARTED, index),
             ended: index => this.events.emit(CombatEvents.WAVE_COMPLETED, index)
         });
-        this.waves.start();
+        this.waves?.start();
+        this.updateHUD();
         this.input.keyboard?.on("keydown-ESC", this.pauseGame, this);
         this.scale.on(Phaser.Scale.Events.RESIZE, this.layoutRoom, this);
         this.layoutRoom();
@@ -372,7 +373,7 @@ export class GameScene extends Phaser.Scene {
     get selectedCharacter(): PlayerCharacter { return this.character; }
 
     private roomCleared(): void {
-        if (this.combatState !== "playing" || this.isChangingRoom) return;
+        if (this.combatState !== "playing" || this.isChangingRoom || this.levels.getLevel(this.roomIndex).availability === "reserved") return;
         getArcadeRun(this.game).clearRoom(this.runId, this.roomIndex);
         this.playerProjectiles.clear(true, true);
         this.enemyProjectiles.clear(true, true);
@@ -411,11 +412,11 @@ export class GameScene extends Phaser.Scene {
 
     private updateHUD(): void {
         const config = this.levels.getLevel(this.roomIndex);
-        const notice = this.waves?.isComplete ? "SALIDA DISPONIBLE" : this.waves?.waitingForSpace ? "LIBERA LA ZONA DE APARICIÓN" :
+        const notice = config.availability === "reserved" ? "JEFE PENDIENTE" : this.waves?.isComplete ? "SALIDA DISPONIBLE" : this.waves?.waitingForSpace ? "LIBERA LA ZONA DE APARICIÓN" :
             this.waves?.state === "starting" ? "PREPARANDO OLEADA" : config.encounter === "special" ? "ENCUENTRO ESPECIAL" : config.encounter === "final" ? "ENCUENTRO FINAL" : "";
         this.hud?.update({ level: this.roomIndex + 1, totalLevels: this.levels.count,
             score: getArcadeRun(this.game).getScore(this.runId), enemies: this.enemyManager?.aliveCount ?? 0,
-            wave: this.waves?.waveNumber, totalWaves: this.waves?.totalWaves,
+            wave: this.waves?.waveNumber ?? 0, totalWaves: this.waves?.totalWaves ?? 0,
             special: getArcadeRun(this.game).getSpecialCharge(this.runId), specialRequired: SpecialAbilityConfig[this.character].killsRequired,
             specialState: this.specialAbilities?.ability.state, specialCooldown: this.specialAbilities?.ability.cooldownRemaining, notice });
     }

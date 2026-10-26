@@ -14,9 +14,9 @@ for (const url of [baseUrl, `http://127.0.0.1:${port}/json/version`]) {
 }
 const browser = await fetch(`http://127.0.0.1:${port}/json/version`).then(response => response.json());
 const suites = [];
-const sprint = process.argv.includes('--sprint9') ? 9 : process.argv.includes('--sprint8') ? 8 : process.argv.includes('--sprint7') ? 7 : process.argv.includes('--sprint6') ? 6 : process.argv.includes('--sprint5') ? 5 : 4;
+const sprint = process.argv.includes('--sprint10') ? 10 : process.argv.includes('--sprint9') ? 9 : process.argv.includes('--sprint8') ? 8 : process.argv.includes('--sprint7') ? 7 : process.argv.includes('--sprint6') ? 6 : process.argv.includes('--sprint5') ? 5 : 4;
 if (sprint >= 6) {
-    const unit = spawnSync(process.execPath, ['--test', 'tests/level-config.test.mjs', ...(sprint >= 7 ? ['tests/waves.test.mjs', 'tests/special-charge.test.mjs'] : []), ...(sprint >= 8 ? ['tests/environment.test.mjs'] : []), ...(sprint >= 9 ? ['tests/large-rooms.test.mjs', 'tests/enemy-attacks.test.mjs'] : [])], { encoding: 'utf8', timeout: 30000 });
+    const unit = spawnSync(process.execPath, ['--test', 'tests/level-config.test.mjs', ...(sprint >= 7 ? ['tests/waves.test.mjs', 'tests/special-charge.test.mjs'] : []), ...(sprint >= 8 ? ['tests/environment.test.mjs'] : []), ...(sprint >= 9 ? ['tests/large-rooms.test.mjs', 'tests/enemy-attacks.test.mjs'] : []), ...(sprint >= 10 ? ['tests/map-composition.test.mjs'] : [])], { encoding: 'utf8', timeout: 30000 });
     if (unit.error) throw unit.error;
     if (unit.status !== 0) { process.stdout.write(unit.stdout ?? ''); process.stderr.write(unit.stderr ?? ''); process.exit(unit.status ?? 1); }
     const checks = Number(unit.stdout.match(/^# tests (\d+)$/m)?.[1]);
