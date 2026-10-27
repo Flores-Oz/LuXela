@@ -321,6 +321,8 @@ async function run() {
         while (!scene.waves.isComplete) { scene.enemyManager.defeatLivingEnemies(); scene.waves.update(1000); }
         const exit=levels[scene.roomIndex].exits[0].position;
         reset(scene.player.physicsSprite, (exit.column+.5)*64, (exit.row+.5)*64); tick(4);
+        // Final arena loads the selected character's finisher atlas on first entry.
+        for(let wait=0;!scene.player&&wait<200;wait++){await new Promise(r=>setTimeout(r,10));tick(2);}
         if (index < levels.length - 1) scene.sys.sceneUpdate = () => {};
     }
     check('Reactor con jefe exige derrotarlo antes de la conclusión', scene.roomIndex===4 && scene.waves===null && scene.enemyManager.aliveCount===0 && !!scene.bossEncounter && !game.scene.isActive('CompletionScene') && !game.scene.isActive('VisualNovelScene'));

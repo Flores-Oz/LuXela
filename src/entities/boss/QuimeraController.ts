@@ -1,6 +1,7 @@
 import {QuimeraConfig as config,type BossAttack,type BossPhase,type BossState} from '../../config/QuimeraConfig';
 import {EnemyAttackController,type EnemyShot} from '../enemies/EnemyAttackController';
 import {robotAttacks,type RobotType} from '../../config/RobotConfig';
+import {BossFinisherConfig} from '../../config/BossFinisherConfig';
 
 type Point={x:number;y:number};
 export interface BossFrame {shots:EnemyShot[];pulse:boolean}
@@ -22,11 +23,17 @@ export class QuimeraController {
     private emitted=0;
     private nextShotAt=0;
     private moduleAttack:EnemyAttackController|null=null;
+    finisherTriggered=false;
 
     get alive():boolean{return this.health>0&&this.state!=='STOPPED';}
-    get vulnerable():boolean{return this.alive&&this.state!=='INTRO'&&this.state!=='PHASE_TRANSITION';}
+    get vulnerable():boolean{return this.alive&&!['INTRO','PHASE_TRANSITION','QTE','FINISHING'].includes(this.state);}
     get charging():boolean{return this.state==='CHARGING'||this.state==='ATTACKING'&&this.attack==='combined'&&this.emitted===1;}
     get pulseWarning():boolean{return this.state==='CHARGING'&&this.attack==='pulse';}
+    get finisherAvailable():boolean{return this.alive&&!this.finisherTriggered&&this.health<=config.maxHealth*(BossFinisherConfig.healthRatio+Number.EPSILON);}
+    tryStartFinisher(distance:number,lineOfSight:boolean):boolean {
+        if(!this.finisherAvailable||!this.vulnerable||!lineOfSight||!Number.isFinite(distance)||distance<0||distance>BossFinisherConfig.activationRange)return false;
+        this.finisherTriggered=true;this.moduleAttack?.cancel(this.time);this.enter('QTE',0);return true;
+    }
     private get requestedPhase():BossPhase{return this.health<=config.maxHealth*config.phaseThresholds[1]?3:this.health<=config.maxHealth*config.phaseThresholds[0]?2:1;}
     damage(amount:number):number {
         if(!this.vulnerable||!Number.isFinite(amount)||amount<=0)return 0;
@@ -36,10 +43,19 @@ export class QuimeraController {
         return before-this.health;
     }
     stop():void {this.moduleAttack?.cancel(this.time);if(this.state!=='DEAD')this.enter('STOPPED',0);}
+    resolveFinisher(success:boolean):boolean {
+        if(this.state!=='QTE')return false;
+        if(success)this.enter('FINISHING',0);else this.recover();
+        return true;
+    }
+    completeFinisher():boolean {
+        if(this.state!=='FINISHING')return false;
+        this.health=0;this.enter('DEAD',0);return true;
+    }
 
     update(delta:number,from:Point,target:Point,lineOfSight:boolean,visible=true):BossFrame {
         const frame:BossFrame={shots:[],pulse:false};
-        if(!this.alive||!Number.isFinite(delta)||delta<=0)return frame;
+        if(!this.alive||this.state==='QTE'||this.state==='FINISHING'||!Number.isFinite(delta)||delta<=0)return frame;
         this.time+=delta;
         if(!visible&&(this.state==='CHARGING'||this.state==='ATTACKING')){this.recover();return frame;}
         if(this.state==='INTRO'||this.state==='PHASE_TRANSITION'){

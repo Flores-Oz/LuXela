@@ -30,18 +30,25 @@ export class Quimera extends Phaser.Physics.Arcade.Sprite {
         const taken=this.controller.damage(amount);
         if(taken===0)return 0;
         this.hitUntil=this.controller.time+160;
-        if(this.isDead()){
-            this.setVelocity(0,0);(this.body as Phaser.Physics.Arcade.Body).enable=false;this.energy.clear();
-            this.onDying();
-            this.once('animationcomplete-quimera-death',()=>{if(!this.stopping){this.setVisible(false);this.emit('quimera-destroyed');}});
-            this.clearTint().play('quimera-death');
-        }else if(['REPOSITION','RECOVERING'].includes(this.controller.state))this.play('quimera-hit',true);
+        if(this.isDead())this.beginDeath();
+        else if(['REPOSITION','RECOVERING'].includes(this.controller.state))this.play('quimera-hit',true);
         return taken;
+    }
+    tryStartFinisher(player:Player,sight:LineOfSight):boolean {
+        if(!this.controller.tryStartFinisher(Math.hypot(player.x-this.x,player.y-this.y),sight.hasLineOfSight(this,player)))return false;
+        this.setVelocity(0,0);this.anims.stop();this.energy.clear();this.clearTint();this.emit('quimera-finisher-ready');return true;
+    }
+    finish():boolean {if(!this.controller.completeFinisher())return false;this.beginDeath();return true;}
+    private beginDeath():void {
+        this.setVelocity(0,0);(this.body as Phaser.Physics.Arcade.Body).enable=false;this.energy.clear();
+        this.onDying();
+        this.once('animationcomplete-quimera-death',()=>{if(!this.stopping){this.setVisible(false);this.emit('quimera-destroyed');}});
+        this.clearTint().play('quimera-death');
     }
     cancel():void {this.stopping=true;this.controller.stop();if(this.body)this.setVelocity(0,0);this.anims?.stop();if(this.energy.scene)this.energy.clear();}
 
     updateCombat(delta:number,player:Player,sight:LineOfSight):BossFrame {
-        if(this.stopping||this.isDead())return {shots:[],pulse:false};
+        if(this.stopping||this.isDead()||this.controller.state==='QTE'||this.controller.state==='FINISHING')return {shots:[],pulse:false};
         const state=this.controller.state;
         const view=this.scene.cameras.main.worldView;
         const frame=this.controller.update(delta,this,player,sight.hasLineOfSight(this,player),view.contains(this.x,this.y));

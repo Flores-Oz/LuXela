@@ -17,4 +17,4 @@ export const QuimeraConfig = {
 
 export type BossAttack = typeof QuimeraConfig.phasePatterns[number][number];
 export type BossPhase = 1 | 2 | 3;
-export type BossState = 'INTRO'|'REPOSITION'|'CHARGING'|'ATTACKING'|'RECOVERING'|'PHASE_TRANSITION'|'DEAD'|'STOPPED';
+export type BossState = 'INTRO'|'REPOSITION'|'CHARGING'|'ATTACKING'|'RECOVERING'|'PHASE_TRANSITION'|'QTE'|'FINISHING'|'DEAD'|'STOPPED';

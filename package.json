@@ -35,7 +35,8 @@
     "test:sprint11": "node tests/run-all.mjs --sprint11",
     "test:sprint11:unit": "node --test tests/quimera.test.mjs tests/enemy-attacks.test.mjs tests/level-config.test.mjs tests/waves.test.mjs tests/special-charge.test.mjs tests/environment.test.mjs tests/map-composition.test.mjs tests/large-rooms.test.mjs",
     "test:sprint11:boss": "node tests/run-sprint-11.mjs",
-    "test:sprint11:visual": "node tests/capture-sprint-11.mjs"
+    "test:sprint11:visual": "node tests/capture-sprint-11.mjs",
+    "test:finisher": "node --test tests/finisher.test.mjs && node tests/run-finisher.mjs"
   },
   "dependencies": {
     "phaser": "^4.2.1",

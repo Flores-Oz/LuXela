@@ -69,6 +69,7 @@ try {
     await browser.evaluate(`(()=>{
         const s=window.sprint11Game.scene.getScene('GameScene');s.cameras.main.stopFollow().centerOn(1280,768);
         s.bossEncounter.boss.receiveDamage(999);
+        if(s.bossEncounter.finisher.active){s.bossEncounter.finisher.input('wrong');s.bossEncounter.boss.receiveDamage(999);}
     })()`);
     await capture('destruction');
     await browser.waitUntil("window.sprint11Game.scene.isActive('VisualNovelScene') && document.querySelector('.vn-skip')");

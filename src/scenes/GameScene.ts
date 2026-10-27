@@ -32,6 +32,7 @@ import {loadQuimeraAssets,createQuimeraAnimations} from '../systems/QuimeraAnima
 import {QuimeraEncounter} from '../systems/QuimeraEncounter';
 import {QuimeraConfig} from '../config/QuimeraConfig';
 import {startNarrative} from '../narrative/startNarrative';
+import {loadFinisherAssets} from '../ui/BossFinisher';
 
 
 
@@ -87,6 +88,7 @@ export class GameScene extends Phaser.Scene {
 
         loadRobotAssets(this);
         loadQuimeraAssets(this);
+        if(this.roomIndex===4)loadFinisherAssets(this,this.character);
     }
 
     create(): void {
@@ -247,7 +249,8 @@ export class GameScene extends Phaser.Scene {
         });
         if(config.boss){
             createQuimeraAnimations(this);
-            this.bossEncounter=new QuimeraEncounter(this,config.boss.spawn,room.tileSize,this.player,this.walls!,this.playerProjectiles,this.enemyProjectiles,this.lineOfSight!,()=>this.bossDying(),()=>this.bossDestroyed());
+            this.bossEncounter=new QuimeraEncounter(this,config.boss.spawn,room.tileSize,this.player,this.walls!,this.playerProjectiles,this.enemyProjectiles,this.lineOfSight!,()=>this.bossDying(),()=>this.bossDestroyed(),
+                {character:this.character,start:()=>this.beginFinisher(),resume:()=>this.resumeAfterFinisher()});
         }
         this.specialAbilities = new SpecialAbilityManager(this, this.player, this.character, this.enemyManager, this.runId,()=>this.bossEncounter?.specialHit(this.character)??null);
         this.waves = config.availability === "reserved" || config.boss ? null : new WaveManager(config.id, getWaves(config), {
@@ -266,10 +269,12 @@ export class GameScene extends Phaser.Scene {
 
     update(time: number, delta = 1000 / 60): void {
         if (this.combatState !== "playing" || !this.player || !this.lineOfSight || this.isChangingRoom) return;
+        if(this.bossEncounter?.finisher.active){this.bossEncounter.update(delta);return;}
         this.briefing?.update(delta);
         const abilityState = this.specialAbilities?.ability.state;
         const cooldownSeconds = Math.ceil((this.specialAbilities?.ability.cooldownRemaining ?? 0) / 1000);
         this.specialAbilities?.update(delta);
+        if(this.bossEncounter?.finisher.active)return;
         if (this.specialAbilities?.ability.state !== abilityState || cooldownSeconds !== Math.ceil((this.specialAbilities?.ability.cooldownRemaining ?? 0) / 1000)) this.updateHUD();
         this.waves?.update(delta);
         this.player.update();
@@ -387,6 +392,17 @@ export class GameScene extends Phaser.Scene {
 
     get selectedCharacter(): PlayerCharacter { return this.character; }
 
+    private beginFinisher():void {
+        this.specialAbilities?.cancel();this.input.keyboard?.resetKeys();
+        this.player?.setSpecialPerforming(true);this.player?.physicsSprite.setVelocity(0,0);
+        this.playerProjectiles.clear(true,true);this.enemyProjectiles.clear(true,true);
+        this.physics.pause();this.updateHUD();
+    }
+    private resumeAfterFinisher():void {
+        if(this.combatState!=='playing'||!this.player||this.player.isDead())return;
+        this.input.keyboard?.resetKeys();this.player.setSpecialPerforming(false);this.physics.resume();this.updateHUD();
+    }
+
     private bossDying():void {
         if(this.combatState!=='playing')return;
         this.combatState='boss-destruction';
@@ -479,6 +495,7 @@ export class GameScene extends Phaser.Scene {
         this.hud?.layout();
         this.briefing?.layout();
         if(this.bossEncounter)this.bossEncounter.healthBar.update(this.bossEncounter.boss.controller,0);
+        this.bossEncounter?.finisher.layout();
         positionHUD(this.pauseButton, this.scale.width - 16, this.scale.width < 650 ? this.scale.height - 56 : 16);
     }
 }

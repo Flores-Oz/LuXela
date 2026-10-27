@@ -101,13 +101,13 @@ test('death and stop cancel every future action and reject duplicate or invalid 
     for(const kill of [true,false]){
         const boss=ready();until(boss,()=>boss.state==='CHARGING');
         for(const amount of [0,-1,NaN,Infinity])assert.equal(boss.damage(amount),0);
-        if(kill){boss.damage(999);assert.equal(boss.state,'DEAD');assert.equal(boss.damage(999),0);}else boss.stop();
+        if(kill){boss.damage(999);boss.resolveFinisher(false);boss.damage(999);assert.equal(boss.state,'DEAD');assert.equal(boss.damage(999),0);}else boss.stop();
         assert.deepEqual(step(boss,100000),{shots:[],pulse:false});
     }
 });
 test('special damage is bounded and normal shots alone can finish the encounter',()=>{
     const boss=ready();assert.ok(config.specialDamage.alex<config.maxHealth/2&&config.specialDamage.lua<config.maxHealth/2);
-    let hits=0;while(boss.alive){boss.damage(config.normalDamage);hits++;}
+    let hits=0;while(boss.alive&&hits<50){boss.damage(config.normalDamage);if(boss.state==='QTE')boss.resolveFinisher(false);hits++;}
     assert.equal(hits,36);assert.equal(boss.health,0);
 });
 for(const [name,mutate]of [

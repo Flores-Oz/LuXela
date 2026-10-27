@@ -122,6 +122,7 @@ async function run(){
         for(let hit=0;hit<config.maxHealth/config.normalDamage;hit++){
             const shot=new Projectile(s,boss.x,boss.y,new Phaser.Math.Vector2(1,0),'player',s.playerProjectiles);
             await until(()=>!shot.physicsBody.active);
+            if(encounter.finisher.active)encounter.finisher.input('wrong');
         }
         check(`${character}: normal shots alone defeat the boss`,boss.isDead()&&boss.controller.state==='DEAD'&&s.combatState==='boss-destruction');
         check(`${character}: destruction disables damage and clears projectiles before victory`,!boss.body.enable&&s.enemyProjectiles.getLength()===0&&s.playerProjectiles.getLength()===0&&!encounter.healthBar.root.visible&&!runs.canComplete(character,winningId)&&boss.anims.currentAnim.key==='quimera-death');
