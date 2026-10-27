@@ -22,7 +22,7 @@ for (const character of ['alex', 'lua']) {
         ability.update(timing.chargeMs - 1); assert.equal(state.discharges, 0);
         ability.update(1); assert.equal(state.discharges, 1);
         ability.update(timing.durationMs + timing.recoveryMs + 100000);
-        assert.equal(ability.state, 'cooldown'); assert.equal(state.discharges, 1); assert.equal(runs.getSpecialCharge(id), 0);
+        assert.equal(ability.state, 'locked'); assert.equal(state.discharges, 1); assert.equal(runs.getSpecialCharge(id), 0);
         runs.advanceSpecialCooldown(id, 100000); assert.equal(ability.state, 'locked');
     });
     test(`${character}: charge crosses rooms and retry restores entry checkpoint`, () => {
@@ -38,29 +38,27 @@ for (const character of ['alex', 'lua']) {
 }
 
 for (const character of ['alex', 'lua']) {
-    test(`${character}: ten new kills and exactly 45 gameplay seconds are both required between uses`, () => {
+    test(`${character}: ten new kills recharge immediately without a time cooldown`, () => {
         const {runs,id,ability,kill}=setup(character),timing=SpecialAbilityConfig[character];
         for(let i=0;i<10;i++)kill(`first-${i}`);
         assert.equal(runs.getSpecialCooldown(id),0);assert.equal(ability.activate(),true);
-        assert.equal(runs.getSpecialCooldown(id),45000);
+        assert.equal(runs.getSpecialCooldown(id),0);
         ability.update(timing.chargeMs+timing.durationMs+timing.recoveryMs);
-        for(let i=0;i<10;i++)kill(`next-${i}`);
-        assert.equal(runs.getSpecialCharge(id),10);assert.equal(ability.state,'cooldown');assert.equal(ability.activate(),false);
-        assert.equal(runs.consumeSpecial(id),false);
-        runs.advanceSpecialCooldown(id,44999);assert.equal(ability.cooldownRemaining,1);assert.equal(ability.activate(),false);
-        runs.advanceSpecialCooldown(id,1);assert.equal(ability.state,'ready');assert.equal(ability.activate(),true);
-        assert.equal(runs.getSpecialCharge(id),0);assert.equal(runs.getSpecialCooldown(id),45000);
+        for(let i=0;i<9;i++)kill(`next-${i}`);
+        runs.advanceSpecialCooldown(id,45000);assert.equal(runs.getSpecialCharge(id),9);assert.equal(ability.activate(),false);
+        kill('next-9');assert.equal(ability.state,'ready');assert.equal(ability.activate(),true);
+        assert.equal(runs.getSpecialCharge(id),0);assert.equal(runs.getSpecialCooldown(id),0);
     });
-    test(`${character}: cooldown crosses rooms and retry restores its entry checkpoint`, () => {
+    test(`${character}: only kill charge crosses rooms and retry restores its entry checkpoint`, () => {
         const {runs,id,kill}=setup(character);
         for(let i=0;i<10;i++)kill(i);
         assert.equal(runs.consumeSpecial(id),true);runs.advanceSpecialCooldown(id,3000);
         for(let i=0;i<3;i++)kill(`after-${i}`);
         runs.clearRoom(id,0);assert.equal(runs.advance(id,0),true);
-        assert.equal(runs.getSpecialCooldown(id),42000);assert.equal(runs.getSpecialCharge(id),3);
+        assert.equal(runs.getSpecialCooldown(id),0);assert.equal(runs.getSpecialCharge(id),3);
         runs.advanceSpecialCooldown(id,10000);kill('room-two',1);runs.defeat(id);
         assert.equal(runs.continue(id,character,1),true);
-        assert.equal(runs.getSpecialCooldown(id),42000);assert.equal(runs.getSpecialCharge(id),3);
+        assert.equal(runs.getSpecialCooldown(id),0);assert.equal(runs.getSpecialCharge(id),3);
         const fresh=runs.begin(character);assert.equal(runs.getSpecialCooldown(fresh),0);assert.equal(runs.getSpecialCharge(fresh),0);
     });
 }
@@ -68,8 +66,8 @@ for (const character of ['alex', 'lua']) {
 test('invalid deltas, stale sessions and defeated runs cannot advance cooldown', () => {
     const {runs,id,kill}=setup();for(let i=0;i<10;i++)kill(i);runs.consumeSpecial(id);
     for(const delta of [0,-1,NaN,Infinity])runs.advanceSpecialCooldown(id,delta);
-    runs.advanceSpecialCooldown(id+1,45000);assert.equal(runs.getSpecialCooldown(id),45000);
-    runs.defeat(id);runs.advanceSpecialCooldown(id,45000);assert.equal(runs.getSpecialCooldown(id),45000);
+    runs.advanceSpecialCooldown(id+1,45000);assert.equal(runs.getSpecialCooldown(id),0);assert.equal(runs.getSpecialCharge(id),0);
+    runs.defeat(id);runs.advanceSpecialCooldown(id,45000);assert.equal(runs.getSpecialCooldown(id),0);assert.equal(runs.getSpecialCharge(id),0);
 });
 test('duplicate deaths, invalid room and defeated sessions do not charge; charge is capped', () => {
     const { runs, id, kill } = setup();

@@ -51,7 +51,7 @@ async function run() {
         scene.player.wasd.D.isDown = true; scene.player.update();
         check(`${character}: movement is preserved`, scene.player.physicsSprite.body.velocity.x === 220); scene.player.wasd.D.isDown = false;
         manager.update(config[character].durationMs + config[character].recoveryMs);
-        check(`${character}: animation restores player while cooldown remains`, !manager.pose.visible && scene.player.physicsSprite.visible && ability.state === 'cooldown' && ability.cooldownRemaining > 0 && !ability.activate());
+        check(`${character}: animation restores player and new kills are still required`, !manager.pose.visible && scene.player.physicsSprite.visible && ability.state === 'locked' && ability.cooldownRemaining === 0 && !ability.activate());
         manager.update(100000); check(`${character}: waiting does not recharge`, runs.getSpecialCharge(scene.runId) === levels[0].enemies.count && ability.state === 'locked');
         scene.player.shootingKeys.UP.isDown = true; scene.player.update();
         check(`${character}: normal shooting restored`, scene.player.consumeShootRequest() !== null); scene.player.shootingKeys.UP.isDown = false;
@@ -75,20 +75,20 @@ async function run() {
         check(`${character}: first ultimate is available at ten kills without an initial wait`,scene.specialAbilities.ability.activate());
         tick(250);
         const remaining=runs.getSpecialCooldown(scene.runId),id=scene.runId;
-        check(`${character}: gameplay reduces the 45-second cooldown during the animation`,remaining>40000&&remaining<45000&&!scene.specialAbilities.ability.performing);
+        check(`${character}: animation completes without introducing a time cooldown`,remaining===0&&!scene.specialAbilities.ability.performing);
         scene.changeRoom();tick(4);scene=game.scene.getScene('GameScene');scene.sys.sceneUpdate=scene.update;quiet();
-        check(`${character}: room transition preserves the active cooldown`,scene.runId===id&&runs.getSpecialCooldown(id)>remaining-200&&runs.getSpecialCooldown(id)<=remaining);
+        check(`${character}: room transition preserves the run without adding cooldown`,scene.runId===id&&runs.getSpecialCooldown(id)===0);
         scene.enemyManager.getLivingEnemies().slice(0,4).forEach(enemy=>enemy.die());
-        check(`${character}: ten new real kills cannot bypass the cooldown`,runs.getSpecialCharge(id)===10&&scene.specialAbilities.ability.state==='cooldown'&&!scene.specialAbilities.ability.activate());
-        check(`${character}: HUD shows both kill count and seconds remaining`,scene.hud.text.text.includes('ESPECIAL 10 / 10')&&scene.hud.text.text.includes('ESPERA'));
+        check(`${character}: ten new real kills make the ability ready immediately`,runs.getSpecialCharge(id)===10&&scene.specialAbilities.ability.state==='ready');
+        check(`${character}: HUD shows kill charge without a time wait`,scene.hud.text.text.includes('ESPECIAL 10 / 10')&&!scene.hud.text.text.includes('ESPERA'));
         scene.pauseGame();tick(3);const frozen=runs.getSpecialCooldown(id);tick(3600);
-        check(`${character}: a full minute of paused frames does not advance the ultimate cooldown`,game.scene.isPaused('GameScene')&&runs.getSpecialCooldown(id)===frozen);
+        check(`${character}: paused frames preserve kill charge`,game.scene.isPaused('GameScene')&&runs.getSpecialCooldown(id)===frozen&&runs.getSpecialCharge(id)===10);
         [...document.querySelectorAll('.pause-screen button')].find(button=>button.textContent.trim()==='Continuar').click();tick(3);
         const manager=scene.specialAbilities;manager.update(runs.getSpecialCooldown(id)-1);
-        check(`${character}: ultimate remains unavailable one millisecond before the cooldown ends`,manager.ability.cooldownRemaining>0&&!manager.ability.activate());
+        check(`${character}: no extra timer is required after reaching ten kills`,manager.ability.cooldownRemaining===0&&manager.ability.state==='ready');
         manager.update(1);scene.updateHUD();
-        check(`${character}: HUD announces readiness only when both requirements are met`,manager.ability.state==='ready'&&scene.hud.text.text.includes('LISTA [Q]'));
-        check(`${character}: next activation consumes ten kills and restarts the 45-second wait`,manager.ability.activate()&&runs.getSpecialCharge(id)===0&&runs.getSpecialCooldown(id)===45000);
+        check(`${character}: HUD announces readiness at ten kills`,manager.ability.state==='ready'&&scene.hud.text.text.includes('LISTA [Q]'));
+        check(`${character}: next activation consumes ten kills without starting a cooldown`,manager.ability.activate()&&runs.getSpecialCharge(id)===0&&runs.getSpecialCooldown(id)===0);
     }
     scene.scene.restart({ character: 'alex' }); tick(4); scene = game.scene.getScene('GameScene');
     scene.sys.sceneUpdate = scene.update; prime(scene);

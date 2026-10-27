@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {tsModuleUrl} from './ts-module.mjs';
 const load=path=>import(tsModuleUrl(new URL(path,import.meta.url)));
 const {levels}=await load('../src/levels/levels.ts');
+const {environmentThemes}=await load('../src/world/environment/RoomTheme.ts');
+const {advancedIndustrialAtlas}=await load('../src/world/environment/AdvancedIndustrialTiles.ts');
 const {arcadeRooms}=await load('../src/data/rooms/arcadeRooms.ts');
 const {Room}=await load('../src/world/Room.ts');
 const {createRoomLayout}=await load('../src/world/RoomLayout.ts');
@@ -12,9 +14,9 @@ const {environmentSheets,sheetFunctions,detailedEnvironmentAtlas}=await load('..
 const {validateLevelCatalog}=await load('../src/levels/validateLevelConfig.ts');
 
 test('campaign pairs its four robots with their intended dominant sheets and Quimera with the reactor',()=>{
-    assert.deepEqual(levels.map(level=>level.presentation.environmentStyle),['quarantine-red','data-blue','cargo-olive','hangar-amber','reactor-cyan']);
-    assert.deepEqual(levels.map(level=>level.enemies.types),[['robot-red'],['robot-blue'],['robot-yellow'],['robot-orange'],[]]);
-    assert.deepEqual(levels.map(level=>level.waves.length),[1,2,3,1,0]);
+    assert.deepEqual(levels.slice(0,5).map(level=>level.presentation.environmentStyle),['quarantine-red','data-blue','cargo-olive','hangar-amber','reactor-cyan']);
+    assert.deepEqual(levels.slice(0,5).map(level=>level.enemies.types),[['robot-red'],['robot-blue'],['robot-yellow'],['robot-orange'],[]]);
+    assert.deepEqual(levels.slice(0,5).map(level=>level.waves.length),[1,2,3,1,0]);
     assert.equal(environmentSheets['quarantine-red'].companion,'industrial-green');
     assert.equal(environmentSheets['quarantine-red'].neutral,'maintenance-teal');
     assert.equal(environmentSheets['hangar-amber'].companion,'assembly-amber');
@@ -22,7 +24,7 @@ test('campaign pairs its four robots with their intended dominant sheets and Qui
 
 for(const level of levels)test(`${level.id}: cohesive machines, clean floors, contextual decoration and continuous perimeter`,()=>{
     const matrix=arcadeRooms[level.roomId],layout=createRoomLayout(new Room(matrix,64),level.exits);
-    const atlas=detailedEnvironmentAtlas(level.presentation.environmentStyle),plan=buildEnvironmentPlan(layout,level.presentation);
+    const atlas=level.presentation.environmentStyle?detailedEnvironmentAtlas(level.presentation.environmentStyle):advancedIndustrialAtlas(level.presentation.scenarioId,environmentThemes[level.presentation.theme].atlas),plan=buildEnvironmentPlan(layout,level.presentation);
     const groups=obstacleGroups(40,24,layout.walls);
     assert.ok(groups.length>=6);
     assert.equal(groups.reduce((sum,group)=>sum+group.cells.length,0),layout.walls.length-124);
@@ -40,7 +42,7 @@ for(const level of levels)test(`${level.id}: cohesive machines, clean floors, co
     }
     const warnings=level.presentation.decorations.filter(d=>d.kind==='warning');
     assert.ok(warnings.length<=(level.order===1?3:level.order===2?4:level.order===3?10:6));
-    assert.deepEqual(composeRoomDecorations(matrix,level.presentation.environmentStyle),level.presentation.decorations);
+    assert.deepEqual(composeRoomDecorations(matrix,level.presentation.environmentStyle??'maintenance-teal'),level.presentation.decorations);
     assert.equal(plan.walls[0][0],atlas.corners.northWest);
     assert.equal(plan.walls[0][39],atlas.corners.northEast);
     assert.equal(plan.walls[23][39],atlas.corners.southEast);

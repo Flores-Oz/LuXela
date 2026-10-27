@@ -6,6 +6,9 @@ import { SpecialAbilityConfig } from "../config/SpecialAbilityConfig";
 /** Session-only arcade result. Narrative/UI cannot manufacture a victory by scene data alone. */
 export class ArcadeRunService {
     private serial = 0;
+    private bossIntroRunId:number|undefined;
+    hasBossIntro(id:number):boolean{return this.bossIntroRunId===id;}
+    acknowledgeBossIntro(id:number):void {if(this.run?.id===id&&this.run.roomIndex===10&&this.run.status==='playing')this.bossIntroRunId=id;}
     private run: { id: number; character: PlayerCharacter; roomIndex: number; cleared: Set<number>; score: number; entryScore: number; specialCharge: number; entryCharge: number; specialCooldown: number; entryCooldown: number; awarded: Set<string>; status: "playing" | "defeat" | "victory" } | null = null;
     readonly roomCount: number;
     constructor(roomCount = levels.length) {

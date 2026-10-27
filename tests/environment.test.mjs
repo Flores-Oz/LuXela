@@ -11,6 +11,7 @@ const { LevelManager } = await import(tsModuleUrl(new URL('../src/levels/LevelMa
 const { levels } = await import(tsModuleUrl(new URL('../src/levels/levels.ts', import.meta.url)));
 const { arcadeRooms } = await import(tsModuleUrl(new URL('../src/data/rooms/arcadeRooms.ts', import.meta.url)));
 const { validateLevelCatalog } = await import(tsModuleUrl(new URL('../src/levels/validateLevelConfig.ts', import.meta.url)));
+const {advancedIndustrialAtlas}=await import(tsModuleUrl(new URL('../src/world/environment/AdvancedIndustrialTiles.ts',import.meta.url)));
 
 for (const [name, cells, expected] of [
     ['isolated', [], 0], ['horizontal', [[2,1],[2,3]], 10], ['vertical', [[1,2],[3,2]], 5],
@@ -24,7 +25,7 @@ test('every room has complete floor, exact wall coverage and bounded decoration 
     const manager = new LevelManager();
     for (let index=0;index<manager.count;index++) {
         const config=manager.getLevel(index), layout=createRoomLayout(manager.createRoom(index),config.exits), plan=buildEnvironmentPlan(layout,config.presentation);
-        const atlas=detailedEnvironmentAtlas(config.presentation.environmentStyle);
+        const atlas=config.presentation.environmentStyle?detailedEnvironmentAtlas(config.presentation.environmentStyle):advancedIndustrialAtlas(config.presentation.scenarioId,environmentThemes[config.presentation.theme].atlas);
         assert.equal(plan.floor.length,layout.height/layout.tileSize); assert.ok(plan.floor.every(row=>row.length===layout.width/layout.tileSize && row.every(tile=>atlas.floors.includes(tile))));
         assert.equal(plan.walls.flat().filter(tile=>tile>=0).length,layout.walls.length);
         for(const cell of layout.walls) assert.ok(plan.walls[cell.row][cell.column]>=0 && plan.walls[cell.row][cell.column]<atlas.columns*atlas.rows);
@@ -35,12 +36,12 @@ test('every room has complete floor, exact wall coverage and bounded decoration 
 });
 test('three themes change only appearance and keep the same room data', () => {
     const manager=new LevelManager(),room=manager.createRoom(0),layout=createRoomLayout(room),snapshot=structuredClone(room.matrix);
-    const plans=Object.keys(environmentThemes).map(theme=>buildEnvironmentPlan(layout,{scenarioId:'same-room',theme}));
+    const plans=Object.keys(environmentThemes).filter(theme=>theme!=='advanced').map(theme=>buildEnvironmentPlan(layout,{scenarioId:'same-room',theme}));
     assert.equal(new Set(plans.map(plan=>plan.theme)).size,3);
     for(const plan of plans) {assert.deepEqual(plan.floor,plans[0].floor);assert.deepEqual(plan.walls,plans[0].walls);}
     assert.deepEqual(room.matrix,snapshot);
-    assert.equal(new Set(Object.values(environmentThemes).map(theme=>theme.textureKey)).size,3);
-    assert.equal(new Set(Object.values(environmentThemes).map(theme=>theme.palette.floor)).size,3);
+    assert.equal(new Set(Object.entries(environmentThemes).filter(([key])=>key!=='advanced').map(([,theme])=>theme.textureKey)).size,3);
+    assert.equal(new Set(Object.entries(environmentThemes).filter(([key])=>key!=='advanced').map(([,theme])=>theme.palette.floor)).size,3);
 });
 test('decorations cannot overlay walls, player start or exit even in unvalidated render input', () => {
     const layout=createRoomLayout(new LevelManager().createRoom(0));
@@ -94,7 +95,7 @@ test('all detailed styles preserve physical geometry and keep fixtures confined 
 });
 test('the five campaign rooms visibly use pieces from all eight source sheets',()=>{
     const manager=new LevelManager(),used=new Set();
-    for(let index=0;index<levels.length;index++){
+    for(let index=0;index<5;index++){
         const config=levels[index],style=config.presentation.environmentStyle,plan=buildEnvironmentPlan(createRoomLayout(manager.createRoom(index)),config.presentation);
         const frames=[...plan.floor.flat(),...plan.walls.flat(),...plan.decoration.flat()];
         if(frames.some(frame=>frame>=0&&frame<16))used.add(style);

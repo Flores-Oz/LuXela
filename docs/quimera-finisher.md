@@ -5,7 +5,7 @@ Con un 10 % de vida o menos (hasta 7,2 de 72), Quimera permite un QTE una vez po
 - Alex y Lua: izquierda → arriba → abajo → derecha → espacio (← ↑ ↓ → Espacio).
 - Cada paso permite 0,6 segundos; también se puede tocar el símbolo.
 - Una tecla de dirección o espacio incorrecta, o agotar el tiempo, cancela la oportunidad y reanuda el combate. Se puede terminar con disparos normales.
-- Completar la secuencia reproduce la animación del personaje; solo después destruye al jefe y activa el cierre narrativo existente.
+- Completar la secuencia reproduce la animación del personaje y después destruye al jefe. Desde el Sprint 12, en el nivel 5 habilita la salida a la segunda etapa; en el nivel 11 activa la victoria provisional. Los epílogos definitivos quedan para otro sprint.
 - Escape permite pausar durante la secuencia o la animación. La física se detiene y los proyectiles se limpian al comenzar. Abandonar o reiniciar cancela la secuencia.
 
 ## Recursos

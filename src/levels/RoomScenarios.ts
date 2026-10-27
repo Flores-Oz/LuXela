@@ -9,7 +9,7 @@ interface RoomScenario {
     readonly hint: string;
     readonly robots: readonly RobotType[];
     readonly theme: RoomTheme;
-    readonly environmentStyle: EnvironmentStyle;
+    readonly environmentStyle?: EnvironmentStyle;
     readonly zones: readonly RoomAnchor[];
     readonly reserved?: boolean;
     readonly boss?: boolean;
@@ -31,5 +31,14 @@ export const roomScenarios: readonly RoomScenario[] = [
         zones: [[.20,.34],[.67,.34],[.37,.65],[.85,.65],[.25,.90],[.67,.90],[.65,.18],[.86,.40],[.16,.70],[.48,.42],[.86,.84],[.50,.77],[.86,.18],[.50,.18]] },
     { roomId: "combat-arena", title: "Núcleo energético", hint: "E.X.P.-01 Quimera · Observá sus señales y aprovechá la recuperación del núcleo.", robots: [],boss:true,
         theme: "laboratory", environmentStyle: "reactor-cyan",
-        zones: [[.16,.25],[.38,.22],[.22,.48],[.60,.40],[.40,.66],[.72,.68],[.18,.78],[.78,.23],[.52,.86],[.84,.48],[.46,.46],[.68,.86],[.85,.80],[.18,.92]] }
+        zones: [[.16,.25],[.38,.22],[.22,.48],[.60,.40],[.40,.66],[.72,.68],[.18,.78],[.78,.23],[.52,.86],[.84,.48],[.46,.46],[.68,.86],[.85,.80],[.18,.92]] },
+    ...([
+        ['convergence','Zona de convergencia','Rojo y azul · Alterná cobertura y pasillos laterales.',['robot-red','robot-blue']],
+        ['industrial-reactor','Reactor industrial','Amarillo y naranja · Mantenete en movimiento entre los conductos.',['robot-yellow','robot-orange']],
+        ['defense-system','Sistema de defensa','Tres variantes · Cruzá los sectores usando rutas alternativas.',['robot-red','robot-blue','robot-yellow']],
+        ['maximum-security','Instalación de máxima seguridad','Ataques cruzados · Vigilá las cargas detrás de las divisiones.',['robot-blue','robot-orange','robot-red']],
+        ['last-defense','Última línea de defensa','Cuatro variantes · Aprovechá las coberturas y conservá una salida.',['robot-red','robot-blue','robot-yellow','robot-orange']],
+        ['true-quimera-arena','Quimera · Verdadero combate','El análisis terminó · Observá las advertencias y buscá cobertura.',[]]
+    ] as const).map(([roomId,title,hint,robots])=>({roomId,title,hint,robots,theme:'advanced' as const,boss:roomId==='true-quimera-arena',
+        zones:[[.18,.38],[.18,.65],[.30,.87],[.46,.35],[.58,.62],[.75,.85],[.85,.35],[.85,.65],[.60,.15],[.35,.68]] as readonly RoomAnchor[]}))
 ];

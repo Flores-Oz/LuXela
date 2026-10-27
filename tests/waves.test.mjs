@@ -15,8 +15,8 @@ function setup(waves) {
 }
 test('catalog contains normal, multiwave, special and final encounters', () => {
     assert.deepEqual(validateLevelCatalog(levels, arcadeRooms), []);
-    assert.deepEqual(levels.map(level => level.waves.length), [1, 2, 3, 1, 0]);
-    assert.equal(levels.reduce((sum, level) => sum + level.waves.reduce((n, w) => n + w.enemies.count, 0), 0), 64);
+    assert.deepEqual(levels.slice(0,5).map(level => level.waves.length), [1, 2, 3, 1, 0]);
+    assert.equal(levels.slice(0,5).reduce((sum, level) => sum + level.waves.reduce((n, w) => n + w.enemies.count, 0), 0), 76);
 });
 test('reinforcements use genuinely different authored positions', () => {
     for (const level of levels) {

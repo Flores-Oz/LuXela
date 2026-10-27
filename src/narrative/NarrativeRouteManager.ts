@@ -2,12 +2,13 @@ import { alexTest } from "./routes/alex/testSequence";
 import { luaTest } from "./routes/lua/testSequence";
 import { alexEnding } from "./routes/alex/ending";
 import { luaEnding } from "./routes/lua/ending";
+import {quimeraIntros} from './routes/quimeraIntro';
 import { isNarrativeSequence, type NarrativeRouteId, type NarrativeSequence, type NarrativeProgress } from "./NarrativeTypes";
 
 export class NarrativeRouteManager {
     private readonly sequences = new Map<string, NarrativeSequence>();
     readonly issues: string[] = [];
-    constructor(sequences: readonly unknown[] = [alexTest, luaTest, alexEnding, luaEnding]) {
+    constructor(sequences: readonly unknown[] = [alexTest, luaTest, alexEnding, luaEnding,...quimeraIntros]) {
         for (const sequence of sequences) {
             if (!isNarrativeSequence(sequence)) { this.issues.push("Guion narrativo inválido."); continue; }
             const key = `${sequence.route}:${sequence.id}`;

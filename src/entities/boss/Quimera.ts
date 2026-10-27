@@ -7,7 +7,7 @@ import type {LineOfSight} from '../../systems/LineOfSight';
 import type {BossFrame} from './QuimeraController';
 
 export class Quimera extends Phaser.Physics.Arcade.Sprite {
-    readonly controller=new QuimeraController();
+    readonly controller:QuimeraController;
     private readonly energy:Phaser.GameObjects.Graphics;
     private facing='down';
     private readonly onDying:()=>void;
@@ -15,8 +15,9 @@ export class Quimera extends Phaser.Physics.Arcade.Sprite {
     private pulseUntil=0;
     private stopping=false;
 
-    constructor(scene:Phaser.Scene,x:number,y:number,onDying:()=>void,onDestroyed:()=>void){
+    constructor(scene:Phaser.Scene,x:number,y:number,onDying:()=>void,onDestroyed:()=>void,mode:'trial'|'advanced'='trial'){
         super(scene,x,y,'quimera','0');scene.add.existing(this);scene.physics.add.existing(this);
+        this.controller=new QuimeraController(mode);
         this.onDying=onDying;
         this.setScale(config.spriteScale).setDepth(0).setCollideWorldBounds(true).setTint(0x68767a);
         this.setSize(config.body.width,config.body.height).setOffset(config.body.offsetX,config.body.offsetY);
@@ -56,7 +57,7 @@ export class Quimera extends Phaser.Physics.Arcade.Sprite {
         this.setVelocity(0,0);
         if(controller.state==='REPOSITION'||controller.state==='ATTACKING'&&controller.attack==='module'&&controller.module==='robot-yellow'){
             const dx=player.x-this.x,dy=player.y-this.y,distance=Math.hypot(dx,dy)||1;
-            const desired=controller.attack==='module'&&controller.state==='ATTACKING'?130:Math.min(config.preferredDistance[controller.phase-1]!,view.width*.3,view.height*.35);
+            const desired=controller.attack==='module'&&controller.state==='ATTACKING'?130:Math.min(controller.config.preferredDistance[controller.phase-1]!,view.width*.3,view.height*.35);
             const approach=distance>desired+60?1:distance<desired-60?-1:0;
             const side=Math.floor(controller.time/1600)%2?1:-1;
             let vx=dx/distance*approach-dy/distance*side*.6,vy=dy/distance*approach+dx/distance*side*.6;
@@ -64,7 +65,7 @@ export class Quimera extends Phaser.Physics.Arcade.Sprite {
             // Turn along a blocked axis, keeping the body's normal Arcade wall collider.
             if(vx<0&&body.blocked.left||vx>0&&body.blocked.right){vx=0;vy=dy>=0?1:-1;}
             if(vy<0&&body.blocked.up||vy>0&&body.blocked.down){vy=0;vx=dx>=0?1:-1;}
-            const speed=config.movementSpeed[controller.phase-1]!*(controller.state==='ATTACKING'?robotMovementScale['robot-yellow']:1);
+            const speed=controller.config.movementSpeed[controller.phase-1]!*(controller.state==='ATTACKING'?robotMovementScale['robot-yellow']:1);
             const length=Math.hypot(vx,vy)||1;this.setVelocity(vx/length*speed,vy/length*speed);
             if(Math.abs(vx)>Math.abs(vy))this.facing=vx<0?'left':'right';else this.facing=vy<0?'up':'down';
             if(this.anims.currentAnim?.key!=='quimera-hit'||!this.anims.isPlaying)this.play(`quimera-walk-${this.facing}`,true);
@@ -83,7 +84,7 @@ export class Quimera extends Phaser.Physics.Arcade.Sprite {
     private drawEnergy():void {
         const c=this.controller,g=this.energy;g.clear();
         const coreY=this.y+12,armY=this.y+38;
-        const color=c.attack==='module'?({'robot-red':0xff5544,'robot-blue':0x669dff,'robot-yellow':0xffdb55,'robot-orange':0xffa52a}[c.module]):c.phase===3?0xff704b:c.phase===2?0x6de8ff:0xb4dfbd;
+        const color=c.attack==='module'?({'robot-red':0xff5544,'robot-blue':0x669dff,'robot-yellow':0xffdb55,'robot-orange':0xffa52a}[c.module]):c.phase>=3?0xff704b:c.phase===2?0x6de8ff:0xb4dfbd;
         if(c.state==='INTRO'){g.fillStyle(0x6de8ff,Math.min(.9,(c.time-c.stateStartedAt)/config.introMs)).fillCircle(this.x,coreY,12);return;}
         if(c.time<this.hitUntil)this.setTint(0xffffff).setTintMode(Phaser.TintModes.FILL);else this.clearTint();
         const glow=c.state==='RECOVERING'?.9:.25+c.phase*.13;
@@ -91,7 +92,7 @@ export class Quimera extends Phaser.Physics.Arcade.Sprite {
         if(c.phase>=2){
             for(const direction of [-1,1])g.fillStyle(color,.5).fillCircle(this.x+direction*65,armY,5+c.phase);
         }
-        if(c.phase===3)for(let i=0;i<4;i++){
+        if(c.phase>=3)for(let i=0;i<4;i++){
             const angle=c.time/350+i*Math.PI/2;g.fillStyle(color,.5).fillCircle(this.x+Math.cos(angle)*78,armY+Math.sin(angle)*45,2);
         }
         if(c.charging){

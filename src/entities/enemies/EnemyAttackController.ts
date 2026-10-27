@@ -6,6 +6,8 @@ export type EnemyShot = {
     speed: number;
     attackType: EnemyAttackType;
     piercesInteriorWalls: boolean;
+    originOffset?:Point;
+    visualFrame?:number;
 };
 export type AttackPhase = "ready" | "burst" | "charging" | "recovering";
 

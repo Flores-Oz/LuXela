@@ -35,10 +35,10 @@ for(const [width,height] of [[40,24],[48,30],[24,16],[20,14]])test(`${width}x${h
     }
 });
 test('large-room combat density increases while wave progression and movement remain intact',()=>{
-    const catalog=createLevelCatalog(),waves=catalog.flatMap(level=>level.waves),robots=waves.flatMap(wave=>wave.enemies.spawns);
-    assert.equal(waves.length,7);assert.equal(robots.length,64);assert.equal(robots.length*catalog[0].scorePerEnemy,6400);
+    const catalog=createLevelCatalog().slice(0,5),waves=catalog.flatMap(level=>level.waves),robots=waves.flatMap(wave=>wave.enemies.spawns);
+    assert.equal(waves.length,7);assert.equal(robots.length,76);assert.equal(robots.length*catalog[0].scorePerEnemy,7600);
     assert.deepEqual([...new Set(robots.map(robot=>robot.type))].sort(),['robot-blue','robot-orange','robot-red','robot-yellow']);
-    assert.deepEqual(catalog.map(config=>config.difficulty.moveSpeed),[80,88,96,104,112]);
+    assert.deepEqual(catalog.map(config=>config.difficulty.moveSpeed),[96,104,108,112,112]);
 });
 test('rooms 1-4 introduce red, blue, yellow and orange separately in every wave',()=>{
     const catalog=createLevelCatalog();

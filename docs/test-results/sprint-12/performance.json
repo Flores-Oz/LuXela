@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "baseline": {
+    "meanMs": 16.851111111111134,
+    "p95Ms": 16.799999999999272,
+    "peakProjectiles": 0,
+    "initialChildren": 276,
+    "children": 276,
+    "colliders": 7
+  },
+  "stress": {
+    "meanMs": 18.70222222222223,
+    "p95Ms": 33.30000000000291,
+    "peakProjectiles": 72,
+    "initialChildren": 276,
+    "children": 348,
+    "colliders": 7
+  },
+  "maxAllowed": 72,
+  "remainingProjectiles": 0,
+  "robots": 10,
+  "renderer": "Canvas",
+  "viewport": "1280x768",
+  "cameraZoom": 0.5,
+  "consoleErrors": [],
+  "generatedAt": "2026-10-27T21:33:38.867Z"
+}

@@ -4,7 +4,7 @@ export type AbilityState = "locked" | "cooldown" | "ready" | "charging" | "activ
 export interface AbilityTiming { chargeMs: number; durationMs: number; recoveryMs: number; killsRequired: number }
 export interface AbilityCharge { count: () => number; consume: () => boolean; cooldownRemaining?: () => number }
 
-/** Availability requires validated eliminations and the session's gameplay cooldown. */
+/** Availability requires validated eliminations; animation/recovery still gates repeated input. */
 export abstract class SpecialAbility {
     private phase: "charging" | "active" | "recovering" | null = null;
     elapsed = 0;

@@ -1,4 +1,4 @@
-export const roomThemeIds = ["industrial", "laboratory", "control"] as const;
+export const roomThemeIds = ["industrial", "laboratory", "control", "advanced"] as const;
 export type RoomTheme = typeof roomThemeIds[number];
 export type DecorationKind = "grate" | "panel" | "warning" | "circuit";
 export interface DecorationConfig { readonly row: number; readonly column: number; readonly kind: DecorationKind }
@@ -35,6 +35,12 @@ export const preparedEnvironmentAtlas: EnvironmentAtlas = {
     screenDecorations: ["panel", "warning", "circuit"]
 };
 export const environmentThemes: Readonly<Record<RoomTheme, EnvironmentTheme>> = {
+    advanced: {textureKey:'environment-advanced',source:'assets/tilesets/advanced-industrial.png',provisional:false,
+        atlas:{tileSize:64,columns:8,rows:8,floors:[0,1,2],walls:Array(16).fill(46),wallVariants:Array(16).fill(45),
+            edgeWalls:{north:9,east:22,south:20,west:23},corners:{northWest:10,northEast:11,southEast:19,southWest:18},
+            decoration:{grate:4,panel:28,warning:56,circuit:29},door:{locked:58,unlocked:58,transitioning:58},screenDecorations:[],floorAlpha:.9,
+            materials:{clean:1,secondary:0,worn:5,machine:46,supportMachine:45,console:42,themed:49}},
+        palette:{floor:'#202a34',floorLight:'#344451',seam:'#121a22',wall:'#59646d',edge:'#849099',inset:'#3d4851',accent:'#659dff',warning:'#ffa52a'}},
     industrial: { textureKey: "environment-industrial", source: "assets/environment/industrial/tileset.png", atlas: preparedEnvironmentAtlas, provisional: false, floorAlpha: .78,
         palette: { floor: "#242b32", floorLight: "#303a43", seam: "#1b2229", wall: "#59646d", edge: "#849099", inset: "#3d4851", accent: "#738b88", warning: "#a08c57" } },
     laboratory: { textureKey: "environment-laboratory", source: "assets/environment/laboratory/tileset.png", atlas: preparedEnvironmentAtlas, provisional: false, floorAlpha: .8,

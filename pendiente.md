@@ -1,5 +1,19 @@
 # Pendientes — retoques finales
 
+## Sprint 12 — segunda etapa integrada
+
+- [x] Ampliar a 11 niveles y añadir cinco mapas de combate mixto.
+- [x] Permitir continuar después de Quimera en el nivel 5.
+- [x] Integrar la introducción y el combate final de cuatro fases, rayo, onda, aprendizaje limitado y refuerzos.
+- [x] Organizar los recursos aportados en `assets/tilesets`, `assets/effects` y `assets/bosses`.
+- [x] Conservar el QTE y habilitar la victoria provisional solamente después del nivel 11.
+- [x] Ajustar proyectiles visibles, dificultad inicial y de niveles 6–9, ampliar a seis refuerzos del jefe y aplicar teletransporte a todas las oleadas.
+- [ ] Ajustar el balance con partidas libres y validar otros navegadores/dispositivos y WebGL.
+- [ ] Escribir los epílogos definitivos de Alex y Lua en un sprint posterior.
+
+Detalles, recursos, pruebas y capturas: `docs/sprint-12.md`. La campaña actual reemplaza el final definitivo del nivel 5 descrito en las notas históricas inferiores: ese encuentro ahora habilita la segunda etapa.
+La restricción del Sprint 12 también sustituye la espera histórica de 45 segundos: las especiales actuales se recargan únicamente con diez bajas nuevas, además de completar su animación y recuperación.
+
 Los sprints 5, 6, 7 y 8 tienen su integración funcional terminada. Los siguientes ajustes de contenido se dejan pendientes para el acabado final del juego.
 
 La ampliación del Sprint 9 también está implementada: salas físicas de 40 × 24 tiles, cámara con seguimiento, pantalla cubierta por el escenario y cuatro variantes de robots. Ver `docs/sprint-9.md` para las verificaciones y los límites de la validación.

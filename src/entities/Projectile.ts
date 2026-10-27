@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { EnemyAttackType } from "../config/RobotConfig";
+import {ProjectileConfig as config} from '../config/ProjectileConfig';
 
 export type ProjectileOwner = "player" | "enemy";
 
@@ -25,7 +26,8 @@ export class Projectile {
         group?: Phaser.Physics.Arcade.Group,
         speed = 500,
         piercesInteriorWalls = false,
-        attackType: EnemyAttackType | "player" = owner === "player" ? "player" : piercesInteriorWalls ? "piercing-spread" : "single"
+        attackType: EnemyAttackType | "player" = owner === "player" ? "player" : piercesInteriorWalls ? "piercing-spread" : "single",
+        visual?:{key:string;frame:number}
     ){
         this.owner = owner;
         this.attackType = attackType;
@@ -47,7 +49,7 @@ export class Projectile {
             graphics.destroy();
         }
 
-          this.body = scene.physics.add.image(
+          this.body = (visual?scene.physics.add.sprite.bind(scene.physics.add):scene.physics.add.image.bind(scene.physics.add))(
             x,
             y,
             textureKey
@@ -56,7 +58,17 @@ export class Projectile {
         // Add before setting velocity: Arcade groups apply their defaults on add.
         group?.add(this.body);
         this.body.setData("projectile", this);
-        this.body.setCircle(8);
+        const scale=config.displaySize[owner]/16,radius=config.normalHitRadius/scale;
+        this.body.setDisplaySize(config.displaySize[owner],config.displaySize[owner]).setCircle(radius,8-radius,8-radius);
+        if(visual&&scene.textures.exists(visual.key)){
+            // The supplied 128px cells contain substantial transparent padding.
+            // Keep the collision diameter inside the visible energy core.
+            const radius=config.energyHitRadius/(config.energyDisplaySize/128);
+            this.body.setTexture(visual.key,visual.frame).setDisplaySize(config.energyDisplaySize,config.energyDisplaySize).setCircle(radius,64-radius,64-radius);
+            const key=`${visual.key}-${visual.frame}`;
+            if(!scene.anims.exists(key))scene.anims.create({key,frames:scene.anims.generateFrameNumbers(visual.key,{start:visual.frame,end:visual.frame+3}),frameRate:12,repeat:-1});
+            (this.body as Phaser.Physics.Arcade.Sprite).play(key);
+        }
         this.body.setCollideWorldBounds(true);
         (this.body.body as Phaser.Physics.Arcade.Body).onWorldBounds=true;
 

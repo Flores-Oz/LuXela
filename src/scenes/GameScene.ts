@@ -33,6 +33,9 @@ import {QuimeraEncounter} from '../systems/QuimeraEncounter';
 import {QuimeraConfig} from '../config/QuimeraConfig';
 import {startNarrative} from '../narrative/startNarrative';
 import {loadFinisherAssets} from '../ui/BossFinisher';
+import {loadAdvancedBossAssets} from '../systems/QuimeraEffects';
+import {AdvancedCombat} from '../config/QuimeraAdvancedConfig';
+import {loadRobotSpawnAsset} from '../systems/RobotSpawnEffect';
 
 
 
@@ -82,13 +85,15 @@ export class GameScene extends Phaser.Scene {
     }
 
     preload(): void {
-        loadEnvironmentAssets(this);
+        loadEnvironmentAssets(this,this.roomIndex>=5);
         loadPlayerAssets(this);
         loadSpecialAssets(this);
 
         loadRobotAssets(this);
+        loadRobotSpawnAsset(this);
         loadQuimeraAssets(this);
-        if(this.roomIndex===4)loadFinisherAssets(this,this.character);
+        if(this.roomIndex===4||this.roomIndex===10)loadFinisherAssets(this,this.character);
+        if(this.roomIndex===10)loadAdvancedBossAssets(this);
     }
 
     create(): void {
@@ -99,6 +104,9 @@ export class GameScene extends Phaser.Scene {
         }
 
         this.input.keyboard?.resetKeys();
+        if(this.roomIndex===10&&!getArcadeRun(this.game).hasBossIntro(this.runId)){
+            startNarrative(this,{route:this.character,sequenceId:`${this.character}_quimera_intro`,resume:false,destination:{kind:'game',roomIndex:10,runId:this.runId}});return;
+        }
         this.physics.resume();
         this.enemies = this.physics.add.group({ collideWorldBounds: true });
         this.enemyManager = new EnemyManager(this, this.enemies);
@@ -250,7 +258,7 @@ export class GameScene extends Phaser.Scene {
         if(config.boss){
             createQuimeraAnimations(this);
             this.bossEncounter=new QuimeraEncounter(this,config.boss.spawn,room.tileSize,this.player,this.walls!,this.playerProjectiles,this.enemyProjectiles,this.lineOfSight!,()=>this.bossDying(),()=>this.bossDestroyed(),
-                {character:this.character,start:()=>this.beginFinisher(),resume:()=>this.resumeAfterFinisher()});
+                {character:this.character,start:()=>this.beginFinisher(),resume:()=>this.resumeAfterFinisher()},config.boss.mode==='advanced'?{room,enemies:this.enemyManager}:undefined);
         }
         this.specialAbilities = new SpecialAbilityManager(this, this.player, this.character, this.enemyManager, this.runId,()=>this.bossEncounter?.specialHit(this.character)??null);
         this.waves = config.availability === "reserved" || config.boss ? null : new WaveManager(config.id, getWaves(config), {
@@ -284,7 +292,7 @@ export class GameScene extends Phaser.Scene {
         for (const child of this.enemies.getChildren()) {
             const enemy = child as Enemy;
             const shots = enemy.updateBehavior(this.player, this.lineOfSight, time - this.pausedDuration);
-            fireEnemyShots(this, enemy, shots, this.enemyProjectiles);
+            fireEnemyShots(this, enemy, shots, this.enemyProjectiles,this.roomIndex>=5?AdvancedCombat.maxProjectiles:Infinity);
         }
 
         const direction = this.player.consumeShootRequest();
@@ -334,7 +342,7 @@ export class GameScene extends Phaser.Scene {
             return;
         }
 
-        if (!this.waves?.isComplete || !this.doors?.canUse(exit)) return;
+        if (!(this.waves?.isComplete||this.bossEncounter?.boss.isDead()) || !this.doors?.canUse(exit)) return;
         const nextRoomIndex = this.levels.nextIndex(this.roomIndex);
         if (nextRoomIndex === null) {
             if (!getArcadeRun(this.game).finish(this.runId, this.roomIndex)) return;
@@ -410,6 +418,8 @@ export class GameScene extends Phaser.Scene {
         this.specialAbilities?.cancel();this.input.keyboard?.resetKeys();
         this.player?.physicsSprite.setVelocity(0,0);
         this.playerProjectiles.clear(true,true);this.enemyProjectiles.clear(true,true);
+        for(const enemy of this.enemies.getChildren() as Enemy[]){enemy.cancelAttack();enemy.stop();}
+        this.enemies.clear(true,true);
         // Leave animations running until the final destruction frame completes.
         this.physics.pause();
     }
@@ -418,9 +428,14 @@ export class GameScene extends Phaser.Scene {
         const runs=getArcadeRun(this.game);
         runs.awardKill(this.runId,this.roomIndex,'quimera',QuimeraConfig.score);
         runs.clearRoom(this.runId,this.roomIndex);
+        if(this.roomIndex===4){
+            this.combatState='playing';this.physics.resume();this.player?.setSpecialPerforming(false);this.doors?.unlock();
+            this.briefing?.destroy();this.briefing=new RoomBriefing(this,'Prueba de combate finalizada','Quimera completó su análisis. La segunda etapa está disponible por la salida.');
+            this.updateHUD();return;
+        }
         if(!runs.finish(this.runId,this.roomIndex))return;
         this.combatState='victory';this.isChangingRoom=true;this.prepareRoomExit();
-        startNarrative(this,{route:this.character,sequenceId:`${this.character}_ending`,resume:false,destination:{kind:'completion',runId:this.runId}});
+        this.scene.start('CompletionScene',{character:this.character,runId:this.runId});
     }
 
     private roomCleared(): void {
@@ -435,6 +450,7 @@ export class GameScene extends Phaser.Scene {
     private enemyDefeated(enemy: Enemy): void {
         if (this.combatState !== "playing" || this.isChangingRoom) return;
         const enemyId: unknown = enemy.getData("level-enemy-id");
+        if(this.roomIndex===10&&typeof enemyId==='string'&&enemyId.startsWith('quimera-reinforcement-'))getArcadeRun(this.game).awardKill(this.runId,this.roomIndex,enemyId,this.levels.getLevel(this.roomIndex).scorePerEnemy);
         if (typeof enemyId === "string" && this.waves?.canDefeat(enemyId)) {
             getArcadeRun(this.game).awardKill(this.runId, this.roomIndex, enemyId, this.levels.getLevel(this.roomIndex).scorePerEnemy);
             this.waves.defeat(enemyId);
@@ -453,7 +469,7 @@ export class GameScene extends Phaser.Scene {
         if (!positions) return false;
         for (const [index, position] of positions.entries()) {
             const enemy = new Enemy(this, (position.column + 0.5) * room.tileSize,
-                (position.row + 0.5) * room.tileSize, wave.enemies.spawns[index]!.type, config.difficulty);
+                (position.row + 0.5) * room.tileSize, wave.enemies.spawns[index]!.type, {...config.difficulty,spawnEffect:true});
             enemy.setData("level-enemy-id", this.waves.enemyId(waveIndex, index));
             this.enemyManager.add(enemy); enemy.playIdle();
         }

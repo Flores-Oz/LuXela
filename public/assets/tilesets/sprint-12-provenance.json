@@ -1,0 +1,51 @@
+[
+    {
+        "path":  "public/assets/effects/quimera-beam.png",
+        "format":  "Format32bppArgb",
+        "width":  2048,
+        "sha256":  "3D158738D590FCBD4266685C3BAA5EF19D07F8FBE42B7A3A2EB993834AA49495",
+        "height":  384
+    },
+    {
+        "path":  "public/assets/effects/quimera-core-charge.png",
+        "format":  "Format32bppArgb",
+        "width":  1024,
+        "sha256":  "83A864716DFD9E3A6960AEB3EC1436E499F9941BEDD01D0CA23C4A1703B58DE3",
+        "height":  512
+    },
+    {
+        "path":  "public/assets/effects/quimera-projectiles.png",
+        "format":  "Format32bppArgb",
+        "width":  512,
+        "sha256":  "7853BAF0104658C20C060E856976199ED80F34F18E6A14766E30FA7FAB2455ED",
+        "height":  512
+    },
+    {
+        "path":  "public/assets/effects/quimera-shockwave.png",
+        "format":  "Format32bppArgb",
+        "width":  1024,
+        "sha256":  "82CDAE15B6E41E5103EEA06A96FA19A97194964AC55BBC339DD5FAA54A9D403C",
+        "height":  768
+    },
+    {
+        "path":  "public/assets/effects/robot-spawn.png",
+        "format":  "Format32bppArgb",
+        "width":  1024,
+        "sha256":  "2B417D9BE32CC05BF1B2709B3AEDE47BEC344F77B152475EE43C22182B68A59E",
+        "height":  768
+    },
+    {
+        "path":  "public/assets/bosses/quimera-intro.png",
+        "format":  "Format24bppRgb",
+        "width":  1920,
+        "sha256":  "0FA1389D33F090967B684E2D1FE6BFF48D7B6D676F44EB2E4C8423EF075B277B",
+        "height":  1080
+    },
+    {
+        "path":  "public/assets/tilesets/advanced-industrial.png",
+        "format":  "Format32bppArgb",
+        "width":  512,
+        "sha256":  "E7A2B01C41950CBAFE71C9AE2B017D88A3E2A0E8ECB9527219FC2AD2C06B4FF2",
+        "height":  512
+    }
+]

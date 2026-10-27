@@ -15,6 +15,12 @@ export const QuimeraConfig = {
     spriteScale:1.1, body:{width:104,height:116,offsetX:44,offsetY:48}
 } as const;
 
-export type BossAttack = typeof QuimeraConfig.phasePatterns[number][number];
-export type BossPhase = 1 | 2 | 3;
+export type BossAttack = typeof QuimeraConfig.phasePatterns[number][number] | 'alternating' | 'cross-burst' | 'beam' | 'shockwave' | 'summon';
+export type BossPhase = 1 | 2 | 3 | 4;
+export type QuimeraTuning = Omit<typeof QuimeraConfig,'maxHealth'|'phaseThresholds'|'movementSpeed'|'repositionMs'|'preferredDistance'|'projectileSpeed'|'recoveryMs'|'phasePatterns'|'warningMs'|'spreadCount'|'spreadAngle'> & {
+    readonly spreadCount:number;readonly spreadAngle:number;
+    readonly maxHealth:number;readonly phaseThresholds:readonly number[];readonly movementSpeed:readonly number[];readonly repositionMs:readonly number[];
+    readonly preferredDistance:readonly number[];readonly projectileSpeed:readonly number[];readonly recoveryMs:readonly number[];
+    readonly phasePatterns:readonly (readonly BossAttack[])[];readonly warningMs:Partial<Readonly<Record<BossAttack,number>>>;
+};
 export type BossState = 'INTRO'|'REPOSITION'|'CHARGING'|'ATTACKING'|'RECOVERING'|'PHASE_TRANSITION'|'QTE'|'FINISHING'|'DEAD'|'STOPPED';

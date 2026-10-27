@@ -4,8 +4,9 @@ import { environmentStyleIds, sheetTextureKey, type EnvironmentStyle } from "./E
 import { resolveSheetTiles } from "./EnvironmentSheetTiles";
 
 /** Final atlases can be supplied by source. Missing art falls back to these simple original tiles. */
-export function loadEnvironmentAssets(scene: Phaser.Scene): void {
+export function loadEnvironmentAssets(scene: Phaser.Scene,advanced=false): void {
     for (const theme of roomThemeIds) {
+        if(theme==='advanced'&&!advanced)continue;
         const config = environmentThemes[theme];
         if (config.source && !scene.textures.exists(config.textureKey)) scene.load.image(config.textureKey, config.source);
     }

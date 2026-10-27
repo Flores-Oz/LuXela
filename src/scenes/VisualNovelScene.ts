@@ -112,6 +112,7 @@ export class VisualNovelScene extends Phaser.Scene {
             if (!getArcadeRun(this.game).canComplete(this.request.route, destination.runId)) { this.reject("La victoria ya no está disponible."); return; }
             this.scene.start("CompletionScene", { character: this.request.route, runId: destination.runId });
         } else {
+            if(this.sequence.id===`${this.request.route}_quimera_intro`&&destination?.kind==='game'&&destination.roomIndex===10&&destination.runId!==undefined)getArcadeRun(this.game).acknowledgeBossIntro(destination.runId);
             this.saves.save(this.request.route, { chapterId: this.sequence.chapterId, sequenceId: this.sequence.id, entryIndex: this.sequence.entries.length, status });
             this.scene.start("GameScene", { character: this.request.route, roomIndex: destination?.roomIndex ?? this.request.returnTo?.roomIndex ?? 0,
                 runId: destination?.runId ?? this.request.returnTo?.runId });

@@ -10,7 +10,7 @@
     "alex: actual keyboard sequence starts the correct finisher",
     "alex: pause freezes animation frame and clock",
     "alex: boss cannot die before the animation ends",
-    "alex: finisher leads to the existing correct ending",
+    "alex: trial finisher unlocks the second stage without ending the campaign",
     "lua: health below ten percent does not trigger from far away",
     "lua: normal combat walking into range triggers the remate",
     "lua: proximity pauses physics, clears projectiles and leaves boss alive",
@@ -19,7 +19,7 @@
     "lua: actual keyboard sequence starts the correct finisher",
     "lua: pause freezes animation frame and clock",
     "lua: boss cannot die before the animation ends",
-    "lua: finisher leads to the existing correct ending",
+    "lua: trial finisher unlocks the second stage without ending the campaign",
     "alex: health below ten percent does not trigger from far away",
     "alex: normal combat walking into range triggers the remate",
     "Wrong key resumes combat and spends the single attempt",
@@ -36,5 +36,5 @@
     "Mobile pointer can complete all five steps"
   ],
   "consoleErrors": [],
-  "generatedAt": "2026-10-27T16:50:51.120Z"
+  "generatedAt": "2026-10-27T21:29:12.439Z"
 }

@@ -5,6 +5,7 @@ import type { LineOfSight } from "../../systems/LineOfSight";
 import { CombatEvents } from "../../systems/CombatEvents";
 import { robotAttacks,robotMovementScale,robotDefinitions,robotTypes,type RobotType,type EnemyAttackConfig } from "../../config/RobotConfig";
 import { EnemyAttackController, type EnemyShot } from "./EnemyAttackController";
+import {RobotSpawnEffect} from '../../systems/RobotSpawnEffect';
 
 export type EnemyConfig = {
     moveSpeed?: number;
@@ -13,6 +14,7 @@ export type EnemyConfig = {
     animationPrefix?: string;
     patrol?: boolean;
     piercesInteriorWalls?: boolean;
+    spawnEffect?: boolean;
 };
 
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
@@ -41,6 +43,16 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     private playerDetected = false;
 
     private currentState: EnemyState = EnemyState.IDLE;
+    private spawnEffect:RobotSpawnEffect|null=null;
+    get isSpawning():boolean{return this.spawnEffect?.active??false;}
+    preUpdate(time:number,delta:number):void {
+        super.preUpdate(time,delta);
+        if(this.spawnEffect?.active){
+            if(!this.scene.physics.world.isPaused)this.spawnEffect.update(delta);
+            this.spawnEffect.setPosition(this.x,this.y);
+            this.setAlpha(this.spawnEffect.active ? .15+.85*this.spawnEffect.progress : 1);
+        }
+    }
 
     constructor(
         scene: Phaser.Scene,
@@ -72,6 +84,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
         this.setCollideWorldBounds(true);
         this.once(Phaser.GameObjects.Events.DESTROY, () => this.cancelAttack());
+        if(config.spawnEffect&&scene.textures.exists('robot-spawn')){
+            this.spawnEffect=new RobotSpawnEffect(scene,x,y);this.setAlpha(.15);
+            this.once(Phaser.GameObjects.Events.DESTROY,()=>this.spawnEffect?.destroy());
+        }
         this.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
             if (!this.dead && this.attack.phase !== "charging" && (this.currentState === EnemyState.ATTACK_READY || this.currentState === EnemyState.RECOVERY || this.currentState === EnemyState.BURST)) this.playIdle();
         });
@@ -133,10 +149,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     public die(): void {
-
         if (this.dead || !this.active || !this.body) {
             return;
         }
+        this.spawnEffect?.destroy();this.setAlpha(1);
 
         this.dead = true;
         this.playerDetected = false;
@@ -308,6 +324,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         if (this.dead || !this.active) {
             return null;
         }
+        if(this.isSpawning){this.setVelocity(0,0);return null;}
 
         if (player.isDead() || !player.physicsSprite.active) {
             this.cancelAttack();

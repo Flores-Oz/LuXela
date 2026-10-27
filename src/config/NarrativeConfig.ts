@@ -28,6 +28,7 @@ export const NarrativeConfig = {
 
 // Dedicated illustrations use the whole source; cover preserves proportions on each viewport.
 export const narrativeBackgrounds: Record<string, BackgroundAsset> = {
+    'quimera-intro':{src:'assets/bosses/quimera-intro.png'},
     "main-menu": { src: "assets/backgrounds/main-menu-background.png" },
     "alex-intro": { src: "assets/backgrounds/alex-intro-background.png" },
     "lua-intro": { src: "assets/backgrounds/lua-intro-background.png" },

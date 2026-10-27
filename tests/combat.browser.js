@@ -51,9 +51,10 @@ async function run() {
     check('Idle y frames de muerte registrados', enemy.anims.currentAnim.key === 'robot-idle' &&
         scene.anims.get('robot-death').frames.map(f => Number(f.textureFrame)).join() === '60,61,62,63,64,65');
 
+    const speed=levels[0].difficulty.moveSpeed;
     for (const [method, vx, vy, animation] of [
-        ['moveUp', 0, -80, 'up'], ['moveDown', 0, 80, 'down'],
-        ['moveLeft', -80, 0, 'left'], ['moveRight', 80, 0, 'right']
+        ['moveUp', 0, -speed, 'up'], ['moveDown', 0, speed, 'down'],
+        ['moveLeft', -speed, 0, 'left'], ['moveRight', speed, 0, 'right']
     ]) {
         enemy[method]();
         check(`Movimiento y animación ${method}`, enemy.body.velocity.x === vx &&
@@ -69,16 +70,16 @@ async function run() {
     enemy.stop();
 
     reset(player.physicsSprite, 160, 160);
-    reset(enemy, 608, 160);
+    reset(enemy, player.x+levels[0].difficulty.detectionRange+88, 160);
     enemy.patrolDirection = -1;
     enemy.nextPatrolTurn = 0;
     check('Fuera de rango: PATROL sin disparo', enemy.updateBehavior(player, scene.lineOfSight, now) === null &&
-        enemy.getState() === EnemyState.PATROL && enemy.body.velocity.x === 80);
+        enemy.getState() === EnemyState.PATROL && enemy.body.velocity.x === speed);
     const patrolX = enemy.x;
     tick(10);
     check('Patrulla desplaza robot sin detectar jugador', enemy.x > patrolX);
     enemy.updateBehavior(player, scene.lineOfSight, now + 1500);
-    check('Patrulla gira por tiempo', enemy.body.velocity.y === 80);
+    check('Patrulla gira por tiempo', enemy.body.velocity.y === speed);
     reset(enemy, scene.physics.world.bounds.width-88, 352);
     enemy.patrolDirection = 0;
     enemy.nextPatrolTurn = now + 10000;
@@ -87,7 +88,7 @@ async function run() {
         tick();
         enemy.updateBehavior(player, scene.lineOfSight, now);
     }
-    check('Patrulla gira al chocar sin atravesar pared', enemy.body.right <= scene.physics.world.bounds.width-64 + 0.01 && enemy.body.velocity.y === 80);
+    check('Patrulla gira al chocar sin atravesar pared', enemy.body.right <= scene.physics.world.bounds.width-64 + 0.01 && enemy.body.velocity.y === speed);
     reset(enemy, wallRight+24, wallY);
     reset(player.physicsSprite, wallRight-152, wallY);
     check('Proximidad detecta a través de pared', enemy.detectPlayer(player.physicsSprite));
@@ -317,7 +318,7 @@ async function run() {
         !scene.player.isDead() && scene.enemyManager.aliveCount === levels[1].enemies.count && !scene.enemyManager.isCleared && emptyRoomClears === 0);
     scene.events.off(CombatEvents.ROOM_CLEARED, onEmptyClear);
     scene.sys.sceneUpdate = () => {};
-    for (let index = 1; index < levels.length - 1; index++) {
+    for (let index = 1; index < Math.min(4,levels.length - 1); index++) {
         while (!scene.waves.isComplete) { scene.enemyManager.defeatLivingEnemies(); scene.waves.update(1000); }
         const exit=levels[scene.roomIndex].exits[0].position;
         reset(scene.player.physicsSprite, (exit.column+.5)*64, (exit.row+.5)*64); tick(4);

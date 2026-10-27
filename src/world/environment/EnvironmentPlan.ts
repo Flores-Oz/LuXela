@@ -2,6 +2,7 @@ import type { RoomLayout, RoomPresentation } from "../RoomLayout";
 import { environmentThemes, placeholderAtlas, type EnvironmentAtlas, type RoomTheme } from "./RoomTheme";
 import { detailedEnvironmentAtlas } from "./EnvironmentSheets";
 import { obstacleGroups } from "./EnvironmentComposition";
+import {advancedIndustrialAtlas} from './AdvancedIndustrialTiles';
 
 export interface EnvironmentPlan { readonly theme: RoomTheme; readonly floor: number[][]; readonly walls: number[][]; readonly decoration: number[][]; readonly decorationOverlay: number[][] }
 /** N=1, E=2, S=4, W=8: all sixteen connection patterns, including ends and junctions. */
@@ -11,6 +12,7 @@ export function wallMask(row: number, column: number, walls: ReadonlySet<string>
 }
 export function buildEnvironmentPlan(layout: RoomLayout, presentation?: RoomPresentation,
     atlas: EnvironmentAtlas = presentation?.environmentStyle ? detailedEnvironmentAtlas(presentation.environmentStyle) : environmentThemes[presentation?.theme ?? "industrial"].atlas ?? placeholderAtlas): EnvironmentPlan {
+    if(presentation?.theme==='advanced')atlas=advancedIndustrialAtlas(presentation.scenarioId,atlas);
     const width = layout.width / layout.tileSize, height = layout.height / layout.tileSize;
     const empty = () => Array.from({ length: height }, () => Array<number>(width).fill(-1));
     const floor = empty(), walls = empty(), decoration = empty(), decorationOverlay = empty();

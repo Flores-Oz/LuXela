@@ -43,8 +43,8 @@ try{
         await b.evaluate("[...document.querySelectorAll('.pause-screen button')].find(n=>n.textContent==='Continuar').click()");
         await b.waitUntil(`${c}.elapsed>1000`);await capture(`${character}-finisher`);
         await check(`${character}: boss cannot die before the animation ends`,`${e}.boss.controller.health>0 && ${s}.combatState==='playing'`);
-        await b.waitUntil("window.finisherGame.scene.isActive('VisualNovelScene')");
-        await check(`${character}: finisher leads to the existing correct ending`, `window.finisherGame.scene.getScene('VisualNovelScene').sequence.id==='${character}_ending'`);
+        await b.waitUntil(`${e}.boss.isDead() && ${s}.combatState==='playing'`);
+        await check(`${character}: trial finisher unlocks the second stage without ending the campaign`, `${s}.doors.currentState==='unlocked' && !window.finisherGame.scene.isActive('VisualNovelScene') && !window.finisherGame.scene.isActive('CompletionScene')`);
     }
     await start('alex');await key('ArrowDown');
     await check('Wrong key resumes combat and spends the single attempt',`${c}.state==='failed' && !${s}.physics.world.isPaused && ${e}.boss.controller.finisherTriggered && ${e}.boss.controller.alive`);

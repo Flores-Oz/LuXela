@@ -15,7 +15,13 @@ const designs: Readonly<Record<string,readonly Block[]>> = {
     // Orange: four L-shaped operational bays, a central shield and connected escape aisles.
     maze:blocks([[3,10,6,2],[3,10,2,7],[3,28,2,7],[3,33,6,2],[15,10,6,2],[19,10,2,7],[15,33,6,2],[19,28,2,7],[8,22,8,2],[11,4,2,3],[11,15,2,3],[11,28,2,3]]),
     // Reserved reactor: all infrastructure stays at the edges of a large clear central arena.
-    "combat-arena":blocks([[3,8,3,3],[3,30,3,3],[18,8,3,3],[18,30,3,3],[2,18,2,4],[20,18,2,4]])
+    "combat-arena":blocks([[3,8,3,3],[3,30,3,3],[18,8,3,3],[18,30,3,3],[2,18,2,4],[20,18,2,4]]),
+    "convergence":blocks([[6,9,2,9],[15,9,2,9],[5,26,5,3],[15,26,5,3],[11,17,2,5],[20,5,1,5]]),
+    "industrial-reactor":blocks([[7,15,3,4],[14,22,3,4],[15,10,3,4],[5,29,3,4],[3,8,2,4],[19,29,2,5]]),
+    "defense-system":blocks([[5,10,5,2],[15,10,5,2],[5,26,5,2],[15,26,5,2],[10,18,2,5],[18,18,2,5],[3,33,3,3]]),
+    "maximum-security":blocks([[3,13,6,2],[13,13,7,2],[6,5,2,7],[16,5,2,7],[5,26,2,8],[15,26,2,8],[9,26,4,2],[19,22,2,6]]),
+    "last-defense":blocks([[5,8,4,3],[14,8,4,3],[4,20,3,4],[16,20,3,4],[9,30,3,4],[18,30,3,4],[10,16,3,4]]),
+    "true-quimera-arena":blocks([[4,8,3,3],[4,30,3,3],[17,8,3,3],[17,30,3,3],[2,18,2,4],[20,18,2,4]])
 };
 
 /** Physical tile matrices, with wide connected routes and dimension-relative authoring. */

@@ -8,7 +8,7 @@ try {
         await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'q', code: 'KeyQ', windowsVirtualKeyCode: 81 });
         await waitUntil("window.abilityGame.scene.getScene('GameScene').specialAbilities.ability.performing");
         await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'q', code: 'KeyQ', windowsVirtualKeyCode: 81, autoRepeat: true });
-        await waitUntil("window.abilityGame.scene.getScene('GameScene').specialAbilities.ability.state === 'cooldown'");
+        await waitUntil("!window.abilityGame.scene.getScene('GameScene').specialAbilities.ability.performing");
         await evaluate("window.abilityGame.scene.getScene('GameScene').specialAbilities.update(100000)");
         if (!(await evaluate("window.abilityGame.scene.getScene('GameScene').specialAbilities.ability.state === 'locked'"))) throw Error('Timed recharge returned');
         await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'q', code: 'KeyQ', windowsVirtualKeyCode: 81 });

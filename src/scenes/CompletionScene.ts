@@ -19,8 +19,8 @@ export class CompletionScene extends Phaser.Scene {
         }
         let leaving = false;
         const leave = (key: string) => { if (leaving) return; leaving = true; getArcadeRun(this.game).reset(); this.scene.start(key); };
-        const view = new MenuView({ kind: "completion", eyebrow: `Ruta de ${characters[character].name}`, title: "Niveles de prueba completados",
-            subtitle: `Has despejado ${levels.length} habitaciones y todas sus oleadas.`, actions: [
+        const view = new MenuView({ kind: "completion", eyebrow: `Ruta de ${characters[character].name}`, title: "Campaña completada",
+            subtitle: `Superaste los ${levels.length} niveles y el verdadero combate contra Quimera. El epílogo de esta ruta llegará próximamente.`, actions: [
                 { label: "Volver al menú principal", primary: true, action: () => leave("MainMenuScene") },
                 { label: "Elegir otro personaje", action: () => leave("CharacterSelectScene") }
             ] });
