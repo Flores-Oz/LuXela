@@ -15,11 +15,13 @@ export type EnemyConfig = {
     patrol?: boolean;
     piercesInteriorWalls?: boolean;
     spawnEffect?: boolean;
+    chargeDuration?: number;
 };
 
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
     readonly piercesInteriorWalls:boolean;
     readonly attack: EnemyAttackController;
+    readonly explodesOnContact:boolean;
 
     private dead = false;
 
@@ -67,9 +69,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         scene.physics.add.existing(this);
 
         const variant = robotTypes.some(type => type === texture) ? texture as RobotType : "robot-red";
+        this.explodesOnContact=variant==='robot-yellow';
         this.moveSpeed = (config.moveSpeed ?? 80) * robotMovementScale[variant];
         this.detectionRange = config.detectionRange ?? 200;
         const attackConfig: EnemyAttackConfig = { ...robotAttacks[variant] };
+        if(variant==='robot-orange'&&config.chargeDuration!==undefined)attackConfig.chargeDuration=config.chargeDuration;
         // The existing level cadence scales the basic soldier; other patterns retain their timings.
         if (variant === "robot-red" && config.shootCooldown !== undefined) attackConfig.attackInterval = config.shootCooldown;
         this.shootCooldown = attackConfig.attackInterval;
@@ -173,6 +177,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         return this.dead;
     }
 
+    public detonateOnContact():boolean {
+        if(!this.explodesOnContact||this.dead||!this.active||this.isSpawning)return false;
+        const blast=this.scene.add.circle(this.x,this.y,16,0xffdc55,.8)
+            .setStrokeStyle(4,0xff921f).setDepth(this.depth+2).setName('yellow-contact-explosion');
+        this.scene.tweens.add({targets:blast,scale:4,alpha:0,duration:350,onComplete:()=>blast.destroy()});
+        this.die();return true;
+    }
+
     public setState(state: EnemyState | number | string): this {
         if (this.dead || this.currentState === state) {
             return this;
@@ -209,7 +221,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         const dx = player.x - this.x;
         const dy = player.y - this.y;
 
-        const stopDistance = 48;
+        const stopDistance = this.explodesOnContact ? 0 : 48;
 
         if (Math.hypot(dx, dy) <= stopDistance) {
             this.stop();

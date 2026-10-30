@@ -46,7 +46,8 @@ async function run(){
                 await until(()=>s.combatState==='playing'&&s.bossEncounter.boss.isDead());
                 check(`${character}: first destruction unlocks exit without victory or epilogue`,!runs.canComplete(character,runId)&&s.doors.currentState==='unlocked'&&!game.scene.isActive('CompletionScene')&&!game.scene.isActive('VisualNovelScene'));
             }else{
-                check(`${character} level ${index+1}: safe distributed spawns and active cap`,s.enemies.getLength()===level.enemies.count&&s.enemies.getLength()<=12&&s.enemies.getChildren().every(enemy=>!s.walls.getChildren().some(w=>Phaser.Geom.Intersects.RectangleToRectangle(enemy.body,w.body))));
+                check(`${character} level ${index+1}: safe distributed spawns and active cap`,s.enemies.getLength()===level.enemies.count&&s.enemies.getLength()<=14&&s.enemies.getChildren().every(enemy=>!s.walls.getChildren().some(w=>Phaser.Geom.Intersects.RectangleToRectangle(enemy.body,w.body))));
+                if(index===3)check(`${character}: introductory orange charges in 650ms with fourteen robots`,s.enemies.getChildren().every(e=>e.attack.config.chargeDuration===650)&&s.enemies.getLength()===14);
                 let teleports=true;
                 while(!s.waves.isComplete){
                     const living=s.enemyManager.getLivingEnemies();
@@ -64,7 +65,7 @@ async function run(){
                 document.querySelector('.vn-skip').click();
             }
             s=await entered(index+1,generation);
-            check(`${character} transition ${index+1}: one bounds listener and stable colliders`,s.physics.world.listenerCount('worldbounds')===1&&s.physics.world.colliders.getActive().length===(s.bossEncounter?9:7));
+            check(`${character} transition ${index+1}: one bounds listener and stable colliders`,s.physics.world.listenerCount('worldbounds')===1&&s.physics.world.colliders.getActive().length===(s.bossEncounter?10:8));
         }
         const encounter=s.bossEncounter,boss=encounter.boss,c=boss.controller;
         check(`${character}: same Quimera sprite, advanced profile and effects loaded`,boss.texture.key==='quimera'&&c.health===96&&c.advanced&&!!encounter.effects&&!!encounter.reinforcements);
@@ -116,6 +117,19 @@ async function run(){
         await until(()=>game.scene.isActive('CompletionScene')&&document.querySelector('.completion-screen'));
         check(`${character}: only final destruction grants campaign victory without definitive epilogue`,runs.canComplete(character,runId)&&!game.scene.isActive('VisualNovelScene')&&document.querySelector('.completion-screen').textContent.includes('Campaña completada'));
         button('.completion-screen','Volver al menú principal').click();await until(()=>game.scene.isActive('MainMenuScene'));
+    }
+    for(const character of ['alex','lua']){
+        window.previewSprint12(character,0);const contact=await entered(0,-1);
+        contact.enemyManager.defeatLivingEnemies();
+        contact.player.physicsSprite.body.reset(600,750);
+        const red=new Enemy(contact,600,750,'robot-red');contact.enemies.add(red);
+        await delay(80);check(`${character}: ordinary red contact does not hurt`,!contact.player.isDead()&&!red.isDead());red.destroy();
+        const yellow=new Enemy(contact,600,750,'robot-yellow',{spawnEffect:true});contact.enemies.add(yellow);contact.enemyManager.add(yellow);
+        await delay(80);check(`${character}: yellow cannot detonate during materialization`,!contact.player.isDead()&&!yellow.isDead());
+        // Keep overlapping bodies until the materialization ends: use the real registered overlap.
+        await until(()=>contact.player.isDead());
+        check(`${character}: yellow touch detonates once and kills immediately`,yellow.isDead()&&contact.combatState==='defeat'&&!!contact.children.getByName('yellow-contact-explosion')&&!yellow.detonateOnContact());
+        check(`${character}: contact death clears projectiles and pending attacks`,contact.enemyProjectiles.getLength()===0&&yellow.attack.phase==='ready');
     }
     window.previewSprint12('alex',0);const spawnScene=await entered(0,-1);
     spawnScene.physics.pause();

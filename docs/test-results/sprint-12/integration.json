@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "count": 148,
+  "count": 158,
   "checks": [
     "alex level 1: full physical room and correct variants",
     "alex level 1: safe distributed spawns and active cap",
@@ -19,6 +19,7 @@
     "alex transition 3: one bounds listener and stable colliders",
     "alex level 4: full physical room and correct variants",
     "alex level 4: safe distributed spawns and active cap",
+    "alex: introductory orange charges in 650ms with fourteen robots",
     "alex level 4: every wave teleports and cancelled effects are cleaned",
     "alex level 4: every configured wave completes",
     "alex transition 4: one bounds listener and stable colliders",
@@ -90,6 +91,7 @@
     "lua transition 3: one bounds listener and stable colliders",
     "lua level 4: full physical room and correct variants",
     "lua level 4: safe distributed spawns and active cap",
+    "lua: introductory orange charges in 650ms with fourteen robots",
     "lua level 4: every wave teleports and cancelled effects are cleaned",
     "lua level 4: every configured wave completes",
     "lua transition 4: one bounds listener and stable colliders",
@@ -144,6 +146,14 @@
     "lua: retry rebuilds final boss without replaying intro or leftovers",
     "lua: final boss preserves the proximity finisher below ten percent",
     "lua: only final destruction grants campaign victory without definitive epilogue",
+    "alex: ordinary red contact does not hurt",
+    "alex: yellow cannot detonate during materialization",
+    "alex: yellow touch detonates once and kills immediately",
+    "alex: contact death clears projectiles and pending attacks",
+    "lua: ordinary red contact does not hurt",
+    "lua: yellow cannot detonate during materialization",
+    "lua: yellow touch detonates once and kills immediately",
+    "lua: contact death clears projectiles and pending attacks",
     "Materialization freezes with paused physics and suppresses movement/attacks",
     "Materialization completes all frames and restores the robot",
     "Live production AI shows its beam warning before emission",
@@ -152,5 +162,5 @@
     "Leaving during a live advanced attack releases boss, effects and summons"
   ],
   "consoleErrors": [],
-  "generatedAt": "2026-10-27T21:29:30.986Z"
+  "generatedAt": "2026-10-27T22:50:13.189Z"
 }

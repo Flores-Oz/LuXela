@@ -9,7 +9,7 @@ import { composeRoomDecorations } from "../world/environment/EnvironmentComposit
 
 /** Existing movement and progression, with large-room combat tuning in one config. */
 const roomSeeds:readonly Omit<LevelConfig,'enemies'>[]=roomScenarios.map(({roomId},index)=>({
-    id:'level-'+(index+1),roomId,difficulty:{moveSpeed:CombatBalance.moveSpeeds[index]!,detectionRange:CombatBalance.detectionRanges[index]!,shootCooldown:CombatBalance.shootCooldowns[index]!,patrol:true},completion:'eliminate-all-enemies',scorePerEnemy:100
+    id:'level-'+(index+1),roomId,difficulty:{moveSpeed:CombatBalance.moveSpeeds[index]!,detectionRange:CombatBalance.detectionRanges[index]!,shootCooldown:CombatBalance.shootCooldowns[index]!,patrol:true,...(index===3?{chargeDuration:CombatBalance.orangeIntroChargeMs}:{})},completion:'eliminate-all-enemies',scorePerEnemy:100
 }));
 export function createLevelCatalog(rooms:LevelRoomCatalog=arcadeRooms):readonly EncounterConfig[]{
     return roomSeeds.map((seed,index)=>{

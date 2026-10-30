@@ -2,7 +2,7 @@
 
 ## Campaña y mapas
 
-La campaña tiene 11 niveles, 22 oleadas normales y 217 robots de oleada. Los cuatro primeros conservan sus mapas y patrones; su presión se incrementó en el ajuste posterior solicitado por el usuario. Quimera usa la misma entidad, spritesheet y hitbox en ambas apariciones.
+La campaña tiene 11 niveles, 22 oleadas normales y 219 robots de oleada. Los cuatro primeros conservan sus mapas y patrones; su presión se incrementó en el ajuste posterior solicitado por el usuario. Quimera usa la misma entidad, spritesheet y hitbox en ambas apariciones.
 
 | Nivel | Escenario | Robots | Oleadas × activos máximos | Composición |
 | --- | --- | --- | --- | --- |
@@ -16,7 +16,7 @@ La campaña tiene 11 niveles, 22 oleadas normales y 217 robots de oleada. Los cu
 
 Todos los mapas tienen 40 × 24 tiles de 64 px (2560 × 1536), generación proporcional, puertas y circulación conectada. Se validaron también tamaños mayores. Suelos, decoración y maquinaria usan las capas de Tilemap existentes y las colisiones lógicas previas. En Canvas se mantienen los fragmentos estáticos cacheados; WebGL conserva los Tilemaps.
 
-El límite por oleada se configura en `CombatBalance.maxActivePerLevel`. Los niveles 6–9 comparten velocidad base de 144 px/s, detección de 550–560 px y tres oleadas, tomando el nivel 9 como referencia. Los niveles 1–4 tienen 8/10/12/12 robots por oleada, mayor detección y más movilidad; el rojo dispara cada 1100 ms en el primer nivel. La dificultad combina variantes y geometría; no se añadieron nuevas clases de robots. La puntuación base completa es 23700; los refuerzos derrotados suman puntos adicionales.
+El límite por oleada se configura en `CombatBalance.maxActivePerLevel`. Los niveles 6–9 comparten velocidad base de 144 px/s, detección de 550–560 px y tres oleadas, tomando el nivel 9 como referencia. Los niveles 1–4 tienen 8/10/12/14 robots por oleada, mayor detección y más movilidad; el rojo dispara cada 1100 ms en el primer nivel. La dificultad combina variantes y geometría; no se añadieron nuevas clases de robots. La puntuación base completa es 23900; los refuerzos derrotados suman puntos adicionales.
 
 ## Quimera avanzado
 
@@ -40,7 +40,7 @@ El ajuste posterior amplía los alternados a seis disparos y las ráfagas cruzad
 
 ## Legibilidad y materialización de robots
 
-Los disparos del jugador pasan de 16 a 22 px, los de robots normales de 16 a 24 px y las celdas de energía del jefe de 32 a 56 px. Sus áreas de impacto se conservan: diámetro de 16 px para proyectiles normales y 8 px para la energía con transparencia. `ProjectileConfig.ts` separa presentación e impacto.
+Los disparos del jugador y de los robots normales conservan su tamaño original de 16 px. Solo las celdas de energía del jefe final se amplían a 128 px (antes 80 px; incluyen margen transparente). Sus áreas de impacto se conservan: diámetro de 16 px para proyectiles normales y 8 px para la energía con transparencia. `ProjectileConfig.ts` separa presentación e impacto.
 
 `RobotSpawnEffect` comparte los doce frames de `robot-spawn.png` entre las invocaciones y todas las oleadas de los niveles 1–4 y 6–10. En las oleadas, el robot aparece gradualmente durante 900 ms y no se mueve ni dispara hasta materializarse. Conserva la muerte de un impacto. La animación se detiene con la pausa y se destruye al eliminar el robot o cambiar de escena. En los niveles 5 y 11 no se inventan robots ordinarios: el primero sigue sin refuerzos y el final utiliza sus invocaciones configuradas.
 
@@ -102,7 +102,7 @@ Comandos: `npm run build`, `npm run test:sprint12`, `npm run test:sprint12:visua
 La suite actual utiliza todos los tests de lógica y las regresiones de selección, controles, combate, habilidades y robots. Sustituye los recorridos históricos de cinco niveles por un recorrido de once niveles con ambos personajes. Los runners históricos permanecen disponibles como referencia del alcance anterior; el comando de aceptación de la campaña actual es `test:sprint12`.
 
 La integración incluye una carga y emisión de rayo por la IA real de producción, evasión de la dirección fijada, pausa durante el rayo activo, abandono durante el ataque y limpieza posterior. El ajuste de balance añade comprobaciones de tamaños físicos conservados, materialización en todas las oleadas, pausa y limpieza del efecto, además de los seis refuerzos máximos. `npm run build` aprueba tipos y compilación; permanece la advertencia previa de Vite por el tamaño del paquete Phaser. El resultado actualizado se registra en `docs/test-results/sprint-12.json`.
-Resultado del ajuste: **748 comprobaciones aprobadas** (192 unitarias, 147 de selección, 69 de combate, 57 de habilidades, 103 de robots, 32 de remates y 148 de campaña/materialización), sin errores de consola. Las capturas `wave-materialization.png` y `larger-projectiles.png` muestran los dos cambios visuales nuevos y fueron examinadas.
+Resultado del ajuste: **760 comprobaciones aprobadas** (194 unitarias, 147 de selección, 69 de combate, 57 de habilidades, 103 de robots, 32 de remates y 158 de campaña/materialización/contacto), sin errores de consola. Las pruebas añadidas verifican la secuencia y advertencias del arsenal, su cancelación, el contacto amarillo con ambos personajes y la carga de los catorce naranjas del nivel 4.
 
 Informes y capturas: `docs/test-results/sprint-12.json` y `docs/test-results/sprint-12/`. Se examinaron las vistas completas de los niveles 6–11, la introducción, el rayo, la onda y las vistas estrechas. Las capturas generales usan una cámara de inspección para mostrar todo el mapa; el juego conserva el seguimiento dinámico normal.
 
@@ -110,3 +110,13 @@ La prueba de estrés utiliza diez robots y hasta 72 proyectiles ampliados, compr
 Con toda la sala visible a 1280 × 768, la última medición dio 16,85 ms por fotograma de base y 18,70 ms bajo estrés (aproximadamente 59/53 FPS), con siete colliders y cero proyectiles residuales. El estrés repone hasta 72 disparos continuamente; ese límite es un techo compartido, no una cantidad emitida en cada ataque normal.
 
 Pendientes de acabado: balance mediante partidas libres, audio definitivo, WebGL y otros navegadores/dispositivos. El aprendizaje no se transporta desde el nivel 5, algo opcional en la especificación. Los epílogos definitivos siguen reservados para otro sprint. No se instalaron dependencias.
+
+
+## Ajuste de combate posterior
+
+- El amarillo conserva sus disparos cada 800 ms y persigue hasta entrar en contacto: al solaparse con Alex o Lua explota y mata al personaje. Usa un único overlap por grupo, sin daño de contacto para otros colores. No explota durante la materialización ni después de morir; la explosión visual dura 350 ms y su baja se contabiliza una sola vez.
+- El nivel 4 contiene 14 naranjas distribuidos por sus anclajes existentes, con carga de 650 ms configurada en el catálogo de niveles. El resto de naranjas conserva 1000 ms.
+- Quimera final incorpora desde la fase 2 el combo arsenal: seis proyectiles perforantes en abanico, cinco ráfagas alternadas rojas/azules de tres proyectiles y rayo. Cada etapa renueva su aviso (1000/1100/1500 ms); entre etapas hay 800 ms de recuperación. Mantiene el límite global de 72 proyectiles.
+- Las paredes interiores detienen las ráfagas rojas/azules y el rayo; solo el abanico naranja las atraviesa. Todos los proyectiles respetan el perímetro. Las etapas pendientes se cancelan al morir, abandonar, perder visibilidad o iniciar el QTE; un cambio de fase se resuelve durante la recuperación.
+- El overlap nuevo eleva a ocho los colliders normales y diez en salas de jefe. La medición de rendimiento anterior corresponde a la versión previa con siete colliders.
+- Se generaron veinte capturas sin errores de consola. Se examinaron la explosión amarilla, la comparación de tamaños, el abanico perforante, las ráfagas rojas/azules y la advertencia del rayo en `docs/test-results/sprint-12/`.

@@ -22,6 +22,7 @@ export class QuimeraController {
     private dueAt:number;
     private patternIndex=0;
     private moduleIndex=0;
+    private comboQueue:BossAttack[]=[];
     private emitted=0;
     private nextShotAt=0;
     private moduleAttack:EnemyAttackController|null=null;
@@ -39,17 +40,17 @@ export class QuimeraController {
     get finisherAvailable():boolean{return this.alive&&!this.finisherTriggered&&this.health<=this.config.maxHealth*(BossFinisherConfig.healthRatio+Number.EPSILON);}
     tryStartFinisher(distance:number,lineOfSight:boolean):boolean {
         if(!this.finisherAvailable||!this.vulnerable||!lineOfSight||!Number.isFinite(distance)||distance<0||distance>BossFinisherConfig.activationRange)return false;
-        this.finisherTriggered=true;this.moduleAttack?.cancel(this.time);this.enter('QTE',0);return true;
+        this.comboQueue=[];this.finisherTriggered=true;this.moduleAttack?.cancel(this.time);this.enter('QTE',0);return true;
     }
     private get requestedPhase():BossPhase {return (1+this.config.phaseThresholds.filter(threshold=>this.health<=this.config.maxHealth*threshold).length) as BossPhase;}
     damage(amount:number):number {
         if(!this.vulnerable||!Number.isFinite(amount)||amount<=0)return 0;
         const before=this.health;
         this.health=Math.max(0,this.health-amount*(this.state==='RECOVERING'?this.config.recoveryDamageMultiplier:1));
-        if(this.health===0){this.moduleAttack?.cancel(this.time);this.enter('DEAD',0);}
+        if(this.health===0){this.comboQueue=[];this.moduleAttack?.cancel(this.time);this.enter('DEAD',0);}
         return before-this.health;
     }
-    stop():void {this.moduleAttack?.cancel(this.time);if(this.state!=='DEAD')this.enter('STOPPED',0);}
+    stop():void {this.comboQueue=[];this.moduleAttack?.cancel(this.time);if(this.state!=='DEAD')this.enter('STOPPED',0);}
     resolveFinisher(success:boolean):boolean {
         if(this.state!=='QTE')return false;
         if(success)this.enter('FINISHING',0);else this.recover();
@@ -64,7 +65,7 @@ export class QuimeraController {
         const frame:BossFrame={shots:[],pulse:false};
         if(!this.alive||this.state==='QTE'||this.state==='FINISHING'||!Number.isFinite(delta)||delta<=0)return frame;
         this.time+=delta;if(this.advanced)this.observation.update(delta,target);
-        if(!visible&&(this.state==='CHARGING'||this.state==='ATTACKING')){this.recover();return frame;}
+        if(!visible&&(this.state==='CHARGING'||this.state==='ATTACKING')){this.comboQueue=[];this.recover();return frame;}
         if(this.state==='INTRO'||this.state==='PHASE_TRANSITION'){
             if(this.time>=this.dueAt)this.enter('REPOSITION',this.config.repositionMs[this.phase-1]!);
             return frame;
@@ -72,7 +73,8 @@ export class QuimeraController {
         if(this.state==='RECOVERING'){
             if(this.time>=this.dueAt){
                 const next=this.requestedPhase;
-                if(next>this.phase){this.phase=next;this.patternIndex=0;this.enter('PHASE_TRANSITION',this.config.transitionMs);}
+                if(next>this.phase){this.comboQueue=[];this.phase=next;this.patternIndex=0;this.enter('PHASE_TRANSITION',this.config.transitionMs);}
+                else if(this.comboQueue.length){this.attack=this.comboQueue.shift()!;this.prepareAttack(from,target,lineOfSight);}
                 else this.enter('REPOSITION',this.config.repositionMs[this.phase-1]!);
             }
             return frame;
@@ -83,28 +85,20 @@ export class QuimeraController {
             if(!visible){this.enter('REPOSITION',250);return frame;}
             const patterns=this.config.phasePatterns[this.phase-1]!;
             this.attack=patterns[this.patternIndex++%patterns.length]!;
-            if(this.advanced&&this.patternIndex%AdvancedCombat.adaptation.selectEvery===0){
+            if(this.advanced&&this.attack!=='arsenal'&&this.patternIndex%AdvancedCombat.adaptation.selectEvery===0){
                 if(this.phase===4&&Math.hypot(target.x-from.x,target.y-from.y)>AdvancedCombat.adaptation.farDistance)this.attack='beam';
                 else if(this.observation.stationaryMs>AdvancedCombat.adaptation.stationaryMs)this.attack='aim';
             }
-            if(this.attack==='module')this.module=this.config.modules[this.moduleIndex++%this.config.modules.length]!;
-            // Normal patterns need sight. Relocate again if solid cover occludes the player.
-            if(!lineOfSight&&!(this.attack==='module'&&this.module==='robot-orange')){
-                this.enter('REPOSITION',Math.min(650,this.config.repositionMs[this.phase-1]!));return frame;
-            }
-            this.aim=angleTo(from,target);this.emitted=0;
-            if(this.advanced&&this.attack==='aim')this.aim=angleTo(from,this.observation.predict(target));
-            this.moduleAttack=this.attack==='module'?new EnemyAttackController(robotAttacks[this.module]):null;
-            let warning:number=this.config.warningMs[this.attack]??700;
-            if(this.attack==='module'&&this.module==='robot-orange'){
-                warning=robotAttacks[this.module].chargeDuration!;
-                this.moduleAttack!.update(this.time,true,from,target);
-            }
-            this.enter('CHARGING',warning);
+            if(this.attack==='arsenal'){
+                this.module='robot-orange';
+                this.comboQueue=['cross-burst','beam'];
+                this.attack='module';
+            }else if(this.attack==='module')this.module=this.config.modules[this.moduleIndex++%this.config.modules.length]!;
+            this.prepareAttack(from,target,lineOfSight);
             return frame;
         }
         if(this.state==='CHARGING'){
-            if(this.attack==='module'&&this.module==='robot-orange'&&Math.hypot(target.x-from.x,target.y-from.y)>robotAttacks[this.module].attackRange){this.recover();return frame;}
+            if(this.attack==='module'&&this.module==='robot-orange'&&Math.hypot(target.x-from.x,target.y-from.y)>robotAttacks[this.module].attackRange){this.comboQueue=[];this.recover();return frame;}
             if(this.time<this.dueAt)return frame;
             this.enter('ATTACKING',0);this.nextShotAt=this.time;
         }
@@ -151,6 +145,24 @@ export class QuimeraController {
         }
         return frame;
     }
-    private recover():void {this.moduleAttack?.cancel(this.time);this.enter('RECOVERING',this.config.recoveryMs[this.phase-1]!);}
+    /** Each combo stage locks a fresh aim and receives its own full warning. */
+    private prepareAttack(from:Point,target:Point,lineOfSight:boolean):void {
+        if(!lineOfSight&&!(this.attack==='module'&&this.module==='robot-orange')){
+            this.comboQueue=[];this.enter('REPOSITION',650);return;
+        }
+        if(this.attack==='module'&&this.module==='robot-orange'&&Math.hypot(target.x-from.x,target.y-from.y)>robotAttacks[this.module].attackRange){
+            this.comboQueue=[];this.enter('REPOSITION',650);return;
+        }
+        this.aim=angleTo(from,target);this.emitted=0;
+        if(this.advanced&&this.attack==='aim')this.aim=angleTo(from,this.observation.predict(target));
+        this.moduleAttack=this.attack==='module'?new EnemyAttackController(robotAttacks[this.module]):null;
+        let warning=this.config.warningMs[this.attack]??700;
+        if(this.attack==='module'&&this.module==='robot-orange'){
+            warning=robotAttacks[this.module].chargeDuration!;
+            this.moduleAttack!.update(this.time,true,from,target);
+        }
+        this.enter('CHARGING',warning);
+    }
+    private recover():void {this.moduleAttack?.cancel(this.time);this.enter('RECOVERING',this.comboQueue.length?AdvancedCombat.comboRecoveryMs:this.config.recoveryMs[this.phase-1]!);}
     private enter(state:BossState,duration:number):void {this.state=state;this.stateStartedAt=this.time;this.dueAt=this.time+duration;}
 }

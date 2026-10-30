@@ -9,7 +9,7 @@ export type LevelEnemyType = RobotType;
 
 export type LevelDifficulty = Readonly<Required<Pick<EnemyConfig,
     "moveSpeed" | "detectionRange" | "shootCooldown" | "patrol"
->>>;
+>>> & Readonly<Pick<EnemyConfig,"chargeDuration">>;
 
 export interface LevelEnemySpawn extends Readonly<TilePosition> {
     readonly type: LevelEnemyType;

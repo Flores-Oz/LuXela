@@ -245,6 +245,11 @@ export class GameScene extends Phaser.Scene {
             projectile.getData("projectile")?.destroy();
             this.player.die();
         });
+        this.physics.add.overlap(this.player.physicsSprite,this.enemies,(_player,target)=>{
+            const enemy=target as Enemy;
+            if(this.combatState!=="playing"||this.isChangingRoom||this.physics.world.isPaused||!this.player||this.player.isDead())return;
+            if(enemy.detonateOnContact())this.player.die();
+        });
         this.hud = new GameHUD(this, { level: this.roomIndex + 1, totalLevels: this.levels.count,
             score: getArcadeRun(this.game).getScore(this.runId), enemies: this.enemyManager.aliveCount }, this.character);
         this.pauseButton = this.add.text(0, 16, "PAUSA · ESC", { fontFamily: UITheme.font, fontSize: "14px", color: UITheme.text, backgroundColor: UITheme.overlay, padding: { x: 12, y: 10 } })

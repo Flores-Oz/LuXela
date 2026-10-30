@@ -13,7 +13,7 @@ const {ArcadeRunService}=await load('../src/systems/ArcadeRunService.ts');
 const {quimeraIntros}=await load('../src/narrative/routes/quimeraIntro.ts');
 test('advanced sectors keep high pressure and the opening sectors increase challenge',()=>{
     for(const [index,oldCount]of [6,8,10,12].entries())assert.ok(levels[index].enemies.count>=oldCount);
-    assert.deepEqual(levels.slice(0,4).map(l=>l.enemies.count),[8,10,12,12]);
+    assert.deepEqual(levels.slice(0,4).map(l=>l.enemies.count),[8,10,12,14]);
     assert.ok(levels.slice(0,4).every(l=>l.difficulty.detectionRange>=520));
     for(const level of levels.slice(5,9)){
         assert.equal(level.waves.length,3);assert.ok(level.enemies.count>=9);
@@ -29,7 +29,7 @@ test('11 distinct connected large maps and exact advanced robot combinations',()
     assert.deepEqual(levels.slice(5,10).map(l=>l.enemies.types),[['robot-red','robot-blue'],['robot-yellow','robot-orange'],['robot-red','robot-blue','robot-yellow'],['robot-blue','robot-orange','robot-red'],['robot-red','robot-blue','robot-yellow','robot-orange']]);
     for(const [i,l]of levels.entries()){
         assert.equal(arcadeRooms[l.roomId].length,24);assert.equal(arcadeRooms[l.roomId][0].length,40);assert.equal(l.next,levels[i+1]?.id??null);
-        for(const w of l.waves)assert.ok(w.enemies.count<=12);
+        for(const w of l.waves)assert.ok(w.enemies.count<=14);
         const m=arcadeRooms[l.roomId],start=m.flatMap((row,r)=>row.flatMap((t,c)=>t===2?[{r,c}]:[]))[0],seen=new Set([`${start.r},${start.c}`]),queue=[start];
         for(let n=0;n<queue.length;n++)for(const [dr,dc]of [[1,0],[-1,0],[0,1],[0,-1]]){const r=queue[n].r+dr,c=queue[n].c+dc,k=`${r},${c}`;if(m[r]?.[c]!==undefined&&m[r][c]!==1&&!seen.has(k)){seen.add(k);queue.push({r,c});}}
         assert.equal(seen.size,m.flat().filter(t=>t!==1).length,`${l.id} disconnected floor`);
@@ -50,7 +50,7 @@ test('advanced patterns are finite, warned, include all new attacks and bounded 
             const f=c.update(50,{x:500,y:500},{x:700+Math.sin(i/7)*30,y:650+Math.cos(i/9)*30},true);
             if(c.state==='CHARGING')assert.ok(c.time-c.stateStartedAt>=0);
             for(const key of ['beam','shockwave','summon'])if(f[key])found.add(key);
-            assert.ok(f.shots.length<=12);assert.equal(f.shots.some(s=>s.piercesInteriorWalls),false);
+            assert.ok(f.shots.length<=12);for(const shot of f.shots)if(shot.piercesInteriorWalls)assert.equal(shot.attackType,'piercing-spread');
             if(f.shots.some(s=>s.originOffset))found.add('alternating');
         }
     }
@@ -85,3 +85,37 @@ test('intro exact lines belong to both routes and acknowledgement is scoped to f
     for(let i=0;i<10;i++){runs.clearRoom(id,i);runs.advance(id,i);}runs.acknowledgeBossIntro(id);assert.ok(runs.hasBossIntro(id));assert.equal(runs.hasBossIntro(runs.begin('lua')),false);
 });
 for(const [file,w,h]of [['tilesets/advanced-industrial',512,512],['effects/quimera-core-charge',1024,512],['effects/quimera-projectiles',512,512],['effects/quimera-beam',2048,384],['effects/quimera-shockwave',1024,768],['effects/robot-spawn',1024,768],['bosses/quimera-intro',1920,1080]])test(`${file}: real PNG dimensions match registered frames`,()=>{const png=readFileSync(`public/assets/${file}.png`);assert.equal(png.readUInt32BE(16),w);assert.equal(png.readUInt32BE(20),h);});
+
+// Drive the complete warned combo without rendering, using the production attack clock.
+test('final arsenal chains six piercing shots, red/blue volleys and a separately warned beam',()=>{
+    const c=new QuimeraController('advanced');c.health=70;
+    const from={x:500,y:500},target={x:800,y:500};
+    const warnings=[],shots=[];let beamAt=0;
+    for(let i=0;i<800&&!beamAt;i++){
+        const before=c.state,frame=c.update(25,from,target,true);
+        if(c.state==='CHARGING'&&before!=='CHARGING')warnings.push({attack:c.attack,time:c.time});
+        if(frame.shots.length)shots.push({attack:c.attack,time:c.time,shots:frame.shots});
+        if(frame.beam)beamAt=c.time;
+    }
+    assert.deepEqual(warnings.map(w=>w.attack),['module','cross-burst','beam']);
+    assert.equal(shots[0].shots.length,6);assert.ok(shots[0].shots.every(s=>s.piercesInteriorWalls));
+    assert.ok(shots[0].time-warnings[0].time>=1000);
+    const normal=shots.slice(1);assert.equal(normal.length,5);
+    assert.ok(normal.every(v=>v.shots.length===3&&v.shots.every(s=>!s.piercesInteriorWalls)));
+    assert.deepEqual([...new Set(normal.flatMap(v=>v.shots.map(s=>s.visualFrame)))].sort(),[0,4]);
+    assert.ok(normal[0].time-warnings[1].time>=1100);
+    assert.ok(beamAt-warnings[2].time>=1500);
+});
+test('queued arsenal stops on death, loss of visibility and QTE',()=>{
+    for(const reason of ['stop','death','hidden','qte']){
+        const c=new QuimeraController('advanced');c.health=70;
+        for(let i=0;i<400&&c.state!=='CHARGING';i++)c.update(25,{x:500,y:500},{x:800,y:500},true);
+        assert.equal(c.attack,'module');assert.equal(c.module,'robot-orange');
+        if(reason==='stop')c.stop();
+        if(reason==='death')c.damage(999);
+        if(reason==='hidden')c.update(25,{x:500,y:500},{x:800,y:500},true,false);
+        if(reason==='qte'){c.health=9;assert.ok(c.tryStartFinisher(100,true));}
+        assert.equal(c.comboQueue.length,0);
+        if(reason!=='hidden')for(let i=0;i<500;i++){const f=c.update(25,{x:500,y:500},{x:800,y:500},true);assert.equal(f.shots.length,0);assert.ok(!f.beam);}
+    }
+});
