@@ -1,33 +1,31 @@
-import Phaser from "phaser";
-import { UITheme } from "../config/UITheme";
+import Phaser from 'phaser';
+import {UITheme} from '../config/UITheme';
+import {anchorCombatUI,CombatPanel,combatUILayout} from './CombatUI';
 
-/** A short tactical introduction, driven by gameplay time so pause also pauses its fade. */
+/** A tactical introduction whose fade advances only with gameplay time. */
 export class RoomBriefing {
-    private readonly scene: Phaser.Scene;
-    private readonly text: Phaser.GameObjects.Text;
-    private elapsed = 0;
-
-    constructor(scene: Phaser.Scene, title: string, hint: string) {
-        this.scene = scene;
-        this.text = scene.add.text(0, 0, `${title}\n${hint}`, {
-            fontFamily: UITheme.font, fontSize: "14px", color: "#d4ecde", backgroundColor: UITheme.overlay,
-            padding: { x: 12, y: 10 }, lineSpacing: 6
-        }).setOrigin(0, 1).setScrollFactor(0).setDepth(99).setName("room-briefing");
-        this.layout();
+    readonly root:Phaser.GameObjects.Container;
+    private readonly panel:CombatPanel;
+    private readonly title:Phaser.GameObjects.Text;
+    private readonly hint:Phaser.GameObjects.Text;
+    private readonly scene:Phaser.Scene;
+    private readonly bossEncounter:boolean;
+    private elapsed=0;
+    constructor(scene:Phaser.Scene,title:string,hint:string,bossEncounter=false){
+        this.scene=scene;this.bossEncounter=bossEncounter;
+        this.panel=new CombatPanel(scene,'level-banner-frame');
+        this.title=scene.add.text(0,0,title,{fontFamily:UITheme.font,fontSize:14,color:'#deeffb'}).setResolution(2);
+        this.hint=scene.add.text(0,0,hint,{fontFamily:UITheme.font,fontSize:12,color:'#b0c7d9',lineSpacing:3}).setResolution(2);
+        this.root=scene.add.container(0,0,[this.panel,this.title,this.hint]).setScrollFactor(0).setDepth(99).setName('room-briefing');this.layout();
     }
-
-    update(delta: number): void {
-        this.elapsed += delta;
-        this.text.setAlpha(Phaser.Math.Clamp((8000 - this.elapsed) / 1000, 0, 1));
+    update(delta:number):void {this.elapsed+=delta;this.root.setAlpha(Phaser.Math.Clamp((8000-this.elapsed)/1000,0,1));}
+    layout():void {
+        const layout=combatUILayout(this.scene.scale.width,this.scene.scale.height),box=layout.briefing;
+        this.panel.resize(box.width,box.height);this.root.setSize(box.width,box.height);
+        this.title.setPosition(22,14).setFontSize(layout.compact?12:14).setWordWrapWidth(box.width-44);
+        this.hint.setPosition(22,36).setFontSize(layout.compact?10:11).setWordWrapWidth(box.width-44);
+        this.root.setVisible(!(this.bossEncounter&&layout.compact&&this.scene.scale.height<600));
+        anchorCombatUI(this.scene,this.root,box.x,box.y);
     }
-
-    layout(): void {
-        const camera = this.scene.cameras.main, zoom = camera.zoom, narrow = this.scene.scale.width < 650;
-        const bottom = this.scene.scale.height - (narrow ? 96 : 16);
-        this.text.setFontSize(narrow ? 12 : 14).setWordWrapWidth(Math.min(580, this.scene.scale.width - 56))
-            .setScale(1 / zoom).setPosition(camera.width / 2 + (16 - camera.width / 2) / zoom,
-                camera.height / 2 + (bottom - camera.height / 2) / zoom);
-    }
-
-    destroy(): void { this.text.destroy(); }
+    destroy():void {this.root.destroy(true);}
 }

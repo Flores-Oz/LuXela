@@ -60,7 +60,7 @@ async function run(){
         check(`${theme}: spawn and exit remain visually clear`,deco.getTileAt(spawn.column,spawn.row)===null&&deco.getTileAt(exit.column,exit.row)===null);
         const door=s.children.list.find(object=>object.name==='door-visual');
         const shot=new Projectile(s,352,416,new Phaser.Math.Vector2(0,1),'player',s.playerProjectiles);
-        check(`${theme}: floor, decals, walls and doors stay below entities`,floor.depth<deco.depth&&deco.depth<wall.depth&&wall.depth<door.depth&&door.depth<s.player.physicsSprite.depth&&door.depth<s.enemyManager.getLivingEnemies()[0].depth&&door.depth<shot.physicsBody.depth&&s.specialAbilities.pose.depth<s.hud.text.depth);
+        check(`${theme}: floor, decals, walls and doors stay below entities`,floor.depth<deco.depth&&deco.depth<wall.depth&&wall.depth<door.depth&&door.depth<s.player.physicsSprite.depth&&door.depth<s.enemyManager.getLivingEnemies()[0].depth&&door.depth<shot.physicsBody.depth&&s.specialAbilities.pose.depth<s.hud.root.depth);
         shot.destroy();
         check(`${theme}: expected theme texture and nearest filter`,floor.tileset[0].image.key===environmentThemes[theme].textureKey&&floor.tileset[0].image.source[0].scaleMode===Phaser.Textures.FilterMode.NEAREST);
         const image=s.textures.get(environmentThemes[theme].textureKey).getSourceImage(),inspection=document.createElement('canvas');inspection.width=image.width;inspection.height=image.height;inspection.getContext('2d').drawImage(image,0,0);

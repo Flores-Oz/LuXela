@@ -64,7 +64,7 @@ async function run(){
     for(const [width,height]of [[1366,768],[1920,1080],[390,844],[3440,1440],[3840,2160]]){
         game.scale.resize(width,height);await delay(80);
         check(`${width}x${height}: camera fills the viewport without letterboxing`,s.cameras.main.width===width&&s.cameras.main.height===height&&contained(s.cameras.main)&&s.cameras.main.worldView.width<=2560.01&&s.cameras.main.worldView.height<=1536.01);
-        check(`${width}x${height}: player proportions and fixed HUD stay intact`,s.player.physicsSprite.scaleX===originalScale&&s.hud.text.scrollFactorX===0&&Math.abs(s.hud.text.scaleX*s.cameras.main.zoom-1)<.001);
+        check(`${width}x${height}: player proportions and fixed HUD stay intact`,s.player.physicsSprite.scaleX===originalScale&&s.hud.root.scrollFactorX===0&&Math.abs(s.hud.root.scaleX*s.cameras.main.zoom-1)<.001);
     }
     game.scale.resize(1366,768);await delay(80);
     s.player.physicsSprite.body.reset(1600,900);const before=s.cameras.main.scrollX;await delay(40);

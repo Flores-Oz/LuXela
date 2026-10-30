@@ -44,7 +44,7 @@ async function run(){
         let s=await toBoss(character),encounter=s.bossEncounter,boss=encounter.boss;
         const runs=getArcadeRun(game),runId=s.runId;
         check(`${character}: only level five creates one full-health boss without normal waves`,s.roomIndex===4&&boss.controller.health===72&&boss.controller.phase===1&&boss.controller.state==='INTRO'&&s.waves===null&&s.enemyManager.aliveCount===0);
-        check(`${character}: existing HUD counts the boss without displaying nonexistent waves`,s.hud.text.text.includes('ENEMIGOS 1')&&!s.hud.text.text.includes('OLEADA'));
+        check(`${character}: existing HUD counts the boss without displaying nonexistent waves`,s.hud.summary.includes('ENEMIGOS 1')&&!s.hud.summary.includes('OLEADA'));
         check(`${character}: safe spawn and stable hitbox`,Math.hypot(boss.x-s.player.x,boss.y-s.player.y)>600&&!s.walls.getChildren().some(w=>Phaser.Geom.Intersects.RectangleToRectangle(boss.body,w.body))&&Math.abs(boss.body.width-config.body.width*config.spriteScale)<.01);
         check(`${character}: original accumulated kills carry into boss arena`,runs.getSpecialCharge(runId)===10&&runs.getScore(runId)===6400);
         check(`${character}: two scoped boss collisions and one shared projectile-bounds listener`,s.physics.world.colliders.getActive().length===9&&s.physics.world.listenerCount('worldbounds')===1);

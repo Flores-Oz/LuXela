@@ -50,7 +50,7 @@ async function run() {
             if(config.availability==='reserved'||config.boss) {
                 check(`${label}: boss arena without normal waves or premature victory`,current.waves===null&&current.enemyManager.aliveCount===0&&!runs.canComplete(character,runId)&&runs.getScore(runId)===campaignScore&&JSON.stringify(saves.get(character))===narrative);
                 current.roomCleared();current.changeRoom();
-                check(`${label}: boss exit remains locked and clearly identified`,current.doors.currentState==='locked'&&!current.isChangingRoom&&current.hud.text.text.includes('QUIMERA'));
+                check(`${label}: boss exit remains locked and clearly identified`,current.doors.currentState==='locked'&&!current.isChangingRoom&&current.hud.summary.includes('QUIMERA'));
                 await pause();button('.pause-screen','Volver al menú principal').click();
                 await until(()=>active('MainMenuScene')&&document.querySelector('.main-screen'));
                 break;
@@ -61,13 +61,13 @@ async function run() {
             current.events.on(CombatEvents.WAVE_COMPLETED, onEnded);
             check(`${label}: session and configured order`, current.runId === runId && current.character === character && current.roomIndex + 1 === config.order);
             check(`${label}: locked visible door`, current.doors.currentState === 'locked' && !current.doors.canUse());
-            check(`${label}: special encounter notice`, config.encounter !== 'special' || current.hud.text.text.includes('ENCUENTRO ESPECIAL'));
+            check(`${label}: special encounter notice`, config.encounter !== 'special' || current.hud.summary.includes('ENCUENTRO ESPECIAL'));
             current.changeRoom(); current.changeRoom(); check(`${label}: blocked transition`, !current.isChangingRoom);
             for (let waveIndex = 0; waveIndex < config.waves.length; waveIndex++) {
                 await waveReady(waveIndex + 1); current = scene();
                 const wave = config.waves[waveIndex], waveLabel = `${label} wave ${waveIndex + 1}`;
                 check(`${waveLabel}: exactly one configured group`, current.enemyManager.aliveCount === wave.enemies.count && current.waves.aliveCount === wave.enemies.count);
-                check(`${waveLabel}: real HUD values`, current.hud.text.text.includes(`OLEADA ${waveIndex + 1} / ${config.waves.length}`) && current.hud.text.text.includes(`ENEMIGOS ${wave.enemies.count}`) && current.hud.text.text.includes(`ESPECIAL ${runs.getSpecialCharge(runId)} / 10`));
+                check(`${waveLabel}: real HUD values`, current.hud.summary.includes(`OLEADA ${waveIndex + 1} / ${config.waves.length}`) && current.hud.summary.includes(`ENEMIGOS ${wave.enemies.count}`) && current.hud.summary.includes(`ESPECIAL ${runs.getSpecialCharge(runId)} / 10`));
                 check(`${waveLabel}: no duplicate start`, !current.waves.start());
                 const walls = current.walls.getChildren().map(wall => wall.body);
                 const living = current.enemyManager.getLivingEnemies();
@@ -136,7 +136,7 @@ async function run() {
                     current.waves.update(1000); await waveReady(waveIndex + 2);
                 }
             }
-            check(`${label}: only final wave unlocks door`, current.waves.isComplete && cleared === 1 && current.doors.currentState === 'unlocked' && current.hud.text.text.includes('SALIDA DISPONIBLE'));
+            check(`${label}: only final wave unlocks door`, current.waves.isComplete && cleared === 1 && current.doors.currentState === 'unlocked' && current.hud.summary.includes('SALIDA DISPONIBLE'));
             current.events.off(CombatEvents.ROOM_CLEARED, onCleared); current.events.off(CombatEvents.WAVE_COMPLETED, onEnded);
             const doors = current.doors, oldPlayer = current.player, oldManager = current.specialAbilities;
             // A real exit overlap starts the first and final transitions; repeated calls exercise the others.

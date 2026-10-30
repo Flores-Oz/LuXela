@@ -90,14 +90,14 @@ async function run() {
         check(`${character}: room transition preserves the run without adding cooldown`,scene.runId===id&&runs.getSpecialCooldown(id)===0);
         scene.enemyManager.getLivingEnemies().slice(0,4).forEach(enemy=>enemy.die());
         check(`${character}: ten new real kills make the ability ready immediately`,runs.getSpecialCharge(id)===10&&scene.specialAbilities.ability.state==='ready');
-        check(`${character}: HUD shows kill charge without a time wait`,scene.hud.text.text.includes('ESPECIAL 10 / 10')&&!scene.hud.text.text.includes('ESPERA'));
+        check(`${character}: HUD shows kill charge without a time wait`,scene.hud.summary.includes('ESPECIAL 10 / 10')&&!scene.hud.summary.includes('ESPERA'));
         scene.pauseGame();tick(3);const frozen=runs.getSpecialCooldown(id);tick(3600);
         check(`${character}: paused frames preserve kill charge`,game.scene.isPaused('GameScene')&&runs.getSpecialCooldown(id)===frozen&&runs.getSpecialCharge(id)===10);
         [...document.querySelectorAll('.pause-screen button')].find(button=>button.textContent.trim()==='Continuar').click();tick(3);
         const manager=scene.specialAbilities;manager.update(runs.getSpecialCooldown(id)-1);
         check(`${character}: no extra timer is required after reaching ten kills`,manager.ability.cooldownRemaining===0&&manager.ability.state==='ready');
         manager.update(1);scene.updateHUD();
-        check(`${character}: HUD announces readiness at ten kills`,manager.ability.state==='ready'&&scene.hud.text.text.includes('LISTA [Q]'));
+        check(`${character}: HUD announces readiness at ten kills`,manager.ability.state==='ready'&&scene.hud.summary.includes('LISTA [Q]'));
         check(`${character}: next activation consumes ten kills without starting a cooldown`,manager.ability.activate()&&runs.getSpecialCharge(id)===0&&runs.getSpecialCooldown(id)===0);
     }
     scene.scene.restart({ character: 'alex' }); tick(4); scene = game.scene.getScene('GameScene');

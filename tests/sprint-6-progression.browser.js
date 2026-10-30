@@ -85,14 +85,14 @@ async function run() {
             gameplay = scene(); const config = levels[index], label = `${character}, level ${index + 1}`;
             check(`${label}: correct count and character`, gameplay.enemyManager.aliveCount === config.enemies.count && gameplay.character === character && gameplay.runId === runId);
             check(`${label}: exact configured AI`, gameplay.enemies.getChildren().every(enemy => enemy.moveSpeed === config.difficulty.moveSpeed * robotMovementScale[enemy.texture.key] && enemy.detectionRange === config.difficulty.detectionRange && enemy.shootCooldown === (enemy.texture.key === 'robot-red' ? config.difficulty.shootCooldown : robotAttacks[enemy.texture.key].attackInterval)));
-            check(`${label}: HUD has level, score and enemy count`, gameplay.hud.text.text.includes(`NIVEL ${index + 1} / 5`) && gameplay.hud.text.text.includes(`PUNTOS ${completedScore}`) && gameplay.hud.text.text.includes(`ENEMIGOS ${config.enemies.count}`) && getArcadeRun(game).getScore(runId) === completedScore && !gameplay.specialAbilities.hud.visible);
+            check(`${label}: HUD has level, score and enemy count`, gameplay.hud.summary.includes(`NIVEL ${index + 1} / 5`) && gameplay.hud.summary.includes(`PUNTOS ${completedScore}`) && gameplay.hud.summary.includes(`ENEMIGOS ${config.enemies.count}`) && getArcadeRun(game).getScore(runId) === completedScore && !gameplay.specialAbilities.hud.visible);
             gameplay.changeRoom(); gameplay.changeRoom(); await delay(30);
             check(`${label}: living robots block exit`, gameplay.roomIndex === index && !gameplay.isChangingRoom);
             if (index === 1) {
                 // Test the narrative bridge against the catalog's fifth valid index separately below.
                 const oldPlayer = gameplay.player;
                 gameplay.enemyManager.getLivingEnemies()[0].die();
-                check(`${character}: partial room score is visible`, getArcadeRun(game).getScore(runId) === completedScore + config.scorePerEnemy && gameplay.hud.text.text.includes(`ENEMIGOS ${config.enemies.count - 1}`));
+                check(`${character}: partial room score is visible`, getArcadeRun(game).getScore(runId) === completedScore + config.scorePerEnemy && gameplay.hud.summary.includes(`ENEMIGOS ${config.enemies.count - 1}`));
                 const lethal = new Projectile(gameplay, oldPlayer.physicsSprite.body.center.x, oldPlayer.physicsSprite.body.center.y, new Phaser.Math.Vector2(0, 1), 'enemy', gameplay.enemyProjectiles);
                 await until(() => active('GameOverScene'));
                 check(`${character}: one enemy projectile causes defeat`, !lethal.physicsBody.active && !active('CompletionScene') && !active('VisualNovelScene'));
@@ -100,7 +100,7 @@ async function run() {
                 gameplay = await entered(index, oldPlayer);
                 check(`${character}: retry preserves current level and run`, gameplay.roomIndex === index && gameplay.runId === runId && gameplay.character === character && gameplay.enemyManager.aliveCount === config.enemies.count && !gameplay.player.isDead());
                 check(`${character}: retry has no residual shots`, gameplay.playerProjectiles.getLength() === 0 && gameplay.enemyProjectiles.getLength() === 0);
-                check(`${character}: retry restores score checkpoint`, getArcadeRun(game).getScore(runId) === completedScore && gameplay.hud.text.text.includes(`PUNTOS ${completedScore}`));
+                check(`${character}: retry restores score checkpoint`, getArcadeRun(game).getScore(runId) === completedScore && gameplay.hud.summary.includes(`PUNTOS ${completedScore}`));
                 for (let cycle = 0; cycle < 3; cycle++) {
                     const player = gameplay.player;
                     await pause(); await delay(30);
@@ -130,7 +130,7 @@ async function run() {
             await until(() => gameplay.enemyManager.isCleared);
             last.die();
             completedScore += config.enemies.count * config.scorePerEnemy;
-            check(`${label}: exact score without duplicate death awards`, getArcadeRun(game).getScore(runId) === completedScore && gameplay.hud.text.text.includes(`PUNTOS ${completedScore}`) && gameplay.hud.text.text.includes('ENEMIGOS 0'));
+            check(`${label}: exact score without duplicate death awards`, getArcadeRun(game).getScore(runId) === completedScore && gameplay.hud.summary.includes(`PUNTOS ${completedScore}`) && gameplay.hud.summary.includes('ENEMIGOS 0'));
             check(`${label}: last projectile hit clears once`, last.isDead() && cleared === 1 && gameplay.enemyManager.aliveCount === 0);
             check(`${label}: clearance removes residual bullets`, !hit.physicsBody.active && !residual.physicsBody.active && gameplay.playerProjectiles.getLength() === 0 && gameplay.enemyProjectiles.getLength() === 0);
             check(`${label}: waits for exit after clearance`, active('GameScene') && !gameplay.isChangingRoom && !active('CompletionScene'));
@@ -169,7 +169,7 @@ async function run() {
     check('Pause restart creates new run at level one', gameplay.runId !== oldRun && gameplay.character === 'alex' && gameplay.enemyManager.aliveCount === levels[0].enemies.count);
     const countBeforeDestroy = gameplay.enemyManager.aliveCount;
     gameplay.enemyManager.getLivingEnemies()[0].destroy();
-    check('Destroying a live robot gives no score', getArcadeRun(game).getScore(gameplay.runId) === 0 && gameplay.enemyManager.aliveCount === countBeforeDestroy - 1 && gameplay.hud.text.text.includes(`ENEMIGOS ${countBeforeDestroy - 1}`));
+    check('Destroying a live robot gives no score', getArcadeRun(game).getScore(gameplay.runId) === 0 && gameplay.enemyManager.aliveCount === countBeforeDestroy - 1 && gameplay.hud.summary.includes(`ENEMIGOS ${countBeforeDestroy - 1}`));
     await pause(); button('.pause-screen', 'Volver al menú principal').click(); await until(() => active('MainMenuScene') && document.querySelector('.main-screen'));
     check('Pause menu removes game and pause scenes', !active('GameScene') && !active('PauseScene') && !scene().player);
     for (const character of ['alex', 'lua']) {

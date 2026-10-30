@@ -17,6 +17,7 @@ import { LevelManager } from "../levels/LevelManager";
 import { isLevelIndex } from "../levels/levels";
 import { UITheme } from "../config/UITheme";
 import { GameHUD } from "../ui/GameHUD";
+import {loadCombatUIAssets,combatUILayout,anchorCombatUI} from '../ui/CombatUI';
 import { RoomBriefing } from "../ui/RoomBriefing";
 import { WaveManager } from "../levels/WaveManager";
 import { getWaves, type WaveConfig } from "../levels/WaveConfig";
@@ -85,6 +86,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     preload(): void {
+        loadCombatUIAssets(this);
         loadEnvironmentAssets(this,this.roomIndex>=5);
         loadPlayerAssets(this);
         loadSpecialAssets(this);
@@ -137,7 +139,7 @@ export class GameScene extends Phaser.Scene {
         const tileSize = 64;
 
         const config = this.levels.getLevel(this.roomIndex);
-        if (config.presentation?.title) this.briefing = new RoomBriefing(this, config.presentation.title, config.presentation.hint ?? "");
+        if (config.presentation?.title) this.briefing = new RoomBriefing(this, config.presentation.title, config.presentation.hint ?? "",!!config.boss);
         const room = this.levels.createRoom(this.roomIndex, tileSize);
 
         const builder = new RoomBuilder(this);
@@ -252,7 +254,7 @@ export class GameScene extends Phaser.Scene {
         });
         this.hud = new GameHUD(this, { level: this.roomIndex + 1, totalLevels: this.levels.count,
             score: getArcadeRun(this.game).getScore(this.runId), enemies: this.enemyManager.aliveCount }, this.character);
-        this.pauseButton = this.add.text(0, 16, "PAUSA · ESC", { fontFamily: UITheme.font, fontSize: "14px", color: UITheme.text, backgroundColor: UITheme.overlay, padding: { x: 12, y: 10 } })
+        this.pauseButton = this.add.text(0, 16, "PAUSA · ESC", { fontFamily: UITheme.font, fontSize: "12px", color: '#c8e9ff', backgroundColor: '#102d43', padding: { x: 12, y: 15 } })
             .setScrollFactor(0).setDepth(100).setOrigin(1, 0).setInteractive({ useHandCursor: true }).on("pointerdown", this.pauseGame, this);
         this.events.on(CombatEvents.ENEMY_DEFEATED, this.enemyDefeated, this);
         this.events.on(CombatEvents.ENEMY_COUNT_CHANGED, this.updateHUD, this);
@@ -507,16 +509,12 @@ export class GameScene extends Phaser.Scene {
     }
 
     private layoutRoom(): void {
-        const camera = this.cameras.main;
         if(this.player)layoutRoomCamera(this,this.roomWidth,this.roomHeight,this.player.physicsSprite);
-        const zoom=camera.zoom;
-        const positionHUD = (text: Phaser.GameObjects.Text | null, x: number, y: number) => {
-            text?.setScale(1 / zoom).setPosition(camera.width / 2 + (x - camera.width / 2) / zoom, camera.height / 2 + (y - camera.height / 2) / zoom);
-        };
         this.hud?.layout();
         this.briefing?.layout();
         if(this.bossEncounter)this.bossEncounter.healthBar.update(this.bossEncounter.boss.controller,0);
         this.bossEncounter?.finisher.layout();
-        positionHUD(this.pauseButton, this.scale.width - 16, this.scale.width < 650 ? this.scale.height - 56 : 16);
+        const pause=combatUILayout(this.scale.width,this.scale.height).pause;
+        if(this.pauseButton)anchorCombatUI(this,this.pauseButton,pause.x,pause.y);
     }
 }
