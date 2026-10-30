@@ -1,0 +1,42 @@
+{
+  "status": "passed",
+  "checks": [
+    "Existing functional selector fixture passes",
+    "desktop-alex: selected character and all artwork load",
+    "desktop-alex: selector fills viewport without horizontal overflow",
+    "desktop-alex: card content and unlock form do not overlap",
+    "desktop-alex: blue action and character-specific accent",
+    "desktop-alex: confirm stays visible",
+    "desktop-lua: selected character and all artwork load",
+    "desktop-lua: selector fills viewport without horizontal overflow",
+    "desktop-lua: card content and unlock form do not overlap",
+    "desktop-lua: blue action and character-specific accent",
+    "desktop-lua: confirm stays visible",
+    "compact: selected character and all artwork load",
+    "compact: selector fills viewport without horizontal overflow",
+    "compact: card content and unlock form do not overlap",
+    "compact: blue action and character-specific accent",
+    "compact: confirm stays visible",
+    "mobile: selected character and all artwork load",
+    "mobile: selector fills viewport without horizontal overflow",
+    "mobile: card content and unlock form do not overlap",
+    "mobile: blue action and character-specific accent",
+    "mobile: confirm stays visible",
+    "landscape: selected character and all artwork load",
+    "landscape: selector fills viewport without horizontal overflow",
+    "landscape: card content and unlock form do not overlap",
+    "landscape: blue action and character-specific accent",
+    "No browser errors"
+  ],
+  "screenshots": [
+    "desktop-locked.png",
+    "desktop-alex.png",
+    "desktop-lua.png",
+    "compact.png",
+    "mobile.png",
+    "landscape.png",
+    "landscape-controls.png"
+  ],
+  "consoleErrors": [],
+  "generatedAt": "2026-10-30T22:09:21.549Z"
+}

@@ -129,7 +129,7 @@ async function run() {
 
     check('Selector es primera escena y no hay jugador', active('CharacterSelectScene') && !active('GameScene'));
     check('Dos imágenes originales sin deformación', [...root().querySelectorAll('.card-portrait img')].every(img =>
-        img.getAttribute('src') === characters[img.alt.toLowerCase()].selectorPath && getComputedStyle(img).objectFit === 'contain'));
+        img.getAttribute('src') === characters[img.closest('[data-character]').dataset.character].selectorPath && getComputedStyle(img).objectFit === 'contain'));
     check('Tarjetas bloqueadas y comienzo deshabilitado', card('alex').getAttribute('aria-disabled') === 'true' &&
         card('lua').getAttribute('aria-disabled') === 'true' && root().querySelector('.select-start').disabled);
     card('alex').click();
