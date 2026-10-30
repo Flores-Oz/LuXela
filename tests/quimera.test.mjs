@@ -25,11 +25,11 @@ test('intro is brief, cannot emit or take damage; normal combat accepts damage',
 });
 test('phase thresholds activate at safe boundaries without reversing or interrupting attacks',()=>{
     const boss=ready();until(boss,()=>boss.state==='ATTACKING'&&boss.attack==='burst');
-    boss.damage(22);assert.equal(boss.phase,1);assert.equal(boss.state,'ATTACKING');
+    boss.damage(37);assert.equal(boss.phase,1);assert.equal(boss.state,'ATTACKING');
     until(boss,()=>boss.phase===2);assert.equal(boss.state,'PHASE_TRANSITION');
     until(boss,()=>boss.state==='REPOSITION');boss.damage(25);
-    step(boss);assert.equal(boss.phase,3);until(boss,()=>boss.state==='REPOSITION');
-    for(let i=0;i<100;i++)step(boss);assert.equal(boss.phase,3);
+    step(boss);assert.equal(boss.phase,2);until(boss,()=>boss.state==='REPOSITION');
+    for(let i=0;i<100;i++)step(boss);assert.equal(boss.phase,2);
 });
 test('recovery is a bonus damage window, not permanent invulnerability',()=>{
     const boss=ready();assert.equal(boss.damage(2),2);
@@ -54,7 +54,7 @@ test('pulse exposes its exact radius before a single damage event',()=>{
 });
 for(const module of config.modules)test(`${module}: experimental module reuses its real cadence, count, speed and wall rules`,()=>{
     const boss=ready();boss.damage(22);until(boss,()=>boss.attack==='module'&&boss.module===module&&boss.state==='CHARGING');
-    const expected=robotAttacks[module],shots=[];
+    const expected={...robotAttacks[module],projectileSpeed:robotAttacks[module].projectileSpeed*boss.tactics.moduleSpeedMultiplier,chargeDuration:(robotAttacks[module].chargeDuration??0)*boss.tactics.moduleTimingMultiplier},shots=[];
     const warning=module==='robot-orange'?expected.chargeDuration:config.warningMs.module;
     assert.equal(step(boss,warning-1).shots.length,0);shots.push(...step(boss,1).shots);
     while(boss.state==='ATTACKING')shots.push(...step(boss,50).shots);
@@ -67,7 +67,7 @@ test('blue module cancels pending burst on lost sight; only orange can fire thro
     assert.equal(step(boss,config.warningMs.module).shots.length,1);
     assert.equal(step(boss,200,false).shots.length,0);assert.equal(boss.state,'RECOVERING');
     until(boss,()=>boss.attack==='module'&&boss.module==='robot-orange'&&boss.state==='CHARGING');
-    assert.equal(step(boss,999,false).shots.length,0);assert.equal(step(boss,1,false).shots.length,6);
+    assert.equal(step(boss,boss.moduleAttack.config.chargeDuration-1,false).shots.length,0);assert.equal(step(boss,1,false).shots.length,6);
 });
 test('yellow does not fire beyond its short range or stay in an endless pursuit',()=>{
     const boss=ready();boss.damage(22);until(boss,()=>boss.attack==='module'&&boss.module==='robot-yellow'&&boss.state==='CHARGING');
@@ -79,14 +79,14 @@ test('orange charge cancels if the player leaves module range',()=>{
     assert.equal(step(boss,1000,false,{x:2200,y:768}).shots.length,0);assert.equal(boss.state,'RECOVERING');
 });
 test('critical discharge preserves a visible safe sector; combined patterns leave a warned gap',()=>{
-    const boss=ready();boss.damage(48);until(boss,()=>boss.attack==='critical'&&boss.state==='CHARGING');
-    const angle=boss.aim;assert.equal(step(boss,1599).shots.length,0);
+    const boss=new QuimeraController('advanced');step(boss,config.introMs);boss.damage(boss.config.maxHealth*.7);until(boss,()=>boss.attack==='critical'&&boss.state==='CHARGING');
+    const angle=boss.aim;assert.equal(step(boss,boss.config.warningMs.critical-1).shots.length,0);
     const critical=step(boss,1).shots;assert.ok(critical.length>=8);
     for(const shot of critical){const difference=Math.atan2(Math.sin(Math.atan2(shot.direction.y,shot.direction.x)-angle),Math.cos(Math.atan2(shot.direction.y,shot.direction.x)-angle));assert.ok(Math.abs(difference)>=Math.PI/6-.00001);}
     assert.equal(boss.state,'RECOVERING');
     until(boss,()=>boss.attack==='combined'&&boss.state==='CHARGING');
-    assert.equal(step(boss,1000).shots.length,5);assert.equal(boss.charging,true);
-    assert.equal(step(boss,799).shots.length,0);assert.equal(step(boss,1).shots.length,1);assert.equal(boss.state,'RECOVERING');
+    assert.equal(step(boss,boss.config.warningMs.combined).shots.length,7);assert.equal(boss.charging,true);
+    assert.equal(step(boss,boss.config.combinedDelay-1).shots.length,0);assert.equal(step(boss,1).shots.length,1);assert.equal(boss.state,'RECOVERING');
 });
 test('no update on pause advances charge; large frames never accumulate infinite emissions',()=>{
     const boss=ready();until(boss,()=>boss.state==='CHARGING');const snapshot=JSON.stringify(boss);

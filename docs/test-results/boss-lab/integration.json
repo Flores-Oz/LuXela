@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "count": 23,
+  "checks": [
+    "Default page boots directly into the first boss with no campaign menu",
+    "Real keyboard input moves the player in the practice arena",
+    "alex level 5: correct boss profile, no ordinary waves or intro",
+    "alex level 5: pause restart stays on the selected boss",
+    "alex level 5: defeat retry restores the same encounter",
+    "alex level 5: victory returns lab options instead of normal levels",
+    "alex level 5: next fight is exclusively the other boss",
+    "alex level 11: correct boss profile, no ordinary waves or intro",
+    "alex level 11: pause restart stays on the selected boss",
+    "alex level 11: defeat retry restores the same encounter",
+    "alex level 11: victory returns lab options instead of normal levels",
+    "alex level 11: next fight is exclusively the other boss",
+    "lua level 5: correct boss profile, no ordinary waves or intro",
+    "lua level 5: pause restart stays on the selected boss",
+    "lua level 5: defeat retry restores the same encounter",
+    "lua level 5: victory returns lab options instead of normal levels",
+    "lua level 5: next fight is exclusively the other boss",
+    "lua level 11: correct boss profile, no ordinary waves or intro",
+    "lua level 11: pause restart stays on the selected boss",
+    "lua level 11: defeat retry restores the same encounter",
+    "lua level 11: victory returns lab options instead of normal levels",
+    "lua level 11: next fight is exclusively the other boss",
+    "Practice unlocks never change persistent campaign storage"
+  ],
+  "consoleErrors": []
+}

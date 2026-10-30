@@ -1,16 +1,18 @@
 import {QuimeraConfig,type QuimeraTuning} from './QuimeraConfig';
+import {BossTacticsConfig} from './BossTacticsConfig';
 
-export const QuimeraAdvancedConfig:QuimeraTuning={...QuimeraConfig,maxHealth:96,phaseThresholds:[.75,.5,.25],
-    movementSpeed:[85,100,110,120],repositionMs:[1500,1300,1400,1300],preferredDistance:[400,360,350,330],
-    projectileSpeed:[290,310,310,330],recoveryMs:[1200,1400,1700,2000],
-    spreadCount:7,spreadAngle:38,
-    warningMs:{...QuimeraConfig.warningMs,alternating:700,'cross-burst':1100,beam:1500,shockwave:1500,summon:1400},
-    phasePatterns:[['alternating','burst','aim'],['arsenal','cross-burst','spread','alternating'],['summon','arsenal','alternating','beam','spread'],['beam','arsenal','shockwave','cross-burst','summon','combined','critical']]
+export const QuimeraAdvancedConfig:QuimeraTuning={...QuimeraConfig,maxHealth:144,phaseThresholds:[.7,.35],
+    movementSpeed:[125,135,145],repositionMs:[350,300,250],preferredDistance:[400,350,330],
+    projectileSpeed:[420,435,450],recoveryMs:[800,950,1100],
+    shortBurstDelay:130,spreadCount:7,spreadAngle:38,
+    warningMs:{...QuimeraConfig.warningMs,alternating:500,'cross-burst':750,'target-area':1150,beam:650},
+    phasePatterns:[['barrage','arsenal','beam-chain','cross-burst','pressure','spread','summon'],['arsenal','barrage','pressure','summon','cross-burst','beam-chain','spread'],['beam-chain','barrage','overload','arsenal','shockwave','cross-burst','summon','combined','critical']]
 };
 export const AdvancedCombat={
-    comboRecoveryMs:800,
-    maxProjectiles:72,maxSummons:6,summonBatch:3,summonIntervalMs:7000,summonWarningMs:900,minSpawnDistance:360,minRobotDistance:140,
-    alternatingVolleys:6,crossBurstVolleys:5,volleyDelayMs:260,
+    comboRecoveryMs:BossTacticsConfig.advanced.comboRecoveryMs,
+    maxProjectiles:72,maxSummons:BossTacticsConfig.advanced.summons.maxActive,summonBatch:BossTacticsConfig.advanced.summons.batch,summonIntervalMs:BossTacticsConfig.advanced.summons.intervalMs,summonWarningMs:900,minSpawnDistance:360,minRobotDistance:140,
+    alternatingVolleys:6,crossBurstVolleys:5,
     beam:{range:1500,width:16,activeMs:650},shockwave:{radius:240,activeMs:1200,thickness:18},
-    adaptation:{stationaryMs:1600,farDistance:650,leadMs:180,maxLead:70,selectEvery:3}
+    adaptation:{leadMs:180,maxLead:70},
+    area:{radius:140,activeMs:900,thickness:18}
 } as const;

@@ -4,5 +4,5 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue()],
-  build: { rollupOptions: { input: { main: 'index.html', robots: 'robots.html' } } },
+  build: { rollupOptions: { input: { main: 'index.html', robots: 'robots.html', bosses: 'bosses.html' } } },
 })

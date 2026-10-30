@@ -47,6 +47,7 @@ async function run() {
         if (character === 'alex') {
             const bounds = scene.physics.world.bounds;
             check('Alex effect covers the entire arena beneath the player', manager.background.visible && manager.background.x === bounds.x && manager.background.y === bounds.y && manager.background.displayWidth === bounds.width && manager.background.displayHeight === bounds.height && manager.background.depth < manager.pose.depth);
+            check('Alex repeats native 512px frames without stretching the arena texture', manager.background instanceof Phaser.GameObjects.TileSprite && manager.background.frame.width === 512 && manager.background.frame.height === 512 && manager.background.scaleX === 1 && manager.background.scaleY === 1 && manager.background.tileScaleX === 1 && manager.background.tileScaleY === 1);
             check('Alex green impacts use enemy coordinates', JSON.stringify(manager.impactPositions) === JSON.stringify(targets));
             manager.update(100); check('Alex machine gun animation advances', manager.pose.frame.name === '4');
             manager.update(config.alex.impactMs); check('Alex impact visuals expire', manager.impactPositions.length === 0 && manager.electricity.commandBuffer.length === 0);

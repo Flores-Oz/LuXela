@@ -13,9 +13,11 @@ export interface EnemyAttackConfig {
     recoveryDuration?: number;
     spreadAngle?: number;
     spreadCount?: number;
+    projectileLifetimeMs?: number;
 }
+export const redRobotRangeMultiplier=1.25;
 export const robotAttacks: Record<RobotType, Readonly<EnemyAttackConfig>> = {
-    "robot-red": { type: "single", projectileSpeed: 300, attackInterval: 1500, attackRange: 600, piercingWalls: false },
+    "robot-red": { type: "single", projectileSpeed: 300, attackInterval: 1500, attackRange: 600*redRobotRangeMultiplier, piercingWalls: false, projectileLifetimeMs:2000*redRobotRangeMultiplier },
     "robot-blue": { type: "burst", projectileSpeed: 350, attackInterval: 2000, attackRange: 420, piercingWalls: false, burstCount: 5, burstDelay: 200 },
     "robot-yellow": { type: "rapid", projectileSpeed: 400, attackInterval: 800, attackRange: 160, piercingWalls: false },
     "robot-orange": { type: "piercing-spread", projectileSpeed: 320, attackInterval: 2500, attackRange: 600, piercingWalls: true, chargeDuration: 1000, recoveryDuration: 2500, spreadAngle: 20, spreadCount: 6 }

@@ -93,7 +93,7 @@ export class GameScene extends Phaser.Scene {
         loadRobotSpawnAsset(this);
         loadQuimeraAssets(this);
         if(this.roomIndex===4||this.roomIndex===10)loadFinisherAssets(this,this.character);
-        if(this.roomIndex===10)loadAdvancedBossAssets(this);
+        if(this.selectionValid&&this.levels.getLevel(this.roomIndex).boss)loadAdvancedBossAssets(this);
     }
 
     create(): void {
@@ -263,7 +263,7 @@ export class GameScene extends Phaser.Scene {
         if(config.boss){
             createQuimeraAnimations(this);
             this.bossEncounter=new QuimeraEncounter(this,config.boss.spawn,room.tileSize,this.player,this.walls!,this.playerProjectiles,this.enemyProjectiles,this.lineOfSight!,()=>this.bossDying(),()=>this.bossDestroyed(),
-                {character:this.character,start:()=>this.beginFinisher(),resume:()=>this.resumeAfterFinisher()},config.boss.mode==='advanced'?{room,enemies:this.enemyManager}:undefined);
+                {character:this.character,start:()=>this.beginFinisher(),resume:()=>this.resumeAfterFinisher()},{room,enemies:this.enemyManager,mode:config.boss.mode??'trial'});
         }
         this.specialAbilities = new SpecialAbilityManager(this, this.player, this.character, this.enemyManager, this.runId,()=>this.bossEncounter?.specialHit(this.character)??null);
         this.waves = config.availability === "reserved" || config.boss ? null : new WaveManager(config.id, getWaves(config), {
@@ -297,7 +297,7 @@ export class GameScene extends Phaser.Scene {
         for (const child of this.enemies.getChildren()) {
             const enemy = child as Enemy;
             const shots = enemy.updateBehavior(this.player, this.lineOfSight, time - this.pausedDuration);
-            fireEnemyShots(this, enemy, shots, this.enemyProjectiles,this.roomIndex>=5?AdvancedCombat.maxProjectiles:Infinity);
+            fireEnemyShots(this, enemy, shots, this.enemyProjectiles,this.bossEncounter||this.roomIndex>=5?AdvancedCombat.maxProjectiles:Infinity);
         }
 
         const direction = this.player.consumeShootRequest();
@@ -455,7 +455,7 @@ export class GameScene extends Phaser.Scene {
     private enemyDefeated(enemy: Enemy): void {
         if (this.combatState !== "playing" || this.isChangingRoom) return;
         const enemyId: unknown = enemy.getData("level-enemy-id");
-        if(this.roomIndex===10&&typeof enemyId==='string'&&enemyId.startsWith('quimera-reinforcement-'))getArcadeRun(this.game).awardKill(this.runId,this.roomIndex,enemyId,this.levels.getLevel(this.roomIndex).scorePerEnemy);
+        if(this.bossEncounter&&typeof enemyId==='string'&&enemyId.startsWith('quimera-reinforcement-'))getArcadeRun(this.game).awardKill(this.runId,this.roomIndex,enemyId,this.levels.getLevel(this.roomIndex).scorePerEnemy);
         if (typeof enemyId === "string" && this.waves?.canDefeat(enemyId)) {
             getArcadeRun(this.game).awardKill(this.runId, this.roomIndex, enemyId, this.levels.getLevel(this.roomIndex).scorePerEnemy);
             this.waves.defeat(enemyId);

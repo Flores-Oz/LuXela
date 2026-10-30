@@ -8,6 +8,7 @@ export type EnemyShot = {
     piercesInteriorWalls: boolean;
     originOffset?:Point;
     visualFrame?:number;
+    lifetimeMs?:number;
 };
 export type AttackPhase = "ready" | "burst" | "charging" | "recovering";
 
@@ -40,7 +41,8 @@ export class EnemyAttackController {
             const radians = angle * Math.PI / 180;
             return { direction: { x: direction.x * Math.cos(radians) - direction.y * Math.sin(radians),
                 y: direction.x * Math.sin(radians) + direction.y * Math.cos(radians) },
-                speed: this.config.projectileSpeed, attackType: this.config.type, piercesInteriorWalls: this.config.piercingWalls };
+                speed: this.config.projectileSpeed, attackType: this.config.type, piercesInteriorWalls: this.config.piercingWalls,
+                ...(this.config.projectileLifetimeMs?{lifetimeMs:this.config.projectileLifetimeMs}:{}) };
         };
 
         if (this.config.type === "piercing-spread") {

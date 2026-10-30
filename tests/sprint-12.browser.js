@@ -41,7 +41,7 @@ async function run(){
             const level=levels[index],generation=s.generation;
             check(`${character} level ${index+1}: full physical room and correct variants`,s.physics.world.bounds.width===2560&&s.physics.world.bounds.height===1536&&s.enemies.getChildren().every(enemy=>level.enemies.types.includes(enemy.texture.key)));
             if(index===4){
-                check(`${character}: trial boss still has 72 health and no advanced effects`,s.bossEncounter.boss.controller.health===72&&!s.bossEncounter.effects);
+                check(`${character}: trial boss has 72 health, two phases and shared effects`,s.bossEncounter.boss.controller.health===72&&!!s.bossEncounter.effects&&s.bossEncounter.boss.controller.config.phasePatterns.length===2);
                 s.bossEncounter.update(1500);s.bossEncounter.boss.receiveDamage(999);
                 await until(()=>s.combatState==='playing'&&s.bossEncounter.boss.isDead());
                 check(`${character}: first destruction unlocks exit without victory or epilogue`,!runs.canComplete(character,runId)&&s.doors.currentState==='unlocked'&&!game.scene.isActive('CompletionScene')&&!game.scene.isActive('VisualNovelScene'));
@@ -68,7 +68,7 @@ async function run(){
             check(`${character} transition ${index+1}: one bounds listener and stable colliders`,s.physics.world.listenerCount('worldbounds')===1&&s.physics.world.colliders.getActive().length===(s.bossEncounter?10:8));
         }
         const encounter=s.bossEncounter,boss=encounter.boss,c=boss.controller;
-        check(`${character}: same Quimera sprite, advanced profile and effects loaded`,boss.texture.key==='quimera'&&c.health===96&&c.advanced&&!!encounter.effects&&!!encounter.reinforcements);
+        check(`${character}: same Quimera sprite, advanced profile and effects loaded`,boss.texture.key==='quimera'&&c.health===144&&c.advanced&&!!encounter.effects&&!!encounter.reinforcements);
         const visualShot=new Projectile(s,boss.x,boss.y,new Phaser.Math.Vector2(0,0),'enemy',s.enemyProjectiles,0,false,'single',{key:'quimera-projectiles',frame:0});
         await delay(40);
         for(const [key,count]of [['quimera-core-charge',8],['quimera-projectiles',16],['quimera-beam',12],['quimera-shockwave',12],['robot-spawn',12]])check(`${character}: ${key} frames registered`,s.textures.get(key).frameTotal===count+1&&(key!=='quimera-projectiles'||Math.abs(visualShot.physicsBody.body.width-8)<.01&&visualShot.physicsBody.anims.isPlaying));
@@ -85,8 +85,11 @@ async function run(){
         s.pauseGame();await until(()=>document.querySelector('.pause-screen'));
         const time=c.time;await delay(120);check(`${character}: pause freezes boss state`,c.time===time);
         button('.pause-screen','Continuar').click();await until(()=>game.scene.isActive('GameScene'));
-        c.health=46;advance(()=>c.phase===3&&c.state==='REPOSITION');
-        s.player.physicsSprite.body.reset(350,800);encounter.reinforcements.request();
+        c.health=60;advance(()=>c.phase===2&&c.state==='REPOSITION');
+        s.player.physicsSprite.body.reset(350,800);
+        // Phase-one supports now reserve before this fixture relocates the player.
+        // Reset that reservation so this check measures clearance at the new position.
+        encounter.reinforcements.cancelPending();encounter.reinforcements.update(AdvancedCombat.summonIntervalMs);encounter.reinforcements.request();
         check(`${character}: summon telegraphs reserve bounded slots`,encounter.reinforcements.pendingCount>0&&encounter.reinforcements.pendingCount<=AdvancedCombat.maxSummons);
         encounter.reinforcements.update(900);
         check(`${character}: summoned robots use existing variants and respect clearance`,s.enemyManager.aliveCount>0&&s.enemyManager.aliveCount<=AdvancedCombat.maxSummons&&s.enemyManager.getLivingEnemies().every(enemy=>Math.hypot(enemy.x-s.player.x,enemy.y-s.player.y)>=360&&!s.walls.getChildren().some(w=>Phaser.Geom.Intersects.RectangleToRectangle(enemy.body,w.body))));
@@ -107,8 +110,8 @@ async function run(){
         check(`${character}: active beam kills player in one valid hit`,s.player.isDead());
         await until(()=>game.scene.isActive('GameOverScene'));
         game.scene.getScene('GameOverScene').input.keyboard.emit('keydown-ENTER');const old=s.generation;s=await entered(10,old);
-        check(`${character}: retry rebuilds final boss without replaying intro or leftovers`,s.bossEncounter.boss.controller.health===96&&s.enemyManager.aliveCount===0&&s.enemyProjectiles.getLength()===0&&runs.hasBossIntro(runId));
-        s.bossEncounter.update(1500);s.bossEncounter.boss.receiveDamage(87);
+        check(`${character}: retry rebuilds final boss without replaying intro or leftovers`,s.bossEncounter.boss.controller.health===144&&s.enemyManager.aliveCount===0&&s.enemyProjectiles.getLength()===0&&runs.hasBossIntro(runId));
+        s.bossEncounter.update(1500);s.bossEncounter.boss.receiveDamage(s.bossEncounter.boss.controller.config.maxHealth*.91);
         s.player.physicsSprite.body.reset(s.bossEncounter.boss.x-140,s.bossEncounter.boss.y);
         s.bossEncounter.update(1);
         check(`${character}: final boss preserves the proximity finisher below ten percent`,s.bossEncounter.finisher.active&&s.bossEncounter.finisher.challenge.remaining===600);
@@ -145,7 +148,7 @@ async function run(){
     live.player.physicsSprite.body.reset(500,768);live.cameras.main.stopFollow().setZoom(.65).centerOn(1280,768);
     e.boss.controller.health=22;live.manual=false;
     await until(()=>e.boss.controller.state==='CHARGING'&&e.boss.controller.attack==='beam');
-    check('Live production AI shows its beam warning before emission',!e.effects.busy&&e.boss.controller.phase===4);
+    check('Live production AI shows its beam warning before emission',!e.effects.busy&&e.boss.controller.phase===3);
     live.player.physicsSprite.body.reset(500,1100);
     await until(()=>e.effects.activeAttack?.kind==='beam');
     check('Live production update emits the warned beam and allows dodging locked aim',!live.player.isDead()&&e.effects.busy);

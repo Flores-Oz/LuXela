@@ -27,6 +27,11 @@ export class Quimera extends Phaser.Physics.Arcade.Sprite {
         this.once('quimera-destroyed',onDestroyed);
     }
     isDead():boolean{return this.controller.health<=0;}
+    evade(velocity:{x:number;y:number}):void {
+        this.setVelocity(velocity.x,velocity.y);this.faceAngle(Math.atan2(velocity.y,velocity.x));
+        this.play(`quimera-walk-${this.facing}`,true);
+        this.energy.lineStyle(3,0x6de8ff,.8).strokeCircle(this.x,this.y+12,30);
+    }
     receiveDamage(amount:number):number {
         const taken=this.controller.damage(amount);
         if(taken===0)return 0;
@@ -48,11 +53,11 @@ export class Quimera extends Phaser.Physics.Arcade.Sprite {
     }
     cancel():void {this.stopping=true;this.controller.stop();if(this.body)this.setVelocity(0,0);this.anims?.stop();if(this.energy.scene)this.energy.clear();}
 
-    updateCombat(delta:number,player:Player,sight:LineOfSight):BossFrame {
+    updateCombat(delta:number,player:Player,sight:LineOfSight,context:{teleportAvailable?:boolean;effectsBusy?:boolean;summonAvailable?:boolean}={}):BossFrame {
         if(this.stopping||this.isDead()||this.controller.state==='QTE'||this.controller.state==='FINISHING')return {shots:[],pulse:false};
         const state=this.controller.state;
         const view=this.scene.cameras.main.worldView;
-        const frame=this.controller.update(delta,this,player,sight.hasLineOfSight(this,player),view.contains(this.x,this.y));
+        const frame=this.controller.update(delta,this,player,sight.hasLineOfSight(this,player),view.contains(this.x,this.y),context);
         const controller=this.controller;
         this.setVelocity(0,0);
         if(controller.state==='REPOSITION'||controller.state==='ATTACKING'&&controller.attack==='module'&&controller.module==='robot-yellow'){

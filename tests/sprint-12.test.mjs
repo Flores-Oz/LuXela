@@ -20,8 +20,8 @@ test('advanced sectors keep high pressure and the opening sectors increase chall
         assert.equal(level.difficulty.moveSpeed,levels[8].difficulty.moveSpeed);
         assert.ok(level.difficulty.detectionRange>=550);
     }
-    assert.ok(AdvancedCombat.maxSummons>=6);assert.ok(AdvancedCombat.summonBatch>=3);assert.ok(AdvancedCombat.maxProjectiles>=72);
-    assert.ok(QuimeraAdvancedConfig.phasePatterns[3].includes('summon'));
+    assert.equal(AdvancedCombat.maxSummons,6);assert.equal(AdvancedCombat.summonBatch,6);assert.ok(AdvancedCombat.maxProjectiles>=72);
+    assert.ok(QuimeraAdvancedConfig.phasePatterns[2].includes('summon'));
 });
 test('11 distinct connected large maps and exact advanced robot combinations',()=>{
     assert.equal(levels.length,11);assert.deepEqual(validateLevelCatalog(levels,arcadeRooms),[]);
@@ -37,14 +37,14 @@ test('11 distinct connected large maps and exact advanced robot combinations',()
 });
 test('maps, footprints and spawns remain valid at larger supported dimensions',()=>{for(const [w,h]of [[40,24],[48,28],[60,36]]){const rooms=createArcadeRooms(w,h);assert.deepEqual(validateLevelCatalog(createLevelCatalog(rooms),rooms),[]);}});
 test('trial and final reuse one controller with independent health and phase profiles',()=>{
-    const first=new QuimeraController(),final=new QuimeraController('advanced');assert.equal(first.health,72);assert.equal(final.health,96);
+    const first=new QuimeraController(),final=new QuimeraController('advanced');assert.equal(first.health,72);assert.equal(final.health,144);
     const step=c=>c.update(2000,{x:100,y:100},{x:400,y:100},true);
-    step(final);for(const [damage,phase]of [[24,2],[24,3],[24,4]]){for(let i=0;i<100&&final.state!=='REPOSITION';i++)step(final);final.damage(damage);for(let i=0;i<100&&final.phase<phase;i++)step(final);assert.equal(final.phase,phase);assert.ok(final.health<=96*.75);}
-    assert.equal(first.health,72);assert.equal(QuimeraAdvancedConfig.phasePatterns.length,4);
+    step(final);for(const [damage,phase]of [[50,2],[50,3]]){for(let i=0;i<100&&final.state!=='REPOSITION';i++)step(final);final.damage(damage);for(let i=0;i<100&&final.phase<phase;i++)step(final);assert.equal(final.phase,phase);assert.ok(final.health<=144*.75);}
+    assert.equal(first.health,72);assert.equal(QuimeraAdvancedConfig.phasePatterns.length,3);
 });
 test('advanced patterns are finite, warned, include all new attacks and bounded adaptation',()=>{
     const found=new Set();
-    for(const health of [96,70,46,22]){
+    for(const health of [144,100,60,30]){
         const c=new QuimeraController('advanced');c.health=health;
         for(let i=0;i<4000;i++){
             const f=c.update(50,{x:500,y:500},{x:700+Math.sin(i/7)*30,y:650+Math.cos(i/9)*30},true);
@@ -88,7 +88,7 @@ for(const [file,w,h]of [['tilesets/advanced-industrial',512,512],['effects/quime
 
 // Drive the complete warned combo without rendering, using the production attack clock.
 test('final arsenal chains six piercing shots, red/blue volleys and a separately warned beam',()=>{
-    const c=new QuimeraController('advanced');c.health=70;
+    const c=new QuimeraController('advanced');c.health=60;
     const from={x:500,y:500},target={x:800,y:500};
     const warnings=[],shots=[];let beamAt=0;
     for(let i=0;i<800&&!beamAt;i++){
@@ -99,16 +99,16 @@ test('final arsenal chains six piercing shots, red/blue volleys and a separately
     }
     assert.deepEqual(warnings.map(w=>w.attack),['module','cross-burst','beam']);
     assert.equal(shots[0].shots.length,6);assert.ok(shots[0].shots.every(s=>s.piercesInteriorWalls));
-    assert.ok(shots[0].time-warnings[0].time>=1000);
+    assert.ok(shots[0].time-warnings[0].time>=1000*c.tactics.moduleTimingMultiplier);
     const normal=shots.slice(1);assert.equal(normal.length,5);
     assert.ok(normal.every(v=>v.shots.length===3&&v.shots.every(s=>!s.piercesInteriorWalls)));
     assert.deepEqual([...new Set(normal.flatMap(v=>v.shots.map(s=>s.visualFrame)))].sort(),[0,4]);
-    assert.ok(normal[0].time-warnings[1].time>=1100);
-    assert.ok(beamAt-warnings[2].time>=1500);
+    assert.ok(normal[0].time-warnings[1].time>=c.config.warningMs['cross-burst']);
+    assert.ok(beamAt-warnings[2].time>=c.config.warningMs.beam);
 });
 test('queued arsenal stops on death, loss of visibility and QTE',()=>{
     for(const reason of ['stop','death','hidden','qte']){
-        const c=new QuimeraController('advanced');c.health=70;
+        const c=new QuimeraController('advanced');c.health=60;
         for(let i=0;i<400&&c.state!=='CHARGING';i++)c.update(25,{x:500,y:500},{x:800,y:500},true);
         assert.equal(c.attack,'module');assert.equal(c.module,'robot-orange');
         if(reason==='stop')c.stop();

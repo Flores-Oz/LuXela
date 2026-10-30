@@ -25,7 +25,7 @@ export class BossHealthBar {
             .fillStyle(0x26363a).fillRect(10,30,width-20,9)
             .fillStyle(0x748783,.8).fillRect(10,30,(width-20)*this.lag,9)
             .fillStyle(color).fillRect(10,30,(width-20)*ratio,9);
-        this.label.setText(`E.X.P.-01 QUIMERA · FASE ${controller.phase}${controller.advanced?'/4':''} · ${Math.ceil(controller.health)} / ${controller.config.maxHealth}`).setFontSize(width<400?10:13);
+        this.label.setText(`E.X.P.-01 QUIMERA · FASE ${controller.phase}/${controller.config.phasePatterns.length} · ${Math.ceil(controller.health)} / ${controller.config.maxHealth}`).setFontSize(width<400?10:13);
         if(controller.finisherAvailable)this.label.setText(`QUIMERA · ${Math.ceil(controller.health)} / ${controller.config.maxHealth} · ACERCATE PARA REMATAR`);
         const camera=this.scene.cameras.main,zoom=camera.zoom,x=(camera.width-width)/2,y=this.scene.scale.width<1000?112:80;
         this.root.setScale(1/zoom).setPosition(camera.width/2+(x-camera.width/2)/zoom,camera.height/2+(y-camera.height/2)/zoom);

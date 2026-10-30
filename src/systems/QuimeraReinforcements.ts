@@ -6,7 +6,6 @@ import type {Player} from '../entities/Player';
 import type {Quimera} from '../entities/boss/Quimera';
 import type {Room} from '../world/Room';
 import {TileType} from '../types/RoomTypes';
-import {robotTypes} from '../config/RobotConfig';
 import {RobotSpawnEffect} from './RobotSpawnEffect';
 
 export class QuimeraReinforcements {
@@ -21,10 +20,17 @@ export class QuimeraReinforcements {
         }
     }
     get pendingCount():number{return this.pending.length;}
+    get canRequest():boolean {
+        const controller=this.boss.controller,limit=controller.tactics.summons;
+        return controller.alive&&!this.player.isDead()&&this.cooldown<=0&&controller.phase>=limit.fromPhase&&
+            !['INTRO','PHASE_TRANSITION','TELEPORTING','QTE','FINISHING'].includes(controller.state)&&
+            (limit.replaceOnClear?this.enemies.aliveCount===0&&this.pending.length===0:this.enemies.aliveCount+this.pending.length<limit.maxActive);
+    }
     request():void {
-        if(this.cooldown>0||this.boss.controller.phase<3)return;
+        if(!this.canRequest)return;
+        const limit=this.boss.controller.tactics.summons;
         const occupied:{x:number;y:number}[]=[...this.enemies.getLivingEnemies(),...this.pending,this.boss];
-        let slots=Math.min(config.summonBatch,config.maxSummons-this.enemies.aliveCount-this.pending.length);
+        let slots=Math.min(limit.batch,limit.maxActive-this.enemies.aliveCount-this.pending.length);
         // Traverse a stable permutation of the room's safe cells, rather than crowding one corner.
         for(let i=0;i<this.candidates.length&&slots>0;i++){
             const point=this.candidates[(i*137+this.serial*53)%this.candidates.length]!;
@@ -32,18 +38,31 @@ export class QuimeraReinforcements {
             const visual=new RobotSpawnEffect(this.scene,point.x,point.y);
             this.pending.push({...point,elapsed:0,visual});occupied.push(point);slots--;
         }
-        this.cooldown=config.summonIntervalMs;
+        // The final boss reserves whole cohorts: never leave a partial batch behind.
+        if(limit.replaceOnClear&&slots>0)this.cancelPending();
+        this.cooldown=limit.intervalMs;
     }
     update(delta:number):void {
+        if(!this.boss.controller.alive||this.player.isDead()){this.cancelPending();return;}
         this.cooldown=Math.max(0,this.cooldown-delta);
+        const limit=this.boss.controller.tactics.summons;
+        // Recheck the complete warning area before materializing a final-boss cohort.
+        // If the player enters it, retry with a fresh warning rather than spawning on them.
+        if(limit.replaceOnClear&&this.pending.length&&this.pending[0]!.elapsed+delta>=config.summonWarningMs&&
+            (this.enemies.aliveCount>0||this.pending.some(item=>Math.hypot(item.x-this.player.x,item.y-this.player.y)<config.minSpawnDistance))){
+            this.cancelPending();this.cooldown=limit.intervalMs;
+        }
         for(const item of [...this.pending]){
             item.elapsed+=delta;item.visual.update(delta);
             if(item.elapsed<config.summonWarningMs)continue;
             item.visual.destroy();this.pending.splice(this.pending.indexOf(item),1);
-            if(this.enemies.aliveCount>=config.maxSummons||Math.hypot(item.x-this.player.x,item.y-this.player.y)<config.minSpawnDistance||this.enemies.getLivingEnemies().some(enemy=>Math.hypot(item.x-enemy.x,item.y-enemy.y)<config.minRobotDistance))continue;
-            const enemy=new Enemy(this.scene,item.x,item.y,robotTypes[this.serial%robotTypes.length]!,{moveSpeed:96,detectionRange:540,shootCooldown:1200,patrol:true});
+            if(this.enemies.aliveCount>=this.boss.controller.tactics.summons.maxActive||Math.hypot(item.x-this.player.x,item.y-this.player.y)<config.minSpawnDistance||this.enemies.getLivingEnemies().some(enemy=>Math.hypot(item.x-enemy.x,item.y-enemy.y)<config.minRobotDistance))continue;
+            const enemy=new Enemy(this.scene,item.x,item.y,limit.types[this.serial%limit.types.length]!,{moveSpeed:96,detectionRange:540,shootCooldown:1200,patrol:true});
             enemy.setData('level-enemy-id',`quimera-reinforcement-${this.serial++}`);this.enemies.add(enemy);enemy.playIdle();this.enemies.start();
         }
+        // Replenishment is independent of the randomly selected attack pattern.
+        // A surviving support robot prevents replacements, even after the cooldown.
+        if(limit.replaceOnClear)this.request();
     }
     cancelPending():void {for(const item of this.pending)item.visual.destroy();this.pending.length=0;}
     destroy():void {this.cancelPending();}

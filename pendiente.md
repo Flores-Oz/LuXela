@@ -1,5 +1,21 @@
 # Pendientes — retoques finales
 
+## Sprint 13 — balance e IA de jefes
+
+- [x] Aumentar un 25 % la detección y el alcance del rojo, conservando velocidad, cadencia y visión.
+- [x] Conservar las mecánicas del azul, amarillo y naranja.
+- [x] Configurar dos fases en el nivel 5 y tres en el nivel 11, sin aumentar la vida.
+- [x] Integrar teletransporte advertido y seguro, IA reactiva y combinaciones sobre el controlador existente.
+- [x] Reutilizar efectos y límites de invocación según el encuentro; conservar especiales por bajas y muerte de un impacto.
+- [x] Validar lógica, campaña y combate en navegador con ambos personajes: 870 comprobaciones aprobadas tras el ajuste de agresividad.
+- [x] Ampliar patrones del primer jefe y añadir al final combos de cuatro etapas de ráfagas, disparos cada 130 ms y desplazamiento más rápido.
+- [x] Jefe final con 144 de vida, apertura agresiva y tandas de seis rojos, azules o naranjas desde fase 1; reponer automáticamente al morir todos. Balance actual validado con 210 pruebas de lógica y 255 comprobaciones de campaña/combate.
+- [x] Evasión ocasional del final: 35 % ante disparos entrantes, paso lateral físico y 3,5 s entre esquivas exitosas, solo al reposicionarse. Validación actual: 216 pruebas de lógica y 267 comprobaciones de campaña/combate aprobadas; recibe daño normalmente durante la recuperación.
+- [x] Rayo final con carga de 650 ms y secuencias de dos rayos en todas las fases y en el combo de presión, cada uno con aviso y apuntado propios. Compilación y 217 pruebas de lógica aprobadas.
+- [ ] Ajustar el balance mediante partidas libres prolongadas y validar WebGL/otros navegadores.
+
+El estado vigente de los jefes está en `docs/sprint-13.md`. Sustituye las cantidades de fases de las notas históricas de Sprints 11–12. Los diálogos y epílogos definitivos continúan pendientes.
+
 ## Sprint 12 — segunda etapa integrada
 
 - [x] Ampliar a 11 niveles y añadir cinco mapas de combate mixto.

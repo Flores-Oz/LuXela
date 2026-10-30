@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Berzerk · Prueba de jefes</title></head>
+<body>
+  <main class="boss-lab">
+    <header class="boss-controls">
+      <strong>BERZERK <span>PRUEBA DE JEFES</span></strong>
+      <label>Encuentro<select id="boss-level" disabled><option value="5">Nivel 5 · Quimera inicial</option><option value="11">Nivel 11 · Verdadero combate</option></select></label>
+      <label>Personaje<select id="boss-character" disabled><option value="alex">Alex</option><option value="lua">Lua</option></select></label>
+      <button id="boss-start" disabled>Iniciar / reiniciar combate</button>
+      <a href="/">Volver al juego ↗</a>
+    </header>
+    <p class="boss-help" id="boss-help" role="status">Cargando…</p>
+    <section id="game-container" aria-label="Combate de prueba contra Quimera"></section>
+  </main>
+  <script type="module" src="/src/boss-lab.ts"></script>
+</body></html>

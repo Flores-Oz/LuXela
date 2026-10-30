@@ -40,7 +40,7 @@ export class SpecialAbilityManager {
     readonly ability: SpecialAbility;
     private readonly key: Phaser.Input.Keyboard.Key;
     private readonly pose: Phaser.GameObjects.Sprite;
-    private readonly background: Phaser.GameObjects.Sprite | null;
+    private readonly background: Phaser.GameObjects.TileSprite | null;
     private readonly electricity: Phaser.GameObjects.Graphics;
     private readonly hud: Phaser.GameObjects.Text;
     private destroyed = false;
@@ -69,7 +69,7 @@ export class SpecialAbilityManager {
             if(character==='alex'&&point){this.impactPositions=[...this.impactPositions,point];this.impactStartedAt=this.visualClock;}
         });
         this.key = scene.input.keyboard!.addKey(SpecialAbilityConfig.key);
-        this.background = character === "alex" ? scene.add.sprite(0, 0, "alex-special-background", 0)
+        this.background = character === "alex" ? scene.add.tileSprite(0, 0, 512, 512, "alex-special-background", 0)
             .setOrigin(0).setDepth(8).setBlendMode(Phaser.BlendModes.SCREEN).setVisible(false) : null;
         this.pose = scene.add.sprite(player.x, player.y, `${character}-special`, "0")
             .setOrigin(0.5, 480 / 544).setScale(0.25).setDepth(10).setVisible(false);
@@ -100,15 +100,16 @@ export class SpecialAbilityManager {
         if (this.background) {
             this.background.setVisible(ability.performing);
             if (ability.performing) {
-                // World bounds cover the whole arena, including rooms larger than the camera.
+                // Repeat the native 512px frame across the arena instead of stretching it.
                 const bounds = this.scene.physics.world.bounds;
                 const timing = SpecialAbilityConfig.alex;
                 const backgroundFrame = ability.state === "active" ? Math.floor(ability.elapsed / timing.backgroundFrameMs) % 6 :
                     ability.state === "recovering" ? 5 : 0;
                 const alpha = ability.state === "charging" ? ability.elapsed / timing.chargeMs :
                     ability.state === "recovering" ? 1 - ability.elapsed / timing.recoveryMs : 1;
-                this.background.setPosition(bounds.x, bounds.y).setDisplaySize(bounds.width, bounds.height)
-                    .setFrame(backgroundFrame).setAlpha(alpha);
+                this.background.setPosition(bounds.x, bounds.y).setSize(bounds.width, bounds.height)
+                    .setAlpha(alpha);
+                if (Number(this.background.frame.name) !== backgroundFrame) this.background.setFrame(backgroundFrame);
             }
         }
         this.player.setSpecialPerforming(ability.performing);

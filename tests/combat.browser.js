@@ -70,7 +70,7 @@ async function run() {
     enemy.stop();
 
     reset(player.physicsSprite, 160, 160);
-    reset(enemy, player.x+levels[0].difficulty.detectionRange+88, 160);
+    reset(enemy, player.x+levels[0].difficulty.detectionRange*1.25+88, 160);
     enemy.patrolDirection = -1;
     enemy.nextPatrolTurn = 0;
     check('Fuera de rango: PATROL sin disparo', enemy.updateBehavior(player, scene.lineOfSight, now) === null &&

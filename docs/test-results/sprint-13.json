@@ -1,0 +1,41 @@
+{
+  "status": "passed",
+  "generatedAt": "2026-10-30T18:41:21.566Z",
+  "suites": [
+    {
+      "name": "unit",
+      "count": 208
+    },
+    {
+      "name": "selection",
+      "count": 147,
+      "consoleErrors": 0
+    },
+    {
+      "name": "combat",
+      "count": 69,
+      "consoleErrors": 0
+    },
+    {
+      "name": "abilities",
+      "count": 68,
+      "consoleErrors": 0
+    },
+    {
+      "name": "robot-attacks",
+      "count": 103,
+      "consoleErrors": 0
+    },
+    {
+      "name": "finisher",
+      "count": 32,
+      "consoleErrors": 0
+    },
+    {
+      "name": "sprint-13",
+      "count": 243,
+      "consoleErrors": 0
+    }
+  ],
+  "totalChecks": 870
+}

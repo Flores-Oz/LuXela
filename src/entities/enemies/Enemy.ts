@@ -3,7 +3,7 @@ import { EnemyState } from "./EnemyState";
 import type { Player } from "../Player";
 import type { LineOfSight } from "../../systems/LineOfSight";
 import { CombatEvents } from "../../systems/CombatEvents";
-import { robotAttacks,robotMovementScale,robotDefinitions,robotTypes,type RobotType,type EnemyAttackConfig } from "../../config/RobotConfig";
+import { robotAttacks,robotMovementScale,robotDefinitions,robotTypes,redRobotRangeMultiplier,type RobotType,type EnemyAttackConfig } from "../../config/RobotConfig";
 import { EnemyAttackController, type EnemyShot } from "./EnemyAttackController";
 import {RobotSpawnEffect} from '../../systems/RobotSpawnEffect';
 
@@ -71,7 +71,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         const variant = robotTypes.some(type => type === texture) ? texture as RobotType : "robot-red";
         this.explodesOnContact=variant==='robot-yellow';
         this.moveSpeed = (config.moveSpeed ?? 80) * robotMovementScale[variant];
-        this.detectionRange = config.detectionRange ?? 200;
+        this.detectionRange = (config.detectionRange ?? 200)*(variant==='robot-red'?redRobotRangeMultiplier:1);
         const attackConfig: EnemyAttackConfig = { ...robotAttacks[variant] };
         if(variant==='robot-orange'&&config.chargeDuration!==undefined)attackConfig.chargeDuration=config.chargeDuration;
         // The existing level cadence scales the basic soldier; other patterns retain their timings.

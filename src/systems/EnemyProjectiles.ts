@@ -10,7 +10,7 @@ export function fireEnemyShots(scene: Phaser.Scene, enemy: Pick<Enemy,'x'|'y'|'i
     for (const shot of shots) {
         if(group.getLength()>=limit)break;
         // Keep the origin inside the body so a muzzle offset cannot jump a wall.
-        new Projectile(scene, enemy.x+(shot.originOffset?.x??0), enemy.y+(shot.originOffset?.y??0), new Phaser.Math.Vector2(shot.direction.x, shot.direction.y), "enemy", group, shot.speed, shot.piercesInteriorWalls, shot.attackType,advanced?{key:'quimera-projectiles',frame:shot.visualFrame??(fired%2?4:0)}:undefined);
+        new Projectile(scene, enemy.x+(shot.originOffset?.x??0), enemy.y+(shot.originOffset?.y??0), new Phaser.Math.Vector2(shot.direction.x, shot.direction.y), "enemy", group, shot.speed, shot.piercesInteriorWalls, shot.attackType,advanced?{key:'quimera-projectiles',frame:shot.visualFrame??(fired%2?4:0)}:undefined,shot.lifetimeMs);
         fired++;
     }
     return fired;

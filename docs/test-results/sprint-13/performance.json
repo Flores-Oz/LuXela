@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "baseline": {
+    "meanMs": 16.66555555555557,
+    "p95Ms": 16.700000000000728,
+    "peakProjectiles": 0,
+    "initialChildren": 277,
+    "children": 277,
+    "colliders": 8
+  },
+  "stress": {
+    "meanMs": 16.66555555555553,
+    "p95Ms": 16.799999999999272,
+    "peakProjectiles": 72,
+    "initialChildren": 277,
+    "children": 349,
+    "colliders": 8
+  },
+  "maxAllowed": 72,
+  "remainingProjectiles": 0,
+  "robots": 10,
+  "teleport": {
+    "completed": 15,
+    "cpuMs": 33.39999997615814,
+    "initialChildren": 237,
+    "finalChildren": 237,
+    "colliders": 10,
+    "finalColliders": 10,
+    "pending": false,
+    "timers": 0
+  },
+  "renderer": "Canvas",
+  "viewport": "1280x768",
+  "cameraZoom": 0.5,
+  "consoleErrors": [],
+  "generatedAt": "2026-10-30T18:07:44.576Z"
+}

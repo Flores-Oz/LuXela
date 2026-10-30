@@ -24,7 +24,7 @@
     "alex level 4: every configured wave completes",
     "alex transition 4: one bounds listener and stable colliders",
     "alex level 5: full physical room and correct variants",
-    "alex: trial boss still has 72 health and no advanced effects",
+    "alex: trial boss has 72 health, two phases and shared effects",
     "alex: first destruction unlocks exit without victory or epilogue",
     "alex transition 5: one bounds listener and stable colliders",
     "alex level 6: full physical room and correct variants",
@@ -96,7 +96,7 @@
     "lua level 4: every configured wave completes",
     "lua transition 4: one bounds listener and stable colliders",
     "lua level 5: full physical room and correct variants",
-    "lua: trial boss still has 72 health and no advanced effects",
+    "lua: trial boss has 72 health, two phases and shared effects",
     "lua: first destruction unlocks exit without victory or epilogue",
     "lua transition 5: one bounds listener and stable colliders",
     "lua level 6: full physical room and correct variants",
@@ -162,5 +162,5 @@
     "Leaving during a live advanced attack releases boss, effects and summons"
   ],
   "consoleErrors": [],
-  "generatedAt": "2026-10-27T22:50:13.189Z"
+  "generatedAt": "2026-10-30T17:49:16.268Z"
 }

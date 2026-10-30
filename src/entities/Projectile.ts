@@ -8,7 +8,6 @@ export class Projectile {
     private readonly body:
         Phaser.Physics.Arcade.Image;
 
-    private readonly lifetime = 2000;
 
     private readonly expiration: Phaser.Time.TimerEvent;
 
@@ -27,7 +26,8 @@ export class Projectile {
         speed = 500,
         piercesInteriorWalls = false,
         attackType: EnemyAttackType | "player" = owner === "player" ? "player" : piercesInteriorWalls ? "piercing-spread" : "single",
-        visual?:{key:string;frame:number}
+        visual?:{key:string;frame:number},
+        lifetimeMs=2000
     ){
         this.owner = owner;
         this.attackType = attackType;
@@ -81,7 +81,7 @@ export class Projectile {
         );
 
         this.expiration = scene.time.delayedCall(
-            this.lifetime,
+            lifetimeMs,
             () => {
                 this.destroy();
             }
