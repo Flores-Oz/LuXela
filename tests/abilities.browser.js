@@ -24,6 +24,7 @@ async function run() {
     while (!game.scene.isActive('GameScene')) await new Promise(r => setTimeout(r, 20));
     game.loop.sleep(); let scene = game.scene.getScene('GameScene'); scene.sys.sceneUpdate = () => {};
     check('Original eight-frame atlases remain intact', ['alex', 'lua'].every(c => game.textures.get(`${c}-special`).getFrameNames().length === 8));
+    check('Alex arena effect has six animation frames', game.textures.get('alex-special-background').getFrameNames().length === 6);
     for (const character of ['alex', 'lua']) {
         scene.scene.restart({ character }); tick(4); scene = game.scene.getScene('GameScene'); scene.sys.sceneUpdate = () => {};
         const manager = scene.specialAbilities, ability = manager.ability, runs = getArcadeRun(game);
@@ -44,19 +45,26 @@ async function run() {
         check(`${character}: special creates no physical green bullets`, scene.playerProjectiles.getLength() === 0);
         check(`${character}: defeats replenish the configured wave count`, runs.getSpecialCharge(scene.runId) === levels[0].enemies.count);
         if (character === 'alex') {
+            const bounds = scene.physics.world.bounds;
+            check('Alex effect covers the entire arena beneath the player', manager.background.visible && manager.background.x === bounds.x && manager.background.y === bounds.y && manager.background.displayWidth === bounds.width && manager.background.displayHeight === bounds.height && manager.background.depth < manager.pose.depth);
             check('Alex green impacts use enemy coordinates', JSON.stringify(manager.impactPositions) === JSON.stringify(targets));
             manager.update(100); check('Alex machine gun animation advances', manager.pose.frame.name === '4');
             manager.update(config.alex.impactMs); check('Alex impact visuals expire', manager.impactPositions.length === 0 && manager.electricity.commandBuffer.length === 0);
+            check('Alex arena animation advances every 100 ms', manager.background.visible && manager.background.frame.name === 5);
+            manager.update(100);
+            check('Alex arena animation loops while the special remains active', manager.background.visible && manager.background.frame.name === 0 && ability.state === 'active');
         } else check('Lua original electricity remains visible', manager.electricity.commandBuffer.length > 0);
         scene.player.wasd.D.isDown = true; scene.player.update();
         check(`${character}: movement is preserved`, scene.player.physicsSprite.body.velocity.x === 220); scene.player.wasd.D.isDown = false;
         manager.update(config[character].durationMs + config[character].recoveryMs);
         check(`${character}: animation restores player and new kills are still required`, !manager.pose.visible && scene.player.physicsSprite.visible && ability.state === 'locked' && ability.cooldownRemaining === 0 && !ability.activate());
+        check(`${character}: arena effect hides after completion`, !manager.background?.visible);
         manager.update(100000); check(`${character}: waiting does not recharge`, runs.getSpecialCharge(scene.runId) === levels[0].enemies.count && ability.state === 'locked');
         scene.player.shootingKeys.UP.isDown = true; scene.player.update();
         check(`${character}: normal shooting restored`, scene.player.consumeShootRequest() !== null); scene.player.shootingKeys.UP.isDown = false;
         const oldPlayer = scene.player; scene.changeRoom(); tick(4); scene = game.scene.getScene('GameScene'); scene.sys.sceneUpdate = () => {};
         check(`${character}: transition cleans visuals and preserves charge`, manager.destroyed && !manager.pose.scene && !manager.electricity.scene && scene.player !== oldPlayer && getArcadeRun(game).getSpecialCharge(scene.runId) === levels[0].enemies.count);
+        check(`${character}: transition destroys the arena effect`, !manager.background?.scene);
         scene.scene.restart({ character }); tick(4); scene = game.scene.getScene('GameScene'); scene.sys.sceneUpdate = () => {};
         const cancelled = scene.specialAbilities; prime(scene); cancelled.ability.activate(); cancelled.update(100);
         scene.player.die(); cancelled.update(10000);
@@ -67,6 +75,7 @@ async function run() {
         new Projectile(scene, scene.player.x, scene.player.y, new Phaser.Math.Vector2(1, 0), 'player', scene.playerProjectiles);
         scene.player.die();
         check(`${character}: death during attack clears effects and projectiles`, scene.playerProjectiles.getLength() === 0 && !activeManager.pose.visible && activeManager.electricity.commandBuffer.length === 0);
+        check(`${character}: death hides the arena effect immediately`, !activeManager.background?.visible);
     }
     for (const character of ['alex','lua']) {
         scene.scene.restart({character});tick(4);scene=game.scene.getScene('GameScene');scene.sys.sceneUpdate=scene.update;

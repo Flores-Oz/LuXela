@@ -11,6 +11,11 @@ import { getArcadeRun } from "../systems/ArcadeRunService";
 
 /** Original 4x2 sheets, with a stable ground line on a logical 512x544 canvas. */
 export function loadSpecialAssets(scene: Phaser.Scene): void {
+    if (!scene.textures.exists("alex-special-background")) {
+        scene.load.spritesheet("alex-special-background", "assets/sprites/player/alex-special-background.png", {
+            frameWidth: 512, frameHeight: 512, endFrame: 5
+        });
+    }
     for (const character of ["alex", "lua"] as const) {
         if (scene.textures.exists(`${character}-special`)) continue;
         const frames: Record<string, object> = {};
@@ -35,6 +40,7 @@ export class SpecialAbilityManager {
     readonly ability: SpecialAbility;
     private readonly key: Phaser.Input.Keyboard.Key;
     private readonly pose: Phaser.GameObjects.Sprite;
+    private readonly background: Phaser.GameObjects.Sprite | null;
     private readonly electricity: Phaser.GameObjects.Graphics;
     private readonly hud: Phaser.GameObjects.Text;
     private destroyed = false;
@@ -63,6 +69,8 @@ export class SpecialAbilityManager {
             if(character==='alex'&&point){this.impactPositions=[...this.impactPositions,point];this.impactStartedAt=this.visualClock;}
         });
         this.key = scene.input.keyboard!.addKey(SpecialAbilityConfig.key);
+        this.background = character === "alex" ? scene.add.sprite(0, 0, "alex-special-background", 0)
+            .setOrigin(0).setDepth(8).setBlendMode(Phaser.BlendModes.SCREEN).setVisible(false) : null;
         this.pose = scene.add.sprite(player.x, player.y, `${character}-special`, "0")
             .setOrigin(0.5, 480 / 544).setScale(0.25).setDepth(10).setVisible(false);
         this.electricity = scene.add.graphics().setDepth(9);
@@ -89,6 +97,20 @@ export class SpecialAbilityManager {
 
     private render(): void {
         const ability = this.ability;
+        if (this.background) {
+            this.background.setVisible(ability.performing);
+            if (ability.performing) {
+                // World bounds cover the whole arena, including rooms larger than the camera.
+                const bounds = this.scene.physics.world.bounds;
+                const timing = SpecialAbilityConfig.alex;
+                const backgroundFrame = ability.state === "active" ? Math.floor(ability.elapsed / timing.backgroundFrameMs) % 6 :
+                    ability.state === "recovering" ? 5 : 0;
+                const alpha = ability.state === "charging" ? ability.elapsed / timing.chargeMs :
+                    ability.state === "recovering" ? 1 - ability.elapsed / timing.recoveryMs : 1;
+                this.background.setPosition(bounds.x, bounds.y).setDisplaySize(bounds.width, bounds.height)
+                    .setFrame(backgroundFrame).setAlpha(alpha);
+            }
+        }
         this.player.setSpecialPerforming(ability.performing);
         this.player.physicsSprite.setVisible(!ability.performing);
         this.pose.setVisible(ability.performing).setPosition(this.player.x, this.player.y + 32.2);
@@ -152,6 +174,7 @@ export class SpecialAbilityManager {
         this.player.setSpecialPerforming(false);
         if (this.player.physicsSprite.active) this.player.physicsSprite.setVisible(true);
         this.pose.setVisible(false);
+        this.background?.setVisible(false);
         this.electricity.clear();
         this.impactPositions = [];
         this.hud.setVisible(false);
@@ -165,6 +188,7 @@ export class SpecialAbilityManager {
         this.player.setSpecialPerforming(false);
         if (this.player.physicsSprite.active) this.player.physicsSprite.setVisible(true);
         this.pose.destroy();
+        this.background?.destroy();
         this.electricity.destroy();
         this.hud.destroy();
         this.scene.input.keyboard?.removeKey(this.key, true);
