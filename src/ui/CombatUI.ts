@@ -28,6 +28,7 @@ export class CombatPanel extends Phaser.GameObjects.Container {
         this.add(this.slices);
     }
     resize(width:number,height:number):this {
+        if(this.width===width&&this.height===height)return this;
         const cap=Math.min(width/3,this.source.cap*height/this.source.height);
         this.slices[0]!.setPosition(0,0).setDisplaySize(cap,height);
         this.slices[1]!.setPosition(cap,0).setDisplaySize(width-2*cap,height);
@@ -51,6 +52,7 @@ export function combatUILayout(width:number,height:number){
         progress:{x:margin,y:margin,width:progressWidth,height:compact?64:76},
         stats:{x:compact?width-margin-statsWidth:(width-statsWidth)/2,y:margin,width:statsWidth,height:compact?64:76},
         pause:{x:width-margin,y:compact?84:margin},
+        exit:{x:(width-Math.min(460,width-2*margin))/2,y:(height-80)/2,width:Math.min(460,width-2*margin),height:80},
         special:{x:margin,y:height-116,width:specialWidth,height:104},
         briefing:{x:compact?margin:width-margin-briefingWidth,y:compact?height-216:height-96,width:briefingWidth,height:84},
         boss:{x:(width-Math.min(720,width-2*margin))/2,y:compact?132:104,width:Math.min(720,width-2*margin),height:compact?72:84},gap

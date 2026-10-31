@@ -7,7 +7,7 @@ import {anchorCombatUI,CombatPanel,combatUILayout} from './CombatUI';
 export interface GameHUDState {
     level:number;totalLevels:number;score:number;enemies:number;
     wave?:number;totalWaves?:number;special?:number;specialRequired?:number;
-    specialState?:AbilityState;notice?:string;specialCooldown?:number;bossEncounter?:boolean;
+    specialState?:AbilityState;notice?:string;specialCooldown?:number;bossEncounter?:boolean;exitUnlocked?:boolean;
 }
 
 /** All objects are allocated once and remain in screen pixels as the camera moves/zooms. */
@@ -15,12 +15,16 @@ export class GameHUD {
     readonly root:Phaser.GameObjects.Container;
     readonly statsRoot:Phaser.GameObjects.Container;
     readonly specialRoot:Phaser.GameObjects.Container;
+    readonly exitRoot:Phaser.GameObjects.Container;
     readonly text:Phaser.GameObjects.Text;
     private readonly scene:Phaser.Scene;
     private readonly character:PlayerCharacter;
     private readonly progressPanel:CombatPanel;
     private readonly statsPanel:CombatPanel;
     private readonly specialPanel:CombatPanel;
+    private readonly exitPanel:CombatPanel;
+    private readonly exitTitle:Phaser.GameObjects.Text;
+    private readonly exitHint:Phaser.GameObjects.Text;
     private readonly wave:Phaser.GameObjects.Text;
     private readonly statsLabel:Phaser.GameObjects.Text;
     private readonly scoreLabel:Phaser.GameObjects.Text;
@@ -39,6 +43,11 @@ export class GameHUD {
         const text=(size:number,color='#eaf3fa')=>scene.add.text(0,0,'',{fontFamily:UITheme.font,fontSize:size,color}).setResolution(2);
         const root=(name:string)=>scene.add.container(0,0).setDepth(100).setScrollFactor(0).setName(name);
         this.root=root('combat-progress');this.statsRoot=root('combat-stats');this.specialRoot=root('combat-special');
+        this.exitRoot=root('combat-exit-unlocked');
+        this.exitPanel=new CombatPanel(scene,'level-banner-frame');
+        this.exitTitle=text(18,'#ffd477').setText('SALIDA DESBLOQUEADA').setFontStyle('bold').setStroke('#07111c',2).setOrigin(.5,0);
+        this.exitHint=text(12,'#ffe7b0').setText('Dirígete a una puerta para continuar.').setOrigin(.5,0);
+        this.exitRoot.add([this.exitPanel,this.exitTitle,this.exitHint]);
         this.progressPanel=new CombatPanel(scene,'hud-panel-frame');this.statsPanel=new CombatPanel(scene,'hud-panel-frame');this.specialPanel=new CombatPanel(scene,'hud-panel-frame');
         this.text=text(24);this.wave=text(11,'#adcadf');
         const progressLabel=text(9,'#91b9d5').setText('HABITACIÓN').setPosition(18,11);
@@ -60,6 +69,9 @@ export class GameHUD {
     update(state:GameHUDState):void {this.state=state;this.layout();}
     layout():void {
         const l=combatUILayout(this.scene.scale.width,this.scene.scale.height),s=this.state;
+        this.exitPanel.resize(l.exit.width,l.exit.height);this.exitRoot.setSize(l.exit.width,l.exit.height).setVisible(s.exitUnlocked===true);
+        this.exitTitle.setPosition(l.exit.width/2,17);this.exitHint.setPosition(l.exit.width/2,45);
+        anchorCombatUI(this.scene,this.exitRoot,l.exit.x,l.exit.y);
         for(const [root,panel,box]of [[this.root,this.progressPanel,l.progress],[this.statsRoot,this.statsPanel,l.stats],[this.specialRoot,this.specialPanel,l.special]] as const){
             panel.resize(box.width,box.height);root.setSize(box.width,box.height);anchorCombatUI(this.scene,root,box.x,box.y);
         }
@@ -76,12 +88,12 @@ export class GameHUD {
         const status=ready?'LISTA · PRESIONA Q':s.specialState==='charging'?'CARGANDO':active?'EN EJECUCIÓN':s.specialCooldown?`ESPERA ${Math.ceil(s.specialCooldown/1000)} s`:'CARGA POR BAJAS';
         this.abilityStatus.setText(status).setColor(ready?characters[this.character].accent:'#b9cedd').setPosition(62,38);
         this.chargeLabel.setText(`${count} / ${required} BAJAS`).setPosition(18,82);
-        this.notice.setText(s.notice??'').setFontSize(9).setPosition(l.special.width-18,84).setOrigin(1,0);
+        this.notice.setText(s.exitUnlocked||s.notice==='SALIDA DISPONIBLE'?'':s.notice??'').setFontSize(9).setPosition(l.special.width-18,84).setOrigin(1,0);
         const width=l.special.width-36,gap=4,segments=required,cell=(width-(segments-1)*gap)/segments;
         const color=Phaser.Display.Color.HexStringToColor(characters[this.character].accent).color;
         this.meter.clear();
         for(let i=0;i<segments;i++)this.meter.fillStyle(i<count?color:0x244358,i<count?1:.9).fillRect(18+i*(cell+gap),63,cell,9);
         if(ready)this.meter.lineStyle(1,color,.85).strokeRect(15,60,width+6,15);
     }
-    destroy():void {this.root.destroy(true);this.statsRoot.destroy(true);this.specialRoot.destroy(true);}
+    destroy():void {this.root.destroy(true);this.statsRoot.destroy(true);this.specialRoot.destroy(true);this.exitRoot.destroy(true);}
 }

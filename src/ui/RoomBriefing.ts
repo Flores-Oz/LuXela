@@ -18,7 +18,10 @@ export class RoomBriefing {
         this.hint=scene.add.text(0,0,hint,{fontFamily:UITheme.font,fontSize:12,color:'#b0c7d9',lineSpacing:3}).setResolution(2);
         this.root=scene.add.container(0,0,[this.panel,this.title,this.hint]).setScrollFactor(0).setDepth(99).setName('room-briefing');this.layout();
     }
-    update(delta:number):void {this.elapsed+=delta;this.root.setAlpha(Phaser.Math.Clamp((8000-this.elapsed)/1000,0,1));}
+    update(delta:number):void {
+        if(this.elapsed>=8000)return;
+        this.elapsed+=delta;this.root.setAlpha(Phaser.Math.Clamp((8000-this.elapsed)/1000,0,1));
+    }
     layout():void {
         const layout=combatUILayout(this.scene.scale.width,this.scene.scale.height),box=layout.briefing;
         this.panel.resize(box.width,box.height);this.root.setSize(box.width,box.height);

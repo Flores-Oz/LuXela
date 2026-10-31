@@ -44,7 +44,7 @@ async function run(){
                 check(`${character}: trial boss has 72 health, two phases and shared effects`,s.bossEncounter.boss.controller.health===72&&!!s.bossEncounter.effects&&s.bossEncounter.boss.controller.config.phasePatterns.length===2);
                 s.bossEncounter.update(1500);s.bossEncounter.boss.receiveDamage(999);
                 await until(()=>s.combatState==='playing'&&s.bossEncounter.boss.isDead());
-                check(`${character}: first destruction unlocks exit without victory or epilogue`,!runs.canComplete(character,runId)&&s.doors.currentState==='unlocked'&&!game.scene.isActive('CompletionScene')&&!game.scene.isActive('VisualNovelScene'));
+                check(`${character}: first destruction unlocks exit without victory or epilogue`,!runs.canComplete(character,runId)&&s.doors.currentState==='unlocked'&&s.hud.exitRoot.visible&&!game.scene.isActive('CompletionScene')&&!game.scene.isActive('VisualNovelScene'));
             }else{
                 check(`${character} level ${index+1}: safe distributed spawns and active cap`,s.enemies.getLength()===level.enemies.count&&s.enemies.getLength()<=14&&s.enemies.getChildren().every(enemy=>!s.walls.getChildren().some(w=>Phaser.Geom.Intersects.RectangleToRectangle(enemy.body,w.body))));
                 if(index===3)check(`${character}: introductory orange charges in 650ms with fourteen robots`,s.enemies.getChildren().every(e=>e.attack.config.chargeDuration===650)&&s.enemies.getLength()===14);
@@ -55,7 +55,7 @@ async function run(){
                     s.enemyManager.defeatLivingEnemies();s.waves.update(1100);
                 }
                 check(`${character} level ${index+1}: every wave teleports and cancelled effects are cleaned`,teleports&&!s.children.getChildren().some(child=>child.name==='robot-spawn-effect'));
-                check(`${character} level ${index+1}: every configured wave completes`,s.doors.currentState==='unlocked');
+                check(`${character} level ${index+1}: every configured wave completes`,s.doors.currentState==='unlocked'&&s.hud.exitRoot.visible);
             }
             s.changeRoom();
             if(index===9){

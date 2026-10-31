@@ -45,6 +45,7 @@ export class SpecialAbilityManager {
     private readonly hud: Phaser.GameObjects.Text;
     private destroyed = false;
     private visualClock = 0;
+    private idleVisualKey='';
     private impactPositions: readonly { x: number; y: number }[] = [];
     private impactStartedAt = 0;
     private readonly advanceCooldown: (delta: number) => void;
@@ -97,6 +98,9 @@ export class SpecialAbilityManager {
 
     private render(): void {
         const ability = this.ability;
+        const idleKey=`${ability.state}:${Math.ceil(ability.cooldownRemaining/1000)}`;
+        if(!ability.performing&&this.idleVisualKey===idleKey)return;
+        this.idleVisualKey=ability.performing?'':idleKey;
         if (this.background) {
             this.background.setVisible(ability.performing);
             if (ability.performing) {

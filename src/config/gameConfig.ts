@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import {runtimeRenderer} from './RuntimeRenderer';
 import { GameSettings } from "./GameSettings";
 import { GameScene } from "../scenes/GameScene";
 import { GameOverScene } from "../scenes/GameOverScene";
@@ -10,7 +11,7 @@ import { CompletionScene } from "../scenes/CompletionScene";
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
 
-    type: Phaser.AUTO,
+    type: runtimeRenderer.type==='canvas'?Phaser.CANVAS:Phaser.AUTO,
 
     width: 1024,
     height: 768,

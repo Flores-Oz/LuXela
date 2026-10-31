@@ -1,0 +1,35 @@
+{
+  "renderer": "Canvas",
+  "viewport": [
+    1920,
+    990
+  ],
+  "frames": {
+    "mean": 16.797777777579096,
+    "p95": 21,
+    "max": 34.80000001192093
+  },
+  "render": {
+    "mean": 12.454143645025749,
+    "p95": 16.30000001192093,
+    "max": 32.19999998807907
+  },
+  "calls": {
+    "graphicsClear": 405,
+    "bossAI": 181,
+    "bossHud": 181,
+    "textRasterization": 12
+  },
+  "cpuMs": {
+    "graphicsClear": 1.0000000596046448,
+    "bossAI": 9.79999989271164,
+    "bossHud": 2.8000000715255737,
+    "textRasterization": 0.5999999642372131
+  },
+  "children": 249,
+  "robots": 6,
+  "projectiles": 4,
+  "health": 45,
+  "consoleErrors": [],
+  "generatedAt": "2026-10-30T23:30:52.159Z"
+}

@@ -17,7 +17,8 @@ import { LevelManager } from "../levels/LevelManager";
 import { isLevelIndex } from "../levels/levels";
 import { UITheme } from "../config/UITheme";
 import { GameHUD } from "../ui/GameHUD";
-import {loadCombatUIAssets,combatUILayout,anchorCombatUI} from '../ui/CombatUI';
+import {loadCombatUIAssets} from '../ui/CombatUI';
+import {PauseControl} from '../ui/PauseControl';
 import { RoomBriefing } from "../ui/RoomBriefing";
 import { WaveManager } from "../levels/WaveManager";
 import { getWaves, type WaveConfig } from "../levels/WaveConfig";
@@ -60,7 +61,7 @@ export class GameScene extends Phaser.Scene {
     private roomHeight = 0;
     private hud: GameHUD | null = null;
     private briefing: RoomBriefing | null = null;
-    private pauseButton: Phaser.GameObjects.Text | null = null;
+    private pauseButton: PauseControl | null = null;
 
     private enemyManager: EnemyManager | null = null;
     private waves: WaveManager | null = null;
@@ -254,8 +255,7 @@ export class GameScene extends Phaser.Scene {
         });
         this.hud = new GameHUD(this, { level: this.roomIndex + 1, totalLevels: this.levels.count,
             score: getArcadeRun(this.game).getScore(this.runId), enemies: this.enemyManager.aliveCount }, this.character);
-        this.pauseButton = this.add.text(0, 16, "PAUSA · ESC", { fontFamily: UITheme.font, fontSize: "12px", color: '#c8e9ff', backgroundColor: '#102d43', padding: { x: 12, y: 15 } })
-            .setScrollFactor(0).setDepth(100).setOrigin(1, 0).setInteractive({ useHandCursor: true }).on("pointerdown", this.pauseGame, this);
+        this.pauseButton = new PauseControl(this,()=>this.pauseGame());
         this.events.on(CombatEvents.ENEMY_DEFEATED, this.enemyDefeated, this);
         this.events.on(CombatEvents.ENEMY_COUNT_CHANGED, this.updateHUD, this);
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -451,6 +451,7 @@ export class GameScene extends Phaser.Scene {
         this.playerProjectiles.clear(true, true);
         this.enemyProjectiles.clear(true, true);
         this.doors?.unlock();
+        this.updateHUD();
         this.events.emit(CombatEvents.ROOM_CLEARED);
     }
 
@@ -486,13 +487,14 @@ export class GameScene extends Phaser.Scene {
 
     private updateHUD(): void {
         const config = this.levels.getLevel(this.roomIndex);
-        const notice = config.boss ? 'E.X.P.-01 QUIMERA' : config.availability === "reserved" ? "JEFE PENDIENTE" : this.waves?.isComplete ? "SALIDA DISPONIBLE" : this.waves?.waitingForSpace ? "LIBERA LA ZONA DE APARICIÓN" :
+        const exitUnlocked=this.doors?.currentState==='unlocked';
+        const notice = exitUnlocked ? 'SALIDA DISPONIBLE' : config.boss ? 'E.X.P.-01 QUIMERA' : config.availability === "reserved" ? "JEFE PENDIENTE" : this.waves?.waitingForSpace ? "LIBERA LA ZONA DE APARICIÓN" :
             this.waves?.state === "starting" ? "PREPARANDO OLEADA" : config.encounter === "special" ? "ENCUENTRO ESPECIAL" : config.encounter === "final" ? "ENCUENTRO FINAL" : "";
         this.hud?.update({ level: this.roomIndex + 1, totalLevels: this.levels.count,
             score: getArcadeRun(this.game).getScore(this.runId), enemies: (this.enemyManager?.aliveCount ?? 0)+(this.bossEncounter&&!this.bossEncounter.boss.isDead()?1:0),bossEncounter:!!config.boss,
             wave: this.waves?.waveNumber ?? 0, totalWaves: this.waves?.totalWaves ?? 0,
             special: getArcadeRun(this.game).getSpecialCharge(this.runId), specialRequired: SpecialAbilityConfig[this.character].killsRequired,
-            specialState: this.specialAbilities?.ability.state, specialCooldown: this.specialAbilities?.ability.cooldownRemaining, notice });
+            specialState: this.specialAbilities?.ability.state, specialCooldown: this.specialAbilities?.ability.cooldownRemaining, notice,exitUnlocked });
     }
 
     private pauseGame(event?: KeyboardEvent): void {
@@ -514,7 +516,6 @@ export class GameScene extends Phaser.Scene {
         this.briefing?.layout();
         if(this.bossEncounter)this.bossEncounter.healthBar.update(this.bossEncounter.boss.controller,0);
         this.bossEncounter?.finisher.layout();
-        const pause=combatUILayout(this.scale.width,this.scale.height).pause;
-        if(this.pauseButton)anchorCombatUI(this,this.pauseButton,pause.x,pause.y);
+        this.pauseButton?.layout();
     }
 }

@@ -1,0 +1,35 @@
+{
+  "renderer": "WebGL",
+  "viewport": [
+    1920,
+    990
+  ],
+  "frames": {
+    "mean": 22.333333333333332,
+    "p95": 28.69999998807907,
+    "max": 42.5
+  },
+  "render": {
+    "mean": 1.6469613241227292,
+    "p95": 2.5,
+    "max": 18.69999998807907
+  },
+  "calls": {
+    "graphicsClear": 731,
+    "bossAI": 181,
+    "bossHud": 181,
+    "textRasterization": 13
+  },
+  "cpuMs": {
+    "graphicsClear": 2.7000001072883606,
+    "bossAI": 10.499999642372131,
+    "bossHud": 10.100000262260437,
+    "textRasterization": 2
+  },
+  "children": 214,
+  "robots": 6,
+  "projectiles": 5,
+  "health": 45,
+  "consoleErrors": [],
+  "generatedAt": "2026-10-30T23:22:20.102Z"
+}

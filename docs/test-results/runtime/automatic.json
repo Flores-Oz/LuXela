@@ -1,0 +1,42 @@
+{
+  "renderer": "Canvas",
+  "selection": {
+    "type": "canvas",
+    "reason": "software-renderer",
+    "device": "ANGLE (Microsoft, Microsoft Basic Render Driver (0x0000008C) Direct3D11 vs_5_0 ps_5_0, D3D11)"
+  },
+  "viewport": [
+    1920,
+    990
+  ],
+  "frames": {
+    "mean": 17.429999999867544,
+    "p95": 21.30000001192093,
+    "max": 23.099999964237213
+  },
+  "render": {
+    "mean": 13.245303868918128,
+    "p95": 17.100000023841858,
+    "max": 18.900000035762787
+  },
+  "calls": {
+    "graphicsClear": 404,
+    "bossAI": 181,
+    "bossHud": 181,
+    "sceneUpdate": 181,
+    "textRasterization": 12
+  },
+  "cpuMs": {
+    "graphicsClear": 1.3999998569488525,
+    "bossAI": 11.499999940395355,
+    "bossHud": 3.699999988079071,
+    "sceneUpdate": 55.999999701976776,
+    "textRasterization": 0.30000001192092896
+  },
+  "children": 250,
+  "robots": 6,
+  "projectiles": 5,
+  "health": 45,
+  "consoleErrors": [],
+  "generatedAt": "2026-10-30T23:32:54.684Z"
+}
