@@ -32,7 +32,7 @@ const active = key => game.scene.isActive(key);
 const gameplay = () => game.scene.getScene('GameScene');
 const selector = () => document.querySelector('.character-select');
 const quietEnemies = scene => scene.enemies.getChildren().forEach(enemy => { enemy.stop(); enemy.updateBehavior = () => null; });
-const enterGameplay = async () => { await until(() => active('GameScene') && gameplay().player); quietEnemies(gameplay()); await pause(40); return gameplay(); };
+const enterGameplay = async () => { await until(() => active('ControlsScene') || (active('GameScene') && gameplay().player)); document.querySelector('.controls-start')?.click(); await until(() => active('GameScene') && gameplay().player); quietEnemies(gameplay()); await pause(40); return gameplay(); };
 const metrics = scene => ({ bodies: scene.physics.world.bodies.size, walls: scene.physics.world.staticBodies.size,
     colliders: scene.physics.world.colliders.getActive().length,
     keys: Object.values(scene.input.keyboard.keys).filter(Boolean).length,
@@ -83,6 +83,8 @@ async function run() {
     game.scene.getScene('CharacterSelectScene').scene.start('GameScene', { character: 'alex', roomIndex: 0 });
     let scene = await enterGameplay();
     const baseline = metrics(scene);
+    // Character artwork can use different child counts; compare repeated runs per character.
+    const baselines = { alex: baseline };
     for (let cycle = 0; cycle < 12; cycle++) {
         const character = cycle % 2 ? 'lua' : 'alex';
         const manager = scene.specialAbilities;
@@ -91,7 +93,8 @@ async function run() {
         scene.scene.restart({ character, roomIndex: 0 });
         await until(() => gameplay().specialAbilities && gameplay().specialAbilities !== manager && gameplay().character === character);
         scene = await enterGameplay();
-        check(`Ciclo ${cycle + 1}: cuerpos, paredes, colliders, teclas y objetos estables`, JSON.stringify(metrics(scene)) === JSON.stringify(baseline));
+        baselines[character] ??= metrics(scene);
+        check(`Ciclo ${cycle + 1}: cuerpos, paredes, colliders, teclas y objetos estables`, JSON.stringify(metrics(scene)) === JSON.stringify(baselines[character]));
         check(`Ciclo ${cycle + 1}: efectos anteriores destruidos y carga reiniciada`, manager.destroyed && !manager.pose.scene && !manager.electricity.scene && !manager.hud.scene && scene.specialAbilities.ability.state === 'locked' && game.scene.getScenes(true).length === 1);
     }
     window.sprint4Results = { status: 'passed', count: checks.length, checks, cycles: 12, baseline, renderer: 'Canvas' };

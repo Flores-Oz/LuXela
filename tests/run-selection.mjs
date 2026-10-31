@@ -1,4 +1,5 @@
 import { openBrowserSession } from './browser-session.mjs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 const { send, evaluate, waitUntil, errors, baseUrl, close } = await openBrowserSession();
 const key = async (key, code, windowsVirtualKeyCode) => {
     await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode,
@@ -10,6 +11,18 @@ const click = async selector => {
         return {x:r.left+r.width/2, y:r.top+r.height/2};})()`);
     await send('Input.dispatchMouseEvent', { type: 'mousePressed', ...point, button: 'left', clickCount: 1 });
     await send('Input.dispatchMouseEvent', { type: 'mouseReleased', ...point, button: 'left', clickCount: 1 });
+};
+const startFromControls = async () => {
+    await waitUntil("window.selectionGame.scene.isActive('ControlsScene') && document.querySelector('.controls-start')");
+    await waitUntil("!document.querySelector('.scene-transition')");
+    if (await evaluate("window.selectionGame.scene.isActive('GameScene') || document.querySelector('.intro-screen') !== null")) throw new Error('Controls overlapped narrative or gameplay');
+    await send('Input.dispatchKeyEvent', {type:'keyDown', key:'Enter', code:'Enter', windowsVirtualKeyCode:13, autoRepeat:true});
+    await send('Input.dispatchKeyEvent', {type:'keyUp', key:'Enter', code:'Enter', windowsVirtualKeyCode:13});
+    if (!(await evaluate("window.selectionGame.scene.isActive('ControlsScene')"))) throw new Error('Held Enter skipped controls');
+    await key('Enter', 'Enter', 13);
+    await waitUntil("window.selectionGame.scene.isActive('GameScene')");
+    await waitUntil("!document.querySelector('.scene-transition')");
+    if (await evaluate("document.querySelector('.controls-screen') !== null")) throw new Error('Controls DOM not cleaned up');
 };
 try {
     await send('Emulation.setDeviceMetricsOverride', { width: 1200, height: 900, deviceScaleFactor: 1, mobile: false });
@@ -45,7 +58,7 @@ try {
     await key(' ', 'Space', 32);
     await click('.intro-next');
     await click('.intro-next');
-    await waitUntil("window.selectionGame.scene.isActive('GameScene')");
+    await startFromControls();
     if (!(await evaluate("window.selectionGame.scene.getScene('GameScene').character === 'lua'"))) {
         throw new Error('Native selector created wrong character');
     }
@@ -59,7 +72,7 @@ try {
         await waitUntil("window.selectionGame.scene.isActive('VisualNovelScene') && document.querySelector('.vn-skip')");
         if (skipWithKey) await key('Escape', 'Escape', 27);
         else await click('.vn-skip');
-        await waitUntil("window.selectionGame.scene.isActive('GameScene')");
+        await startFromControls();
         if (!(await evaluate(`window.selectionGame.scene.getScene('GameScene').character === '${id}'`))) {
             throw new Error('Skip replaced the selected character');
         }
@@ -111,6 +124,37 @@ try {
         if (!fits) throw new Error(`Introduction overflow at ${width}x${height}`);
         result.introLayoutTests.push(`${width}x${height}: diálogo y controles visibles sin solaparse`);
     }
+    result.controlsLayoutTests = [];
+    // Test output is outside the game viewport; hide it for actual UI captures.
+    await evaluate("document.getElementById('results').style.display='none'; document.documentElement.style.overflow='hidden'; document.body.style.overflow='hidden'; document.querySelector('canvas').style.display='block'");
+    mkdirSync('docs/test-results/controls', { recursive: true });
+    for (const character of ['lua', 'alex']) {
+        if (character === 'alex') {
+            await evaluate("void window.selectionGame.scene.getScene('ControlsScene').scene.start('VisualNovelScene', {route:'alex', resume:false})");
+            await waitUntil("document.querySelector('.vn-skip')");
+        }
+        await click('.vn-skip');
+        await waitUntil("window.selectionGame.scene.isActive('ControlsScene') && document.querySelector('.controls-screen')");
+        await waitUntil("!document.querySelector('.scene-transition')");
+        for (const [width, height] of [[1280, 800], [800, 450], [390, 844]]) {
+            await send('Emulation.setDeviceMetricsOverride', {width, height, deviceScaleFactor:1, mobile:false});
+            await new Promise(r => setTimeout(r, 200));
+            const fits = await evaluate(`(() => {
+                const root = document.querySelector('.controls-screen'); root.scrollTop = 0;
+                const rect = root.getBoundingClientRect();
+                return root.scrollWidth <= root.clientWidth + 1 && rect.left >= -1 && rect.right <= innerWidth + 1 &&
+                    [...root.querySelectorAll('article')].every(a => a.scrollWidth <= a.clientWidth + 1) &&
+                    !window.selectionGame.scene.isActive('GameScene');
+            })()`);
+            if (!fits) throw new Error(`Controls overflow: ${character} ${width}x${height}`);
+            const screenshot = await send('Page.captureScreenshot', {format:'png'});
+            writeFileSync(`docs/test-results/controls/${character}-${width}.png`, Buffer.from(screenshot.data, 'base64'));
+            await evaluate("document.querySelector('.controls-start').scrollIntoView({block:'end'})");
+            if (!(await evaluate("(() => {const r=document.querySelector('.controls-start').getBoundingClientRect();return r.top>=0 && r.bottom<=innerHeight+1;})()"))) throw new Error('Start button unreachable');
+            result.controlsLayoutTests.push(`${character}: ${width}x${height}, readable cards and reachable start button`);
+        }
+    }
+    writeFileSync('docs/test-results/controls/integration.json', JSON.stringify({status:'passed', count:result.count, nativeUiTests:result.nativeUiTests, controlsLayoutTests:result.controlsLayoutTests, consoleErrors:errors}, null, 2));
     await evaluate('localStorage.removeItem(window.selectionStorageKey);localStorage.removeItem(window.selectionNarrativeKey)');
     console.log(JSON.stringify({ ...result, consoleErrors: errors }, null, 2));
     if (errors.length) process.exitCode = 1;

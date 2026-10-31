@@ -15,7 +15,7 @@
 .presentation-actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-width: min(280px, 100%); }
 .presentation-actions button { text-align: left; color: var(--ui-text); font: inherit; padding: 14px 22px; border: 1px solid transparent; border-radius: 0; background: transparent; cursor: pointer; transition: background .2s, border-color .2s; }
 .presentation-actions button.is-primary { color: var(--ui-accent); border-color: var(--ui-border); }
-.presentation-actions button:hover, .presentation-actions button:focus-visible { background: #b4dfbd14; border-color: var(--ui-accent); outline: none; }
+.presentation-actions button:hover, .presentation-actions button:focus-visible { background: #8dcfff14; border-color: var(--ui-accent); outline: none; }
 .presentation-footer { position: absolute; bottom: 25px; left: clamp(24px, 6vw, 100px); right: clamp(24px, 6vw, 100px); display: flex; justify-content: space-between; gap: 16px; letter-spacing: .15em; font-size: 10px; color: var(--ui-muted); }
 .pause-screen { background: #080d10a8; }
 .pause-screen .presentation-shade { background: linear-gradient(90deg, #080d10aa, transparent); }
@@ -40,7 +40,9 @@
 .pause-screen .presentation-shade { background: #00000048; }
 .pause-screen .presentation-brand, .pause-screen .presentation-footer,
 .completion-screen .presentation-brand, .completion-screen .presentation-footer { display: none; }
-.pause-screen .presentation-panel { width: min(580px, 94%); height: min(800px, 94%); min-height: 0; margin: 0 auto; top: 50%; transform: translateY(-50%); padding: 0; background: url('/assets/ui/pause-overlay.png') center / 300% 135% no-repeat; }
+.pause-screen .presentation-panel { width: min(580px, 94%); height: min(800px, 94%); min-height: 0; margin: 0 auto; top: 50%; transform: translateY(-50%); padding: 0; }
+/* Recolor only the decorative artwork, keeping text and the room behind it intact. */
+.pause-screen .presentation-panel::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: url('/assets/ui/pause-overlay.png') center / 300% 135% no-repeat; filter: hue-rotate(55deg) saturate(.85); }
 .pause-screen .presentation-eyebrow, .pause-screen .presentation-subtitle { display: none; }
 .pause-screen .presentation-panel h1 { position: absolute; top: 12%; left: 10%; right: 10%; max-width: none; margin: 0; text-align: center; font-size: clamp(32px, 7vh, 64px); }
 .pause-screen .presentation-actions { position: absolute; top: 36%; bottom: 12%; left: 12%; right: 12%; min-width: 0; justify-content: center; gap: clamp(6px, 2vh, 20px); }
@@ -49,7 +51,7 @@
 .pause-screen .presentation-actions button:hover, .pause-screen .presentation-actions button:focus-visible { border-color: var(--ui-accent); }
 .pause-screen .presentation-actions button::before { content: ''; position: absolute; left: 14px; top: 50%; transform: translateY(-50%); border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 7px solid var(--ui-accent); opacity: 0; }
 .pause-screen .presentation-actions button:hover::before, .pause-screen .presentation-actions button:focus::before { opacity: 1; }
-.presentation-actions button:active { background: #b4dfbd28; }
+.presentation-actions button:active { background: #8dcfff28; }
 .completion-screen .presentation-decoration { background: url('/assets/ui/completion-overlay.png') center / 100% 100% no-repeat; }
 .completion-screen .presentation-shade { background: #080d104d; }
 .completion-screen .presentation-panel { display: block; padding: 0; }

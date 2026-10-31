@@ -34,7 +34,7 @@ export class BossFinisher {
         this.graphics=scene.add.graphics();
         const style={fontFamily:UITheme.font,fontSize:'22px',color:UITheme.text,align:'center' as const};
         this.title=scene.add.text(0,0,'REMATE DISPONIBLE',style).setOrigin(.5);
-        this.key=scene.add.text(0,0,'',{...style,fontSize:'38px',color:UITheme.accent,padding:{x:28,y:12},backgroundColor:'#18292b'}).setOrigin(.5).setScrollFactor(0).setInteractive({useHandCursor:true});
+        this.key=scene.add.text(0,0,'',{...style,fontSize:'38px',color:UITheme.accent,padding:{x:28,y:12},backgroundColor:'#18344a'}).setOrigin(.5).setScrollFactor(0).setInteractive({useHandCursor:true});
         this.hint=scene.add.text(0,0,'',{...style,fontSize:'14px',lineSpacing:6}).setOrigin(.5);
         this.portrait=scene.add.image(0,0,`boss-finisher-${character}`,0).setVisible(false);
         this.root=scene.add.container(0,0,[this.graphics,this.portrait,this.title,this.key,this.hint]).setScrollFactor(0).setDepth(200).setVisible(false).setName('boss-finisher');

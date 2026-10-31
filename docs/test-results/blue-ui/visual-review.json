@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "colors": {
+    "menu": "rgb(141, 207, 255)",
+    "dialogue": {
+      "button": "rgb(141, 207, 255)",
+      "frame": "hue-rotate(55deg) saturate(0.85)",
+      "indicator": "hue-rotate(55deg) saturate(0.85)"
+    },
+    "pause": {
+      "button": "rgb(141, 207, 255)",
+      "frame": "hue-rotate(55deg) saturate(0.85)"
+    },
+    "retry": "#8dcfff"
+  },
+  "consoleErrors": []
+}

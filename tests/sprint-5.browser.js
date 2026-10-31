@@ -25,7 +25,7 @@ window.sprint5Game = game;
 const active = key => game.scene.isActive(key);
 const scene = () => game.scene.getScene('GameScene');
 const quiet = () => scene().enemies.getChildren().forEach(enemy => { enemy.stop(); enemy.updateBehavior=()=>null; });
-const entered = async () => { await until(()=>active('GameScene') && scene().player); quiet(); await delay(40); return scene(); };
+const entered = async () => { await until(()=>active('ControlsScene') || (active('GameScene') && scene().player)); document.querySelector('.controls-start')?.click(); await until(()=>active('GameScene') && scene().player); quiet(); await delay(40); return scene(); };
 const button = (root,text) => [...document.querySelectorAll(`${root} button`)].find(b=>b.textContent===text);
 const main = async () => { await until(()=>active('MainMenuScene') && document.querySelector('.main-screen')); };
 const select = async character => {
@@ -39,7 +39,7 @@ const prime = gameplay => { for(let i=0;i<10;i++)getArcadeRun(game).awardKill(ga
 async function run() {
     await main();
     check('Menú principal es el inicio, sin gameplay', !active('GameScene') && !unlocks.isUnlocked('alex') && !unlocks.isUnlocked('lua'));
-    check('Tema compartido aplicado al menú', document.querySelector('.main-screen').style.getPropertyValue('--ui-accent') === '#b4dfbd');
+    check('Tema compartido aplicado al menú', document.querySelector('.main-screen').style.getPropertyValue('--ui-accent') === '#8dcfff');
     check('Canvas ocupa el viewport', game.canvas.width===innerWidth && game.canvas.height===innerHeight);
     const cacheA=loadIllustration('assets/sprites/player/alex-special-background.png');
     check('Ilustraciones reutilizan la misma carga', cacheA===loadIllustration('assets/sprites/player/alex-special-background.png'));

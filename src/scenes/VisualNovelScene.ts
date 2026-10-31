@@ -11,6 +11,7 @@ import { VisualNovelView } from "../ui/VisualNovelView";
 import { mountSceneView } from "../ui/mountSceneView";
 import { getArcadeRun } from "../systems/ArcadeRunService";
 import { isLevelIndex } from "../levels/levels";
+import { startSceneTransition } from "../ui/SceneTransition";
 
 export class VisualNovelScene extends Phaser.Scene {
     private request: Partial<NarrativeRequest> = {};
@@ -114,8 +115,12 @@ export class VisualNovelScene extends Phaser.Scene {
         } else {
             if(this.sequence.id===`${this.request.route}_quimera_intro`&&destination?.kind==='game'&&destination.roomIndex===10&&destination.runId!==undefined)getArcadeRun(this.game).acknowledgeBossIntro(destination.runId);
             this.saves.save(this.request.route, { chapterId: this.sequence.chapterId, sequenceId: this.sequence.id, entryIndex: this.sequence.entries.length, status });
-            this.scene.start("GameScene", { character: this.request.route, roomIndex: destination?.roomIndex ?? this.request.returnTo?.roomIndex ?? 0,
-                runId: destination?.runId ?? this.request.returnTo?.runId });
+            const roomIndex = destination?.roomIndex ?? this.request.returnTo?.roomIndex ?? 0;
+            const isIntroduction = this.sequence.id === new NarrativeRouteManager().resolve(this.request.route)?.id;
+            const data = { character: this.request.route, roomIndex,
+                runId: destination?.runId ?? this.request.returnTo?.runId };
+            if (isIntroduction && roomIndex === 0) startSceneTransition(this, "ControlsScene", data);
+            else this.scene.start("GameScene", data);
         }
     }
     private reject(notice: string): void { this.scene.start("CharacterSelectScene", { notice }); }

@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "checks": [
+    "Selection and narrative integration passed",
+    "Narrative handoff immediately covers the viewport",
+    "Controls reveal without starting combat",
+    "Game handoff immediately has a loading panel",
+    "Panel remains visible during delayed asset loading",
+    "Destination is ready and loading DOM is released",
+    "Red source uses the new 887x1774 sheet",
+    "Red frames preserve the 64px physics/render contract",
+    "All 53 used red animation frames contain visible artwork"
+  ],
+  "consoleErrors": []
+}

@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "count": 186,
+  "nativeUiTests": [
+    "Escritura y Enter canjean Alex",
+    "Clic canjea Lua",
+    "Flechas y Enter seleccionan Lua",
+    "Enter mantenido no atraviesa transición",
+    "Enter avanza una sola línea",
+    "Espacio y clic completan introducción de Lua",
+    "Botón omitir inicia alex",
+    "Escape inicia lua"
+  ],
+  "controlsLayoutTests": [
+    "lua: 1280x800, readable cards and reachable start button",
+    "lua: 800x450, readable cards and reachable start button",
+    "lua: 390x844, readable cards and reachable start button",
+    "alex: 1280x800, readable cards and reachable start button",
+    "alex: 800x450, readable cards and reachable start button",
+    "alex: 390x844, readable cards and reachable start button"
+  ],
+  "consoleErrors": []
+}

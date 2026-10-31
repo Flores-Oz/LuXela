@@ -15,11 +15,12 @@
 .vn-left { left: 4%; } .vn-center { left: 31%; } .vn-right { right: 4%; }
 .vn-portrait figcaption { position: absolute; bottom: 6px; left: 0; right: 0; padding: 8px; font-size: 10px; background: var(--ui-overlay); color: var(--ui-accent); }
 .vn-portrait-missing { border: 1px dashed var(--ui-muted); }
-.intro-dialogue { position: absolute; z-index: 2; left: 5%; right: 5%; bottom: 112px; min-height: 156px; padding: 24px 30px; border: 8px solid transparent; border-image: url('/assets/ui/dialogue-panel.png') 8 fill / 8px / 0 stretch; backdrop-filter: blur(10px); }
+.intro-dialogue { position: absolute; z-index: 2; isolation: isolate; left: 5%; right: 5%; bottom: 112px; min-height: 156px; padding: 24px 30px; border: 8px solid transparent; backdrop-filter: blur(10px); }
+.intro-dialogue::before { content: ''; position: absolute; inset: -8px; z-index: -1; pointer-events: none; border: 8px solid transparent; border-image: url('/assets/ui/dialogue-panel.png') 8 fill / 8px / 0 stretch; filter: hue-rotate(55deg) saturate(.85); }
 .intro-portrait { display: none; }
 .intro-content { padding-bottom: 12px; }
 /* Original sheet: six 362 x 724 cells. Crop vertical whitespace at display size. */
-.vn-advance-indicator { position: absolute; right: 14px; bottom: 8px; width: 32px; height: 32px; pointer-events: none; background: url('/assets/ui/dialogue-advance.png') no-repeat 0 center / 192px 64px; animation: vn-advance-pulse 1.2s steps(6, end) infinite; }
+.vn-advance-indicator { position: absolute; right: 14px; bottom: 8px; width: 32px; height: 32px; pointer-events: none; background: url('/assets/ui/dialogue-advance.png') no-repeat 0 center / 192px 64px; filter: hue-rotate(55deg) saturate(.85); animation: vn-advance-pulse 1.2s steps(6, end) infinite; }
 .vn-advance-indicator[hidden] { display: none; animation: none; }
 @keyframes vn-advance-pulse { from { background-position-x: 0; } to { background-position-x: -192px; } }
 .intro-line-header { display: flex; justify-content: space-between; gap: 20px; }

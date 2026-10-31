@@ -8,6 +8,7 @@ import { VisualNovelScene } from "../scenes/VisualNovelScene";
 import { MainMenuScene } from "../scenes/MainMenuScene";
 import { PauseScene } from "../scenes/PauseScene";
 import { CompletionScene } from "../scenes/CompletionScene";
+import { ControlsScene } from "../scenes/ControlsScene";
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
 
@@ -46,6 +47,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
         MainMenuScene,
         CharacterSelectScene,
         VisualNovelScene,
+        ControlsScene,
         GameScene,
         GameOverScene,
         PauseScene,

@@ -38,14 +38,14 @@ export class RobotLabScene extends Phaser.Scene {
         createPlayerAnimations(this);
         this.physics.world.setBounds(0, 0, 960, 600);
         const grid = this.add.graphics();
-        grid.fillStyle(0x18261f).fillRect(0, 0, 960, 600);
-        grid.lineStyle(1, 0x263b2e);
+        grid.fillStyle(0x182b3b).fillRect(0, 0, 960, 600);
+        grid.lineStyle(1, 0x263f55);
         for (let x = 0; x <= 960; x += 40) grid.lineBetween(x, 0, x, 600);
         for (let y = 0; y <= 600; y += 40) grid.lineBetween(0, y, 960, y);
-        grid.lineStyle(4, 0x557461).strokeRect(2, 2, 956, 596);
+        grid.lineStyle(4, 0x557895).strokeRect(2, 2, 956, 596);
         this.walls = this.physics.add.staticGroup();
-        const wallGraphic = this.add.graphics().fillStyle(0x5d7466).fillRect(0, 0, 40, 240);
-        wallGraphic.lineStyle(2, 0xabc5b3).strokeRect(1, 1, 38, 238);
+        const wallGraphic = this.add.graphics().fillStyle(0x5d758c).fillRect(0, 0, 40, 240);
+        wallGraphic.lineStyle(2, 0xabc5dc).strokeRect(1, 1, 38, 238);
         wallGraphic.generateTexture("lab-wall", 40, 240);
         wallGraphic.destroy();
         this.wall = this.walls.create(440, 300, "lab-wall") as Phaser.Physics.Arcade.Image;
@@ -53,7 +53,7 @@ export class RobotLabScene extends Phaser.Scene {
         this.setWall(false);
         this.sight = new LineOfSight(this.walls);
         this.player = new Player(this, 620, 300, "alex");
-        this.targetLabel = this.add.text(620, 365, "ALEX · INVULNERABLE", { fontSize: "12px", color: "#b5d6c2" }).setOrigin(.5);
+        this.targetLabel = this.add.text(620, 365, "ALEX · INVULNERABLE", { fontSize: "12px", color: "#b5d6f2" }).setOrigin(.5);
         this.projectiles = this.physics.add.group();
         this.enemies = this.physics.add.group();
         this.physics.add.collider(this.enemies, this.walls);
@@ -65,7 +65,7 @@ export class RobotLabScene extends Phaser.Scene {
         this.physics.add.overlap(this.projectiles, this.player.physicsSprite, shot => {
             (shot as Phaser.Physics.Arcade.Image).getData("projectile")?.destroy();
             this.hits++;
-            this.player.physicsSprite.setTint(0xaaffcc);
+            this.player.physicsSprite.setTint(0xaaddff);
             this.time.delayedCall(100, () => this.player.physicsSprite.clearTint());
         });
         const world = this.physics.world;

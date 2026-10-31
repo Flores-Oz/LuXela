@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { PlayerCharacter } from "../config/characters";
 import { getCharacterUnlocks } from "../systems/CharacterUnlockService";
+import { UITheme } from "../config/UITheme";
 
 export type RetryData = { roomIndex: number; character: PlayerCharacter; runId?: number };
 
@@ -26,13 +27,13 @@ export class GameOverScene extends Phaser.Scene {
             fontFamily: "monospace", fontSize: "56px", color: "#ff5555"
         }).setOrigin(0.5);
         const retry = this.add.text(width / 2, height / 2 + 16, "[ REINTENTAR ]", {
-            fontFamily: "monospace", fontSize: "28px", color: "#66ff33"
+            fontFamily: "monospace", fontSize: "28px", color: UITheme.accent
         }).setOrigin(0.5).setPadding(16).setInteractive({ useHandCursor: true });
         this.add.text(width / 2, height / 2 + 90, "ENTER o R para reiniciar", {
             fontFamily: "monospace", fontSize: "18px", color: "#ccccdd"
         }).setOrigin(0.5);
         retry.on("pointerover", () => retry.setColor("#ffffff"));
-        retry.on("pointerout", () => retry.setColor("#66ff33"));
+        retry.on("pointerout", () => retry.setColor(UITheme.accent));
         retry.on("pointerdown", this.restart, this);
         this.input.keyboard?.on("keydown-ENTER", this.restart, this);
         this.input.keyboard?.on("keydown-R", this.restart, this);

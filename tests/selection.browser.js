@@ -50,6 +50,20 @@ const game = new Phaser.Game({ ...gameConfig, type: Phaser.CANVAS,
 });
 window.selectionGame = game;
 const active = key => game.scene.isActive(key);
+const enterGameplay = async () => {
+    await until(() => active('ControlsScene') || (active('GameScene') && game.scene.getScene('GameScene').player));
+    if (active('ControlsScene')) {
+        check('Controls appear after narrative without combat', !active('VisualNovelScene') && !active('GameScene'));
+        const character = game.scene.getScene('ControlsScene').request.character;
+        check('Controls show the selected ability', document.querySelector('.controls-special h2').textContent === characters[character].abilityName);
+        const button = document.querySelector('.controls-start');
+        button.dispatchEvent(new KeyboardEvent('keydown', {key:'Enter', code:'Enter', repeat:true, bubbles:true, cancelable:true}));
+        check('Held Enter cannot skip controls', active('ControlsScene') && !active('GameScene'));
+        button.click(); button.click();
+    }
+    await until(() => active('GameScene') && game.scene.getScene('GameScene').player);
+    check('Controls DOM cleaned after starting level', !document.querySelector('.controls-screen'));
+};
 const selector = () => game.scene.getScene('CharacterSelectScene');
 const root = () => document.querySelector('.character-select');
 const card = id => root().querySelector(`[data-character="${id}"]`);
@@ -63,7 +77,7 @@ const start = async id => {
     await until(() => active('VisualNovelScene') && document.querySelector('.intro-next'));
     const intro = game.scene.getScene('VisualNovelScene');
     for (let i = 0; i < intro.runner.dialogueTotal * 2; i++) document.querySelector('.intro-next').click();
-    await until(() => active('GameScene') && game.scene.getScene('GameScene').player);
+    await enterGameplay();
 };
 window.resetSelectionProgress = async () => {
     localStorage.removeItem(storageKey);
@@ -193,7 +207,7 @@ async function run() {
     next.click();
     check('Linea final completa permite continuar', next.textContent === 'CONTINUAR →');
     next.click(); intro.skip(); intro.advance();
-    await until(() => active('GameScene') && game.scene.getScene('GameScene').player);
+    await enterGameplay();
     let gameplay = game.scene.getScene('GameScene');
     check('Finalizar conserva Lua y un solo jugador', gameplay.character === 'lua' && gameplay.children.list.filter(c => c.texture?.key === 'lua-walk').length === 1);
     check('Final guarda estado completado solo en Lua', getNarrativeSaves(game).get('lua').status === 'completed' && !getNarrativeSaves(game).get('alex'));
@@ -214,7 +228,7 @@ async function run() {
     gameplay.player.die();
     await until(() => active('GameOverScene'));
     game.scene.getScene('GameOverScene').input.keyboard.emit('keydown-ENTER');
-    await until(() => active('GameScene') && gameplay.player);
+    await enterGameplay();
     check('Reinicio conserva personaje y habitación desbloqueados', gameplay.character === 'alex' && gameplay.roomIndex === 1 && !gameplay.player.isDead());
     check('Reintento no vuelve a reproducir introducción', !active('VisualNovelScene') && !document.querySelector('.intro-screen'));
 
@@ -227,7 +241,7 @@ async function run() {
         check(`Reentrada ${id} reinicia narrativa desde primera línea`, intro.runner.position === 2 && intro.sequence.route === id);
         document.querySelector('.vn-skip').click();
         intro.skip();
-        await until(() => active('GameScene') && gameplay.player);
+        await enterGameplay();
         check(`Omitir ${id} inicia una sola entidad correcta`, gameplay.character === id && gameplay.player.physicsSprite.texture.key === `${id}-walk` &&
             gameplay.children.list.filter(c => c.texture?.key === `${id}-walk`).length === 1);
     }
@@ -257,11 +271,11 @@ async function run() {
     await until(() => active('VisualNovelScene') && intro.runner);
     check('Seleccionar reanuda entrada y presentacion de Alex', intro.runner.position === 4 && document.querySelector('.vn-right').dataset.character === 'alex' && intro.background.currentKey === 'alex-intro');
     intro.skip();
-    await until(() => active('GameScene') && gameplay.player);
+    await enterGameplay();
     startNarrative(gameplay, {route:'lua', resume:false, returnTo:{roomIndex:1}});
     await until(() => active('VisualNovelScene') && intro.runner);
     intro.skip();
-    await until(() => active('GameScene') && gameplay.player);
+    await enterGameplay();
     check('Cambiar de ruta narrativa inicia nueva partida con Lua', gameplay.roomIndex === 0 && gameplay.character === 'lua');
 
     // Inaccessible storage must still work across scene transitions in this game.
@@ -287,7 +301,7 @@ async function run() {
     await until(() => active('VisualNovelScene') && intro.runner);
     check('Progreso narrativo en memoria sobrevive cambio de escenas', intro.runner.position === 4 && getNarrativeSaves(game) === temporaryNarrative);
     intro.skip();
-    await until(() => active('GameScene') && gameplay.player);
+    await enterGameplay();
 
     game.registry.set('narrative-save-service', new NarrativeSaveService(new NarrativeRouteManager(), () => narrativeStorage));
     game.registry.set('character-unlock-service', new CharacterUnlockService(() => testStorage));

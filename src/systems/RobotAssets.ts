@@ -5,8 +5,7 @@ export function loadRobotAssets(scene:Phaser.Scene):void {
     for(const type of robotTypes){
         if(scene.textures.exists(type))continue;
         const path=`assets/sprites/enemies/${robotDefinitions[type].file}`;
-        if(type==="robot-red")scene.load.spritesheet(type,path,{frameWidth:64,frameHeight:64,endFrame:65});
-        else if(!scene.textures.exists(`${type}-source`))scene.load.image(`${type}-source`,path);
+        if(!scene.textures.exists(`${type}-source`))scene.load.image(`${type}-source`,path);
     }
 }
 /** Normalize the provided larger sheets in memory, keeping the existing 64px robot body contract. */
