@@ -19,7 +19,7 @@ export class VisualNovelView {
             <header class="intro-header"><span>BERZERK<span class="intro-underscore">_</span></span>
                 <span class="intro-draft">${provisional ? "SECUENCIA DE PRUEBA · PROVISIONAL" : "PRESENTACIÓN NARRATIVA"}</span></header>
             <div class="intro-stage">
-                <div class="vn-background"></div><div class="vn-portraits"></div>
+                <div class="vn-background"></div><div class="vn-story-layer"></div><div class="vn-portraits"></div>
                 <span class="vn-route">RUTA ${config.name.toUpperCase()}</span>
             </div>
             <div class="intro-dialogue">

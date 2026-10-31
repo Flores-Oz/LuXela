@@ -52,14 +52,17 @@ async function run() {
     for (const character of ['alex','lua']) {
         await select(character);
         const narrative=game.scene.getScene('VisualNovelScene');
-        check(`${character}: introducción independiente y provisional`, narrative.sequence.route===character && narrative.sequence.provisional && !active('GameScene'));
-        check(`${character}: fondo y personaje correctos`, narrative.background.currentKey===`${character}-intro` && document.querySelector(`.vn-portrait[data-character=${character}]`));
+        check(`${character}: introducción independiente con estado editorial correcto`, narrative.sequence.route===character && narrative.sequence.provisional===(character==='lua') && !active('GameScene'));
+        const firstDialogue=narrative.sequence.entries.findIndex(entry=>entry.type==='dialogue');
+        const firstBackground=narrative.sequence.entries.slice(0,firstDialogue).findLast(entry=>entry.type==='background');
+        check(`${character}: introducción muestra el fondo definido en su guion`, narrative.background.currentKey===firstBackground.key);
         const root=document.querySelector('.intro-screen').getBoundingClientRect();
         check(`${character}: narrativa ocupa toda la pantalla`, Math.abs(root.width-innerWidth)<2 && Math.abs(root.height-innerHeight)<2);
         if (character==='alex') {
             document.querySelector('.intro-next').click();
-            check('Completar texto no salta el diálogo', narrative.runner.position===2 && !narrative.runner.dialogue.isTyping);
-            for (let i=0;i<5 && active('VisualNovelScene');i++) { document.querySelector('.intro-next')?.click(); await delay(30); }
+            check('Completar texto no salta el diálogo', narrative.runner.position===firstDialogue && !narrative.runner.dialogue.isTyping);
+            const maximumAdvances=narrative.runner.dialogueTotal*2;
+            for (let i=0;i<maximumAdvances && active('VisualNovelScene');i++) { document.querySelector('.intro-next')?.click(); await delay(5); }
         } else document.querySelector('.vn-skip').click();
         let gameplay=await entered();
         check(`${character}: entrada conserva personaje, permiso y una sola escena`, gameplay.character===character && unlocks.isUnlocked(character) && game.scene.getScenes(true).length===1);

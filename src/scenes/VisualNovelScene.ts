@@ -12,6 +12,9 @@ import { mountSceneView } from "../ui/mountSceneView";
 import { getArcadeRun } from "../systems/ArcadeRunService";
 import { isLevelIndex } from "../levels/levels";
 import { startSceneTransition } from "../ui/SceneTransition";
+import { StoryStageManager } from "../narrative/StoryStageManager";
+import { narrativeBackgrounds } from "../config/NarrativeConfig";
+import { loadIllustration } from "../narrative/VisualAssetCache";
 
 export class VisualNovelScene extends Phaser.Scene {
     private request: Partial<NarrativeRequest> = {};
@@ -22,6 +25,7 @@ export class VisualNovelScene extends Phaser.Scene {
     private background: BackgroundManager | null = null;
     private portraits: CharacterPortraitManager | null = null;
     private audio: NarrativeAudioManager | null = null;
+    private stage: StoryStageManager | null = null;
     private leaving = false;
     constructor() { super("VisualNovelScene"); }
     init(data: unknown = {}): void {
@@ -62,9 +66,11 @@ export class VisualNovelScene extends Phaser.Scene {
         this.background = new BackgroundManager(this.view.element.querySelector(".vn-background")!, report);
         this.portraits = new CharacterPortraitManager(this.view.element.querySelector(".vn-portraits")!, report);
         this.audio = new NarrativeAudioManager(this, report);
+        this.stage = new StoryStageManager(this.view.element.querySelector(".vn-story-layer")!, report);
         this.runner = new NarrativeSequenceRunner(sequence, {
             effect: (entry, restoring) => this.effect(entry, restoring),
             dialogue: (entry, index) => {
+                this.warmUpcomingBackgrounds(sequence, index);
                 this.portraits?.highlight(entry.speakerId ?? entry.speaker);
                 if (destination?.kind !== "completion") this.saves.save(route, { chapterId: sequence.chapterId, sequenceId: sequence.id, entryIndex: index, status: "reading" });
                 this.view?.storageStatus(this.saves.storageStatus);
@@ -76,6 +82,7 @@ export class VisualNovelScene extends Phaser.Scene {
             this.background?.destroy(); this.background = null;
             this.portraits?.destroy(); this.portraits = null;
             this.audio?.destroy(); this.audio = null;
+            this.stage?.destroy(); this.stage = null;
             this.view?.destroy(); this.view = null;
         });
         const index = resume && saved.sequenceId === sequence.id && routes.validProgress(route, saved) ? saved.entryIndex : 0;
@@ -88,6 +95,7 @@ export class VisualNovelScene extends Phaser.Scene {
     update(_time: number, delta: number): void {
         if (this.leaving || !this.runner) return;
         this.runner.update(delta);
+        this.stage?.update(delta);
         this.view?.render(this.runner);
     }
     private effect(entry: Exclude<NarrativeEntry, { type: "dialogue" }>, restoring: boolean): void {
@@ -95,10 +103,23 @@ export class VisualNovelScene extends Phaser.Scene {
             background: () => { if (entry.type === "background") this.background?.show(entry.key, !restoring && entry.transition === "fade"); },
             portrait: () => { if (entry.type === "portrait") this.portraits?.show(entry.character, entry.expression, entry.position, !restoring); },
             hidePortrait: () => { if (entry.type === "hidePortrait") this.portraits?.hide(entry.character, !restoring); },
+            actor: () => { if (entry.type === "actor") this.stage?.showActor(entry, restoring); },
+            hideActor: () => { if (entry.type === "hideActor") this.stage?.hideActor(entry.id); },
+            prop: () => { if (entry.type === "prop") this.stage?.showProp(entry); },
+            hideProp: () => { if (entry.type === "hideProp") this.stage?.hideProp(entry.id); },
+            cue: () => { if (entry.type === "cue" && !restoring) this.stage?.cue(entry); },
             music: () => { if (entry.type === "music") { if (entry.action === "play") this.audio?.playMusic(entry.key, entry.volume); else this.audio?.stopMusic(entry.key); } },
             sound: () => { if (entry.type === "sound" && !restoring) this.audio?.playSound(entry.key, entry.volume); }
         };
         handlers[entry.type]();
+    }
+    private warmUpcomingBackgrounds(sequence: NarrativeSequence, index: number): void {
+        // Decode only the next two illustrations. Shared cache also covers revisiting them.
+        const keys = sequence.entries.slice(index + 1).filter(entry => entry.type === "background").slice(0, 2);
+        for (const entry of keys) {
+            const asset = narrativeBackgrounds[entry.key];
+            if (asset) void loadIllustration(asset.src).catch(() => {});
+        }
     }
     private advance(): void { if (!this.leaving && this.runner) { this.runner.advance(); this.view?.render(this.runner); } }
     private skip(): void { this.finish("skipped"); }

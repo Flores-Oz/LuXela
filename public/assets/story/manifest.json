@@ -1,0 +1,199 @@
+{
+  "version": 1,
+  "status": "Alex introduction and campaign ending integrated; Lua companion integration deferred",
+  "method": "built-in image_gen.imagegen",
+  "styleReference": "/assets/portraits/alex-expressions.png",
+  "validation": "PNG dimensions and actual alpha inspected using System.Drawing; selected images visually inspected during generation.",
+  "assets": [
+    {
+      "file": "/assets/story/alex/characters/kira-spritesheet.png",
+      "kind": "animation-sheet-source",
+      "width": 948,
+      "height": 1659,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "transparentPixels": 747603,
+      "status": "integrated through StoryActorConfig and StoryStageManager; 48 aligned runtime crops on a 128x128 canvas"
+    },
+    {
+      "file": "/assets/story/lua/characters/chihuahua-spritesheet.png",
+      "kind": "animation-sheet-source",
+      "width": 948,
+      "height": 1659,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "transparentPixels": 684672,
+      "status": "requires frame extraction and alignment; do not load as uniform 128x128 spritesheet"
+    },
+    {
+      "file": "/assets/story/alex/backgrounds/alex-house-exterior-night.png",
+      "kind": "empty-background",
+      "width": 1672,
+      "height": 941,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/backgrounds/alex-house-kitchen.png",
+      "kind": "empty-background",
+      "width": 1672,
+      "height": 941,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/backgrounds/alex-equipment-room.png",
+      "kind": "empty-background",
+      "width": 1672,
+      "height": 941,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/backgrounds/alex-factory-exterior.png",
+      "kind": "empty-background",
+      "width": 1672,
+      "height": 941,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/objects/birthday-cake.png",
+      "kind": "transparent-prop",
+      "width": 1254,
+      "height": 1254,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "transparentPixels": 864806,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/illustrations/kira-baking.png",
+      "kind": "illustration-with-characters",
+      "width": 1672,
+      "height": 941,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/illustrations/robot-home-invasion.png",
+      "kind": "illustration-with-characters",
+      "width": 1672,
+      "height": 941,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/illustrations/alex-arming-up.png",
+      "kind": "illustration-with-characters",
+      "width": 1672,
+      "height": 940,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/illustrations/kira-containment-room.png",
+      "kind": "illustration-with-characters",
+      "width": 1672,
+      "height": 941,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/objects/birthday-cake-unlit.png",
+      "kind": "transparent-prop",
+      "width": 1254,
+      "height": 1254,
+      "alphaMin": 0,
+      "alphaMax": 255,
+      "transparentPixels": 894988,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/illustrations/kira-captured.png",
+      "kind": "illustration-with-characters",
+      "width": 1672,
+      "height": 941,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/illustrations/alex-factory-entrance-scene.png",
+      "kind": "illustration-with-characters",
+      "width": 1672,
+      "height": 941,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/illustrations/alex-kira-reunion.png",
+      "kind": "illustration-with-characters",
+      "width": 1672,
+      "height": 941,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/backgrounds/alex-house-damaged.png",
+      "kind": "empty-background",
+      "width": 1672,
+      "height": 941,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/illustrations/alex-return-home-dawn.png",
+      "kind": "illustration-with-characters",
+      "width": 1672,
+      "height": 941,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/illustrations/alex-ending-birthday.png",
+      "kind": "illustration-with-characters",
+      "width": 1672,
+      "height": 941,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    },
+    {
+      "file": "/assets/story/alex/illustrations/alex-ending-cg.png",
+      "kind": "illustration-with-characters",
+      "width": 1672,
+      "height": 941,
+      "alphaMin": 255,
+      "alphaMax": 255,
+      "transparentPixels": 0,
+      "status": "ready for future narrative registration"
+    }
+  ]
+}

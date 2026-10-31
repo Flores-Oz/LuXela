@@ -52,7 +52,8 @@ async function run() {
         await until(() => active('VisualNovelScene') && document.querySelector('.intro-screen'));
         check(`${character}: desbloqueo conecta con ruta correcta`, unlocks.isUnlocked(character) && game.scene.getScene('VisualNovelScene').sequence.route === character && !active('GameScene'));
         if (character === 'alex') {
-            for (let i = 0; i < 8 && active('VisualNovelScene'); i++) {
+            const dialogueTotal = game.scene.getScene('VisualNovelScene').runner.dialogueTotal;
+            for (let i = 0; i < dialogueTotal * 2 && active('VisualNovelScene'); i++) {
                 document.querySelector('.intro-next')?.click(); await pause(30);
             }
         } else document.querySelector('.vn-skip').click();

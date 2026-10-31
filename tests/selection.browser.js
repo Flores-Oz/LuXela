@@ -67,6 +67,10 @@ const enterGameplay = async () => {
 const selector = () => game.scene.getScene('CharacterSelectScene');
 const root = () => document.querySelector('.character-select');
 const card = id => root().querySelector(`[data-character="${id}"]`);
+const dialogueIndex = (sequence, ordinal = 0) => sequence.entries
+    .map((entry, index) => entry.type === 'dialogue' ? index : -1).filter(index => index >= 0)[ordinal];
+const portraitState = () => [...document.querySelectorAll('.vn-portrait')]
+    .map(portrait => ({ character: portrait.dataset.character, expression: portrait.dataset.expression, position: portrait.className }));
 const submit = code => {
     root().querySelector('input').value = code;
     root().querySelector('form').requestSubmit();
@@ -76,7 +80,8 @@ const start = async id => {
     root().querySelector('.select-start').click();
     await until(() => active('VisualNovelScene') && document.querySelector('.intro-next'));
     const intro = game.scene.getScene('VisualNovelScene');
-    for (let i = 0; i < intro.runner.dialogueTotal * 2; i++) document.querySelector('.intro-next').click();
+    const maximumAdvances = intro.runner.dialogueTotal * 2;
+    for (let i = 0; i < maximumAdvances && intro.runner && !intro.runner.isComplete; i++) document.querySelector('.intro-next')?.click();
     await enterGameplay();
 };
 window.resetSelectionProgress = async () => {
@@ -99,7 +104,7 @@ async function run() {
         const service = getCharacterUnlocks(game);
         check('Desbloqueos sobreviven recarga real de página', service.isUnlocked('alex') && service.isUnlocked('lua'));
         check('Selección no se impone tras recargar', root().querySelector('.select-start').disabled);
-        check('Recarga recupera checkpoint Lua y progreso Alex separado', getNarrativeSaves(game).get('lua')?.entryIndex === 4 && getNarrativeSaves(game).get('lua')?.status === 'reading' && getNarrativeSaves(game).get('alex')?.status === 'skipped');
+        check('Recarga recupera checkpoint Lua y progreso Alex separado', getNarrativeSaves(game).get('lua')?.entryIndex === dialogueIndex(new NarrativeRouteManager().resolve('lua'), 1) && getNarrativeSaves(game).get('lua')?.status === 'reading' && getNarrativeSaves(game).get('alex')?.status === 'skipped');
         return;
     }
 
@@ -192,18 +197,18 @@ async function run() {
     check('Selector inicia ruta Lua sin combate', intro.sequence.route === 'lua' && !active('GameScene') && !active('CharacterSelectScene'));
     check('Selector libera formulario y callbacks', !root() && oldView.events.signal.aborted && selector().view === null);
     check('Muestra de prueba identificada', document.querySelector('.intro-draft').textContent.includes('PROVISIONAL'));
-    check('Texto inicialmente progresivo y guion correcto', intro.runner.position === 2 && intro.runner.dialogue.current.text.includes('La energía está lista.'));
+    check('Texto inicialmente progresivo y guion correcto', intro.runner.position === dialogueIndex(intro.sequence) && intro.runner.dialogue.current.text.includes('La energía está lista.'));
     const next = document.querySelector('.intro-next');
     next.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }));
     next.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', repeat: true, bubbles: true, cancelable: true }));
     next.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true, cancelable: true }));
-    check('Una pulsacion completa sin saltar entrada', intro.runner.position === 2 && !intro.runner.dialogue.isTyping);
+    check('Una pulsacion completa sin saltar entrada', intro.runner.position === dialogueIndex(intro.sequence) && !intro.runner.dialogue.isTyping);
     next.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', bubbles: true }));
     next.dispatchEvent(new MouseEvent('click', { detail: 2, bubbles: true }));
-    check('Doble clic no consume siguiente entrada', intro.runner.position === 2);
+    check('Doble clic no consume siguiente entrada', intro.runner.position === dialogueIndex(intro.sequence));
     check('Narrativa no crea jugador ni combate', !game.scene.getScene('GameScene').player && !active('GameScene'));
     next.click();
-    check('Siguiente dialogo aplica expresion y posicion del guion', intro.runner.position === 4 && document.querySelector('.vn-center').dataset.expression === 'determined');
+    check('Siguiente dialogo aplica expresion y posicion del guion', intro.runner.position === dialogueIndex(intro.sequence, 1) && document.querySelector('.vn-center').dataset.expression === 'determined');
     next.click();
     check('Linea final completa permite continuar', next.textContent === 'CONTINUAR →');
     next.click(); intro.skip(); intro.advance();
@@ -238,7 +243,7 @@ async function run() {
         await until(() => active('CharacterSelectScene') && root());
         card(id).click(); root().querySelector('.select-start').click();
         await until(() => active('VisualNovelScene') && document.querySelector('.intro-screen'));
-        check(`Reentrada ${id} reinicia narrativa desde primera línea`, intro.runner.position === 2 && intro.sequence.route === id);
+        check(`Reentrada ${id} reinicia narrativa desde primera línea`, intro.runner.position === dialogueIndex(intro.sequence) && intro.sequence.route === id);
         document.querySelector('.vn-skip').click();
         intro.skip();
         await enterGameplay();
@@ -263,13 +268,16 @@ async function run() {
     await until(() => active('VisualNovelScene') && intro.runner);
     const firstRunView = intro.view;
     intro.advance(); intro.advance();
-    check('Checkpoint guarda dialogo visible y no otra ruta', getNarrativeSaves(game).get('alex').entryIndex === 4 && getNarrativeSaves(game).get('lua').status === 'skipped');
+    const alexCheckpoint = dialogueIndex(intro.sequence, 1);
+    const checkpointBackground = intro.background.currentKey;
+    const checkpointPortraits = portraitState();
+    check('Checkpoint guarda dialogo visible y no otra ruta', getNarrativeSaves(game).get('alex').entryIndex === alexCheckpoint && getNarrativeSaves(game).get('lua').status === 'skipped');
     document.querySelector('.vn-back').click();
     await until(() => active('CharacterSelectScene') && root());
     check('Volver detiene escritura y limpia eventos', firstRunView.events.signal.aborted && intro.runner === null);
     card('alex').click(); root().querySelector('.select-start').click();
     await until(() => active('VisualNovelScene') && intro.runner);
-    check('Seleccionar reanuda entrada y presentacion de Alex', intro.runner.position === 4 && document.querySelector('.vn-right').dataset.character === 'alex' && intro.background.currentKey === 'alex-intro');
+    check('Seleccionar reanuda entrada y presentacion de Alex', intro.runner.position === alexCheckpoint && JSON.stringify(portraitState()) === JSON.stringify(checkpointPortraits) && intro.background.currentKey === checkpointBackground);
     intro.skip();
     await enterGameplay();
     startNarrative(gameplay, {route:'lua', resume:false, returnTo:{roomIndex:1}});
@@ -294,12 +302,12 @@ async function run() {
     startNarrative(gameplay, { route: 'alex', resume: false });
     await until(() => active('VisualNovelScene') && intro.runner);
     intro.advance(); intro.advance();
-    check('Visual Novel informa guardado narrativo temporal', temporaryNarrative.get('alex').entryIndex === 4 && document.querySelector('.vn-save-note').textContent.includes('temporal'));
+    check('Visual Novel informa guardado narrativo temporal', temporaryNarrative.get('alex').entryIndex === dialogueIndex(intro.sequence, 1) && document.querySelector('.vn-save-note').textContent.includes('temporal'));
     document.querySelector('.vn-back').click();
     await until(() => active('CharacterSelectScene') && root());
     card('alex').click(); root().querySelector('.select-start').click();
     await until(() => active('VisualNovelScene') && intro.runner);
-    check('Progreso narrativo en memoria sobrevive cambio de escenas', intro.runner.position === 4 && getNarrativeSaves(game) === temporaryNarrative);
+    check('Progreso narrativo en memoria sobrevive cambio de escenas', intro.runner.position === dialogueIndex(intro.sequence, 1) && getNarrativeSaves(game) === temporaryNarrative);
     intro.skip();
     await enterGameplay();
 

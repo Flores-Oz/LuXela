@@ -1,6 +1,7 @@
 import { openBrowserSession } from './browser-session.mjs';
 import { mkdirSync, writeFileSync } from 'node:fs';
 const { send, evaluate, waitUntil, errors, baseUrl, close } = await openBrowserSession();
+const dialoguePosition = ordinal => `window.selectionGame.scene.getScene('VisualNovelScene').sequence.entries.map((entry,index)=>entry.type==='dialogue'?index:-1).filter(index=>index>=0)[${ordinal}]`;
 const key = async (key, code, windowsVirtualKeyCode) => {
     await send('Input.dispatchKeyEvent', { type: 'keyDown', key, code, windowsVirtualKeyCode,
         ...(key === 'Enter' ? { text: '\r', unmodifiedText: '\r' } : {}) });
@@ -48,11 +49,11 @@ try {
     // A held Enter from the selector must not advance the newly focused intro.
     await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, autoRepeat: true });
     await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });
-    if (!(await evaluate("window.selectionGame.scene.getScene('VisualNovelScene').runner.position === 2"))) {
+    if (!(await evaluate(`window.selectionGame.scene.getScene('VisualNovelScene').runner.position === ${dialoguePosition(0)}`))) {
         throw new Error('Held Enter leaked from selection into introduction');
     }
     await key('Enter', 'Enter', 13);
-    if (!(await evaluate("window.selectionGame.scene.getScene('VisualNovelScene').runner.position === 2 && !window.selectionGame.scene.getScene('VisualNovelScene').runner.dialogue.isTyping"))) {
+    if (!(await evaluate(`window.selectionGame.scene.getScene('VisualNovelScene').runner.position === ${dialoguePosition(0)} && !window.selectionGame.scene.getScene('VisualNovelScene').runner.dialogue.isTyping`))) {
         throw new Error('Enter must advance exactly one dialogue line');
     }
     await key(' ', 'Space', 32);
@@ -109,7 +110,7 @@ try {
     await click('[data-character=lua]');
     await click('.select-start');
     await waitUntil("window.selectionGame.scene.isActive('VisualNovelScene') && document.querySelector('.intro-next')");
-    if (!(await evaluate("window.selectionGame.scene.getScene('VisualNovelScene').runner.position === 4 && document.querySelector('.vn-center').dataset.character === 'lua'"))) throw new Error('Visual state not restored after real reload');
+    if (!(await evaluate(`window.selectionGame.scene.getScene('VisualNovelScene').runner.position === ${dialoguePosition(1)} && document.querySelector('.vn-center').dataset.character === 'lua'`))) throw new Error('Visual state not restored after real reload');
     result.introLayoutTests = [];
     for (const [width, height] of [[800, 600], [390, 844]]) {
         await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });

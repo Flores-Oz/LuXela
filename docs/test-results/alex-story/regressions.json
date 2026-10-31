@@ -1,0 +1,49 @@
+{
+  "status": "passed",
+  "generatedAt": "2026-10-31T06:23:39.778Z",
+  "commands": [
+    "node --test tests/*.test.mjs",
+    "npm.cmd run test:sprint13",
+    "node tests/run-finisher.mjs",
+    "node tests/run-sprint-13.mjs"
+  ],
+  "suites": [
+    {
+      "name": "unit",
+      "checks": 234
+    },
+    {
+      "name": "selection",
+      "checks": 201,
+      "consoleErrors": 0
+    },
+    {
+      "name": "combat",
+      "checks": 69,
+      "consoleErrors": 0
+    },
+    {
+      "name": "abilities",
+      "checks": 68,
+      "consoleErrors": 0
+    },
+    {
+      "name": "robot-attacks",
+      "checks": 103,
+      "consoleErrors": 0
+    },
+    {
+      "name": "finisher",
+      "checks": 32,
+      "consoleErrors": 0
+    },
+    {
+      "name": "sprint-13",
+      "checks": 109,
+      "campaignChecks": 159,
+      "consoleErrors": 0
+    }
+  ],
+  "totalChecks": 975,
+  "executionNote": "The aggregate runner was interrupted during finisher by a development HMR reload while product changes were still being saved. With editing stopped, finisher and sprint-13 (including the full previous campaign for Alex and Lua) were rerun individually and passed. Earlier suites passed in the aggregate run."
+}

@@ -1,8 +1,13 @@
 ﻿.intro-screen { position: relative; width: 100%; height: 100%; overflow: hidden; box-sizing: border-box; color: var(--ui-text); font: 16px var(--ui-font); background: var(--ui-background); animation: intro-arrive .2s ease-out; }
 /* Full viewport narrative presentation; gameplay remains a separate scene. */
 .intro-screen *, .intro-screen *::before, .intro-screen *::after { box-sizing: border-box; }
-.intro-stage, .vn-background, .vn-portraits { position: absolute; inset: 0; }
-.vn-background canvas { display: block; width: 100%; height: 100%; object-fit: cover; opacity: .65; }
+.intro-stage, .vn-background, .vn-story-layer, .vn-portraits { position: absolute; inset: 0; }
+.vn-background canvas { display: block; width: 100%; height: 100%; object-fit: cover; opacity: .9; image-rendering: pixelated; }
+.vn-story-layer { pointer-events: none; }
+.vn-story-actor, .vn-story-prop { position: absolute; transform: translate(-50%, -100%); height: auto; image-rendering: pixelated; }
+.vn-story-actor { min-width: 58px; }
+.vn-story-prop { min-width: 64px; }
+.vn-story-flash { position: absolute; inset: 0; background: #e8f3ff; pointer-events: none; }
 .intro-stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(0deg, var(--ui-background), transparent 65%); }
 .intro-header { position: absolute; z-index: 2; top: 30px; left: 5%; right: 5%; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .intro-header > span:first-child { font-size: 18px; letter-spacing: .3em; font-weight: 600; }

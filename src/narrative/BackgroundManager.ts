@@ -17,13 +17,18 @@ export class BackgroundManager {
     }
     show(key: string, fade = false): void {
         const token = ++this.generation;
+        const hadImage = this.canvas.dataset.key !== undefined;
         this.detachImage();
         this.animation?.cancel();
         this.currentKey = key;
         const asset = Object.hasOwn(this.assets, key) ? this.assets[key] : undefined;
         const context = this.canvas.getContext("2d");
-        this.canvas.width = this.canvas.height = 512;
-        if (context) { context.fillStyle = "#101c1a"; context.fillRect(0, 0, 512, 512); }
+        // Keep the previous illustration visible while the next one decodes.
+        // On first load (or a missing asset) retain a safe neutral fallback.
+        if (!hadImage || !asset) {
+            this.canvas.width = this.canvas.height = 512;
+            if (context) { context.fillStyle = "#101c1a"; context.fillRect(0, 0, 512, 512); }
+        }
         if (!asset) { this.report(`Fondo no disponible: ${key}. Se usa un fondo neutro.`); return; }
         void loadIllustration(asset.src).then(image => {
             if (token !== this.generation) return;
@@ -35,7 +40,9 @@ export class BackgroundManager {
                 this.report(`Recorte inválido para fondo: ${key}.`); return;
             }
             this.canvas.width = crop.width; this.canvas.height = crop.height;
-            this.canvas.getContext("2d")?.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+            const target = this.canvas.getContext("2d");
+            if (target) { target.imageSmoothingEnabled = false; target.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height); }
+            this.canvas.dataset.key = key;
             if (fade) this.animation = this.canvas.animate([{ opacity: 0 }, { opacity: 1 }], { duration: NarrativeConfig.transitionMs });
         }).catch(() => { if (token === this.generation) this.report(`No se pudo cargar el fondo: ${key}.`); });
     }

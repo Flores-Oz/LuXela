@@ -364,7 +364,7 @@ export class GameScene extends Phaser.Scene {
             this.isChangingRoom = true;
             this.doors.beginTransition(exit);
             this.prepareRoomExit();
-            this.scene.start("CompletionScene", { character: this.character, runId: this.runId });
+            this.startCampaignEnding();
             return;
         }
 
@@ -451,7 +451,15 @@ export class GameScene extends Phaser.Scene {
         }
         if(!runs.finish(this.runId,this.roomIndex))return;
         this.combatState='victory';this.isChangingRoom=true;this.prepareRoomExit();
-        this.scene.start('CompletionScene',{character:this.character,runId:this.runId});
+        this.startCampaignEnding();
+    }
+
+    private startCampaignEnding(): void {
+        if (this.character === "alex") startNarrative(this, {
+            route: "alex", sequenceId: "alex_ending", resume: false,
+            destination: { kind: "completion", runId: this.runId }
+        });
+        else this.scene.start("CompletionScene", { character: this.character, runId: this.runId });
     }
 
     private roomCleared(): void {

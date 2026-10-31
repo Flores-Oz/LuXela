@@ -45,7 +45,9 @@
     "test:sprint13": "node tests/run-sprint-12-all.mjs --sprint13",
     "test:sprint13:combat": "node tests/run-sprint-13.mjs",
     "test:sprint13:unit": "node --test tests/*.test.mjs",
-    "test:sprint13:performance": "node tests/run-sprint-12-performance.mjs --sprint13"
+    "test:sprint13:performance": "node tests/run-sprint-12-performance.mjs --sprint13",
+    "test:story:unit": "node --test tests/alex-story.test.mjs tests/story-actor-config.test.mjs tests/story-presentation.test.mjs",
+    "test:story": "node tests/run-alex-story.mjs"
   },
   "dependencies": {
     "phaser": "^4.2.1",

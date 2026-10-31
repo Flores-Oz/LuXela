@@ -117,8 +117,13 @@ async function run(){
         check(`${character}: final boss preserves the proximity finisher below ten percent`,s.bossEncounter.finisher.active&&s.bossEncounter.finisher.challenge.remaining===600);
         for(const key of BossFinisherConfig.sequences[character])s.bossEncounter.finisher.input(key);
         s.bossEncounter.finisher.update(3000);
+        if(character==='alex'){
+            await until(()=>game.scene.isActive('VisualNovelScene')&&document.querySelector('.vn-skip'));
+            check('Alex: final destruction starts the definitive rescue ending before completion',runs.canComplete(character,runId)&&game.scene.getScene('VisualNovelScene').sequence.id==='alex_ending'&&!game.scene.getScene('VisualNovelScene').sequence.provisional&&!game.scene.isActive('CompletionScene'));
+            document.querySelector('.vn-skip').click();
+        }
         await until(()=>game.scene.isActive('CompletionScene')&&document.querySelector('.completion-screen'));
-        check(`${character}: only final destruction grants campaign victory without definitive epilogue`,runs.canComplete(character,runId)&&!game.scene.isActive('VisualNovelScene')&&document.querySelector('.completion-screen').textContent.includes('Campaña completada'));
+        check(`${character}: only final destruction grants the character's campaign conclusion`,runs.canComplete(character,runId)&&!game.scene.isActive('VisualNovelScene')&&document.querySelector('.completion-screen').textContent.includes(character==='alex'?'Historia completada':'Campaña completada'));
         button('.completion-screen','Volver al menú principal').click();await until(()=>game.scene.isActive('MainMenuScene'));
     }
     for(const character of ['alex','lua']){

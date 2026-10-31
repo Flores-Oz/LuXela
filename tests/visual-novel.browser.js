@@ -47,28 +47,32 @@ export async function testNarrativeEngine(game, check, until) {
 
     const store = memory();
     const saves = new NarrativeSaveService(routes, () => store);
-    const alex = { chapterId: 'test', sequenceId: 'alex_test', entryIndex: 2, status: 'reading' };
-    const lua = { chapterId: 'test', sequenceId: 'lua_test', entryIndex: 4, status: 'reading' };
+    const alexSequence = routes.resolve('alex');
+    const luaSequence = routes.resolve('lua');
+    const alexDialogueIndex = alexSequence.entries.findIndex(entry => entry.type === 'dialogue');
+    const luaDialogueIndex = luaSequence.entries.findLastIndex(entry => entry.type === 'dialogue');
+    const alex = { chapterId: alexSequence.chapterId, sequenceId: alexSequence.id, entryIndex: alexDialogueIndex, status: 'reading' };
+    const lua = { chapterId: luaSequence.chapterId, sequenceId: luaSequence.id, entryIndex: luaDialogueIndex, status: 'reading' };
     saves.save('alex', alex); saves.save('lua', lua);
-    check('Guardar Lua no sobrescribe Alex', saves.get('alex').entryIndex === 2 && saves.get('lua').entryIndex === 4);
+    check('Guardar Lua no sobrescribe Alex', saves.get('alex').entryIndex === alexDialogueIndex && saves.get('lua').entryIndex === luaDialogueIndex);
     const reloaded = new NarrativeSaveService(routes, () => store);
     check('Carga versionada conserva ambas rutas', reloaded.get('alex').sequenceId === 'alex_test' && reloaded.get('lua').sequenceId === 'lua_test' && JSON.parse(store.getItem()).version === 1);
-    check('Rechaza índices, capítulos y rutas inválidos', !saves.save('alex', lua) && !saves.save('alex', { ...alex, entryIndex: 1 }) &&
+    check('Rechaza índices, capítulos y rutas inválidos', !saves.save('alex', lua) && !saves.save('alex', { ...alex, entryIndex: alexSequence.entries.findIndex(entry => entry.type !== 'dialogue') }) &&
         !saves.save('alex', { ...alex, chapterId: 'other' }) && !saves.save('lua', { ...lua, entryIndex: 999 }));
-    saves.save('alex', { ...alex, status: 'completed', entryIndex: 6 });
-    check('Finalización no avanza capítulos automáticamente', saves.get('alex').chapterId === 'test' && saves.get('lua').status === 'reading');
+    saves.save('alex', { ...alex, status: 'completed', entryIndex: alexSequence.entries.length });
+    check('Finalización no avanza capítulos automáticamente', saves.get('alex').chapterId === alexSequence.chapterId && saves.get('lua').status === 'reading');
     for (const corrupt of ['{', 'null', '{"version":2,"routes":{}}']) {
         const broken = new NarrativeSaveService(routes, () => memory(corrupt));
         check(`Guardado corrupto controlado: ${corrupt}`, broken.storageStatus === 'corrupt' && !broken.get('alex'));
     }
     const partial = new NarrativeSaveService(routes, () => memory(JSON.stringify({ version: 1, routes: { alex: { ...alex, entryIndex: 999 }, lua } })));
-    check('Ruta corrupta no invalida otra ruta válida', partial.storageStatus === 'corrupt' && !partial.get('alex') && partial.get('lua').entryIndex === 4);
+    check('Ruta corrupta no invalida otra ruta válida', partial.storageStatus === 'corrupt' && !partial.get('alex') && partial.get('lua').entryIndex === luaDialogueIndex);
     const unavailable = new NarrativeSaveService(routes, () => { throw new Error('denied'); });
     unavailable.save('alex', alex);
-    check('Progreso narrativo funciona en memoria sin storage', unavailable.storageStatus === 'unavailable' && unavailable.get('alex').entryIndex === 2);
+    check('Progreso narrativo funciona en memoria sin storage', unavailable.storageStatus === 'unavailable' && unavailable.get('alex').entryIndex === alexDialogueIndex);
     const noWrites = new NarrativeSaveService(routes, () => ({ getItem: () => null, setItem: () => { throw new Error('quota'); } }));
     noWrites.save('lua', lua);
-    check('Error de escritura no pierde progreso en sesión', noWrites.storageStatus === 'unavailable' && noWrites.get('lua').entryIndex === 4);
+    check('Error de escritura no pierde progreso en sesión', noWrites.storageStatus === 'unavailable' && noWrites.get('lua').entryIndex === luaDialogueIndex);
     let key = '';
     new NarrativeSaveService(routes, () => ({ getItem: () => null, setItem: k => { key = k; } })).save('alex', alex);
     check('Guardado narrativo separado de desbloqueos', key === NarrativeConfig.storageKey && key !== 'berzerk_character_unlocks_v1');

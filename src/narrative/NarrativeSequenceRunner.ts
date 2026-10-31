@@ -32,6 +32,8 @@ export class NarrativeSequenceRunner {
         let background: Effect | null = null;
         let music: Effect | null = null;
         const portraits = new Map<string, Effect>();
+        const actors = new Map<string, Effect>();
+        const props = new Map<string, Effect>();
         for (const entry of this.sequence.entries.slice(0, index)) {
             if (entry.type === "background") background = entry;
             if (entry.type === "music") {
@@ -40,9 +42,15 @@ export class NarrativeSequenceRunner {
             }
             if (entry.type === "portrait") portraits.set(entry.character, entry);
             if (entry.type === "hidePortrait") portraits.delete(entry.character);
+            if (entry.type === "actor") actors.set(entry.id, entry);
+            if (entry.type === "hideActor") actors.delete(entry.id);
+            if (entry.type === "prop") props.set(entry.id, entry);
+            if (entry.type === "hideProp") props.delete(entry.id);
         }
         if (background) this.handlers.effect(background, true);
         for (const portrait of portraits.values()) this.handlers.effect(portrait, true);
+        for (const actor of actors.values()) this.handlers.effect(actor, true);
+        for (const prop of props.values()) this.handlers.effect(prop, true);
         if (music) this.handlers.effect(music, true);
         this.pump();
     }

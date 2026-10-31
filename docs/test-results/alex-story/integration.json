@@ -1,0 +1,38 @@
+{
+  "status": "passed",
+  "count": 15,
+  "checks": [
+    "Alex starts the definitive birthday introduction",
+    "Baking illustration has no duplicate portrait or cat",
+    "Birthday uses a real animated cat and transparent cake",
+    "Walking stops at its destination",
+    "Mobile dialogue and controls remain inside the viewport",
+    "Resume restores the actual dialogue and final cat position without replaying movement",
+    "Invasion clears all dynamic overlays before the complete illustration",
+    "Alex arming illustration avoids a second Alex portrait",
+    "Full introduction finishes at controls before combat",
+    "Story starts Alex in the first campaign level",
+    "Ending cannot be entered with a manufactured victory",
+    "Real final-boss destruction opens the rescue rather than the conclusion",
+    "Kira remains fully visible above the dialogue after returning home",
+    "Full epilogue ends in the Alex completion screen",
+    "Lua keeps her independent original script without Alex actors"
+  ],
+  "screenshots": [
+    "01-arrival.png",
+    "02-baking.png",
+    "03-birthday.png",
+    "04-mobile-birthday.png",
+    "05-invasion.png",
+    "06-capture.png",
+    "07-factory.png",
+    "08-containment.png",
+    "09-reunion.png",
+    "10-dawn.png",
+    "11-home-damaged.png",
+    "12-celebration.png",
+    "13-closing.png",
+    "14-completion.png"
+  ],
+  "consoleErrors": []
+}

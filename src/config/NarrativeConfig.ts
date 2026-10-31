@@ -30,10 +30,25 @@ export const NarrativeConfig = {
 export const narrativeBackgrounds: Record<string, BackgroundAsset> = {
     'quimera-intro':{src:'assets/bosses/quimera-intro.png'},
     "main-menu": { src: "assets/backgrounds/main-menu-background.png" },
-    "alex-intro": { src: "assets/backgrounds/alex-intro-background.png" },
+    "alex-intro": { src: "assets/story/alex/backgrounds/alex-house-exterior-night.png" },
     "lua-intro": { src: "assets/backgrounds/lua-intro-background.png" },
     "alex-ending": { src: "assets/backgrounds/alex-ending-background.png" },
     "lua-ending": { src: "assets/backgrounds/lua-ending-background.png" },
+    // Alex's story: empty backgrounds support portraits; CGs already include their actors.
+    "alex-house-kitchen": { src: "assets/story/alex/backgrounds/alex-house-kitchen.png" },
+    "alex-house-damaged": { src: "assets/story/alex/backgrounds/alex-house-damaged.png" },
+    "alex-equipment-room": { src: "assets/story/alex/backgrounds/alex-equipment-room.png" },
+    "alex-factory-exterior": { src: "assets/story/alex/backgrounds/alex-factory-exterior.png" },
+    "alex-kira-baking": { src: "assets/story/alex/illustrations/kira-baking.png" },
+    "alex-robot-home-invasion": { src: "assets/story/alex/illustrations/robot-home-invasion.png" },
+    "alex-kira-captured": { src: "assets/story/alex/illustrations/kira-captured.png" },
+    "alex-arming-up": { src: "assets/story/alex/illustrations/alex-arming-up.png" },
+    "alex-factory-entrance": { src: "assets/story/alex/illustrations/alex-factory-entrance-scene.png" },
+    "alex-kira-containment": { src: "assets/story/alex/illustrations/kira-containment-room.png" },
+    "alex-kira-reunion": { src: "assets/story/alex/illustrations/alex-kira-reunion.png" },
+    "alex-return-home-dawn": { src: "assets/story/alex/illustrations/alex-return-home-dawn.png" },
+    "alex-ending-birthday": { src: "assets/story/alex/illustrations/alex-ending-birthday.png" },
+    "alex-ending-celebration": { src: "assets/story/alex/illustrations/alex-ending-cg.png" },
     // Retain original effect-sheet regions for existing scripts and crop regression checks.
     "alex-test": { src: "assets/sprites/player/alex-special-background.png", crop: { x: 0, y: 0, width: 512, height: 512 } },
     "lua-test": { src: "assets/sprites/player/lua-special-background.png", crop: { x: 0, y: 0, width: 512, height: 512 } }

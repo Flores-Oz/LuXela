@@ -19,8 +19,9 @@ export class CompletionScene extends Phaser.Scene {
         }
         let leaving = false;
         const leave = (key: string) => { if (leaving) return; leaving = true; getArcadeRun(this.game).reset(); this.scene.start(key); };
-        const view = new MenuView({ kind: "completion", eyebrow: `Ruta de ${characters[character].name}`, title: "Campaña completada",
-            subtitle: `Superaste los ${levels.length} niveles y el verdadero combate contra Quimera. El epílogo de esta ruta llegará próximamente.`, actions: [
+        const view = new MenuView({ kind: "completion", eyebrow: `Ruta de ${characters[character].name}`, title: character === "alex" ? "Historia completada" : "Campaña completada",
+            subtitle: character === "alex" ? "Kira está en casa. El pastel está a salvo. Por fin, el cumpleaños que nos debían." :
+                `Superaste los ${levels.length} niveles y el verdadero combate contra Quimera. El epílogo de esta ruta llegará próximamente.`, actions: [
                 { label: "Volver al menú principal", primary: true, action: () => leave("MainMenuScene") },
                 { label: "Elegir otro personaje", action: () => leave("CharacterSelectScene") }
             ] });
@@ -28,7 +29,7 @@ export class CompletionScene extends Phaser.Scene {
         const background = new BackgroundManager(view.element.querySelector(".presentation-background")!, message => {
             view.element.querySelector(".presentation-subtitle")!.textContent = message;
         });
-        background.show("main-menu", true);
+        background.show(character === "alex" ? "alex-ending-birthday" : "main-menu", true);
         view.focus();
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => { background.destroy(); view.destroy(); });
     }
