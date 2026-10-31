@@ -38,6 +38,7 @@ import {loadFinisherAssets} from '../ui/BossFinisher';
 import {loadAdvancedBossAssets} from '../systems/QuimeraEffects';
 import {AdvancedCombat} from '../config/QuimeraAdvancedConfig';
 import {loadRobotSpawnAsset} from '../systems/RobotSpawnEffect';
+import { captureGameOverBackdrop, gameOverBackdropKey, loadGameOverAssets } from '../ui/GameOverView';
 
 
 
@@ -57,6 +58,7 @@ export class GameScene extends Phaser.Scene {
     private runId = 0;
     private pausedAt = 0;
     private pausedDuration = 0;
+    private defeatCapture: object | null = null;
     private roomWidth = 0;
     private roomHeight = 0;
     private hud: GameHUD | null = null;
@@ -87,6 +89,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     preload(): void {
+        loadGameOverAssets(this);
         loadCombatUIAssets(this);
         loadEnvironmentAssets(this,this.roomIndex>=5);
         loadPlayerAssets(this);
@@ -135,6 +138,8 @@ export class GameScene extends Phaser.Scene {
             this.pauseButton = null;
             this.scale.off(Phaser.Scale.Events.RESIZE, this.layoutRoom, this);
             this.input.keyboard?.off("keydown-ESC", this.pauseGame, this);
+            this.defeatCapture = null;
+            if (this.combatState !== 'game-over' && this.textures.exists(gameOverBackdropKey)) this.textures.remove(gameOverBackdropKey);
         });
 
         const tileSize = 64;
@@ -318,6 +323,8 @@ export class GameScene extends Phaser.Scene {
         for (const child of this.enemies.getChildren()) { (child as Enemy).cancelAttack(); (child as Enemy).stop(); }
         this.playerProjectiles.clear(true, true);
         this.enemyProjectiles.clear(true, true);
+        const capture = this.defeatCapture = {};
+        captureGameOverBackdrop(this, () => this.defeatCapture === capture && this.combatState === 'defeat' && this.scene.isActive());
     }
 
     private showGameOver(): void {
@@ -386,6 +393,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     init(data: { roomIndex?: number; character?: PlayerCharacter; runId?: number } = {}): void {
+        this.defeatCapture = null;
+        if (this.textures.exists(gameOverBackdropKey)) this.textures.remove(gameOverBackdropKey);
         this.roomIndex =
             data.roomIndex ?? 0;
 

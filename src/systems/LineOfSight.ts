@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { EnemyNavigationGrid, type NavigationBox } from "../entities/enemies/EnemyNavigation";
 
 export type Point2D = {
     x: number;
@@ -8,6 +9,10 @@ export type Point2D = {
 export class LineOfSight {
 
     private readonly obstacles: Phaser.Physics.Arcade.StaticGroup;
+    private navigationTime = -Infinity;
+    private navigationSignature = "";
+    private navigationWalls: NavigationBox[] = [];
+    private readonly navigationGrids = new Map<string, EnemyNavigationGrid>();
 
     constructor(obstacles: Phaser.Physics.Arcade.StaticGroup) {
         this.obstacles = obstacles;
@@ -23,6 +28,26 @@ export class LineOfSight {
         ignoreInteriorWalls = false
     ): boolean {
         return LineOfSight.hasClearLineOfSight(from, to, this.obstacles,ignoreInteriorWalls);
+    }
+
+    /** Reuse one body-clearance grid across robots; refresh only if physical walls change. */
+    public movementGrid(width: number, height: number, time: number): EnemyNavigationGrid {
+        const bounds = this.obstacles.scene.physics.world.bounds;
+        if (time !== this.navigationTime) {
+            this.navigationTime = time;
+            const walls = this.obstacles.getChildren().flatMap(child => {
+                const body = child.body as Phaser.Physics.Arcade.StaticBody | null;
+                return child.active && body?.enable ? [{ x: body.x, y: body.y, width: body.width, height: body.height }] : [];
+            });
+            const signature = `${bounds.x},${bounds.y},${bounds.width},${bounds.height};${walls.map(b => `${b.x},${b.y},${b.width},${b.height}`).join(';')}`;
+            if (signature !== this.navigationSignature) {
+                this.navigationSignature = signature; this.navigationWalls = walls; this.navigationGrids.clear();
+            }
+        }
+        const key = `${width},${height}`;
+        let grid = this.navigationGrids.get(key);
+        if (!grid) { grid = new EnemyNavigationGrid(bounds, this.navigationWalls, width, height); this.navigationGrids.set(key, grid); }
+        return grid;
     }
 
     /**

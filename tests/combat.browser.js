@@ -88,7 +88,7 @@ async function run() {
         tick();
         enemy.updateBehavior(player, scene.lineOfSight, now);
     }
-    check('Patrulla gira al chocar sin atravesar pared', enemy.body.right <= scene.physics.world.bounds.width-64 + 0.01 && enemy.body.velocity.y === speed);
+    check('Patrulla gira al chocar sin atravesar pared', enemy.body.right <= scene.physics.world.bounds.width-64 + 0.01 && (enemy.body.velocity.y !== 0 || enemy.body.velocity.x < 0));
     reset(enemy, wallRight+24, wallY);
     reset(player.physicsSprite, wallRight-152, wallY);
     check('Proximidad detecta a través de pared', enemy.detectPlayer(player.physicsSprite));

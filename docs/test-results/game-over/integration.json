@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "checks": [
+    "Existing combat and retry integration passes",
+    "alex: actual room snapshot survives gameplay cleanup",
+    "alex: score and level show the defeated run",
+    "alex: correct defeated character and supplied panel",
+    "alex 1280x800: readable controls fit without overlap",
+    "alex 1920x1080: readable controls fit without overlap",
+    "alex 844x390: readable controls fit without overlap",
+    "alex 390x844: readable controls fit without overlap",
+    "alex 360x640: readable controls fit without overlap",
+    "alex: arrows select the next action",
+    "alex: R retries the same room and restores its checkpoint",
+    "alex: background and keyboard listeners released on retry",
+    "lua: actual room snapshot survives gameplay cleanup",
+    "lua: score and level show the defeated run",
+    "lua: correct defeated character and supplied panel",
+    "lua 1280x800: readable controls fit without overlap",
+    "lua 1920x1080: readable controls fit without overlap",
+    "lua 844x390: readable controls fit without overlap",
+    "lua 390x844: readable controls fit without overlap",
+    "lua 360x640: readable controls fit without overlap",
+    "lua: arrows select the next action",
+    "lua: R retries the same room and restores its checkpoint",
+    "lua: background and keyboard listeners released on retry",
+    "Keyboard focuses character selection before confirming",
+    "Enter confirms character selection instead of restarting",
+    "Pointer returns to the main menu and releases the background"
+  ],
+  "count": 26,
+  "consoleErrors": []
+}

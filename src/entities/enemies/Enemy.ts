@@ -6,6 +6,7 @@ import { CombatEvents } from "../../systems/CombatEvents";
 import { robotAttacks,robotMovementScale,robotDefinitions,robotTypes,redRobotRangeMultiplier,type RobotType,type EnemyAttackConfig } from "../../config/RobotConfig";
 import { EnemyAttackController, type EnemyShot } from "./EnemyAttackController";
 import {RobotSpawnEffect} from '../../systems/RobotSpawnEffect';
+import type { NavigationPoint } from './EnemyNavigation';
 
 export type EnemyConfig = {
     moveSpeed?: number;
@@ -41,6 +42,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     private patrolDirection = -1;
 
     private nextPatrolTurn = 0;
+    private detour: NavigationPoint[] = [];
+    private detourTarget: NavigationPoint | null = null;
+    private nextRouteCheck = 0;
+    private movementSample: NavigationPoint | null = null;
+    private movementSampleTime = 0;
 
     private playerDetected = false;
 
@@ -211,7 +217,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     public chasePlayer(
-        player: Phaser.GameObjects.Components.Transform
+        player: Phaser.GameObjects.Components.Transform,
+        lineOfSight?: LineOfSight,
+        time = this.scene.time.now
     ): void {
 
         if (this.dead) {
@@ -225,6 +233,35 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
         if (Math.hypot(dx, dy) <= stopDistance) {
             this.stop();
+            return;
+        }
+
+        const body = this.body as Phaser.Physics.Arcade.Body;
+        const from = { x: body.center.x, y: body.center.y };
+        const target = { x: player.x + body.center.x - this.x, y: player.y + body.center.y - this.y };
+        const horizontal = Math.abs(dx) > Math.abs(dy);
+        const blocked = horizontal ? (dx > 0 ? body.blocked.right : body.blocked.left) : (dy > 0 ? body.blocked.down : body.blocked.up);
+        let stalled = false;
+        if (!this.movementSample || time < this.movementSampleTime) { this.movementSample = from; this.movementSampleTime = time; }
+        else if (time - this.movementSampleTime >= 300) {
+            stalled = Math.hypot(from.x - this.movementSample.x, from.y - this.movementSample.y) < 3;
+            this.movementSample = from; this.movementSampleTime = time;
+        }
+        if (lineOfSight && (this.detourTarget || blocked || stalled)) {
+            const grid = lineOfSight.movementGrid(body.width, body.height, time);
+            const changedTarget = this.detourTarget && Math.hypot(target.x - this.detourTarget.x, target.y - this.detourTarget.y) > 64;
+            if (!this.detourTarget || (time >= this.nextRouteCheck && (changedTarget || stalled || !this.detour.length))) {
+                this.detour = grid.findPath(from, target); this.detourTarget = target; this.nextRouteCheck = time + 500;
+            }
+            while (this.detour.length && Math.hypot(this.detour[0]!.x - from.x, this.detour[0]!.y - from.y) <= 2) this.detour.shift();
+            const waypoint = this.detour[0];
+            if (waypoint) {
+                const vx = waypoint.x - from.x, vy = waypoint.y - from.y, distance = Math.hypot(vx, vy);
+                const speed = Math.min(this.moveSpeed, distance * 30);
+                this.setVelocity(vx / distance * speed, vy / distance * speed);
+                const direction = Math.abs(vx) > Math.abs(vy) ? (vx > 0 ? 'right' : 'left') : (vy > 0 ? 'down' : 'up');
+                this.play(`${this.animationPrefix}-walk-${direction}`, true);
+            } else { this.setVelocity(0, 0); this.playIdle(); }
             return;
         }
 
@@ -279,14 +316,25 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         return this.playerDetected;
     }
 
-    private patrol(time: number): void {
+    private patrol(time: number, lineOfSight: LineOfSight): void {
         const body = this.body as Phaser.Physics.Arcade.Body;
-        const blocked = [body.blocked.right, body.blocked.down,
-            body.blocked.left, body.blocked.up][this.patrolDirection];
+        const grid = lineOfSight.movementGrid(body.width, body.height, time);
+        const directions = [{ x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 0, y: -1 }];
+        const free = (index: number) => {
+            const direction = directions[index];
+            if (!direction) return false;
+            return grid.canTravel(body.center, { x: body.center.x + direction.x * Math.max(12, this.moveSpeed * .15),
+                y: body.center.y + direction.y * Math.max(12, this.moveSpeed * .15) });
+        };
 
         // Turn at walls or after 1.5 seconds, using the scene clock.
-        if (blocked || time >= this.nextPatrolTurn) {
-            this.patrolDirection = (this.patrolDirection + 1) % 4;
+        if (!free(this.patrolDirection) || time >= this.nextPatrolTurn) {
+            let next = -1;
+            for (let turn = 1; turn <= 4; turn++) {
+                const candidate = (this.patrolDirection + turn + 4) % 4;
+                if (free(candidate)) { next = candidate; break; }
+            }
+            this.patrolDirection = next;
             this.nextPatrolTurn = time + 1500;
         }
 
@@ -295,6 +343,18 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
             case 1: this.moveDown(); break;
             case 2: this.moveLeft(); break;
             case 3: this.moveUp(); break;
+            default: {
+                // At an exact two-wall contact, first move diagonally into the
+                // nearest clear grid node before resuming cardinal patrol.
+                const bounds = this.scene.physics.world.bounds;
+                const route = grid.findPath(body.center, { x: bounds.centerX, y: bounds.centerY });
+                const next = route.find(p => Math.hypot(p.x - body.center.x, p.y - body.center.y) > 2);
+                if (!next) { this.stop(); break; }
+                const dx = next.x - body.center.x, dy = next.y - body.center.y, distance = Math.hypot(dx, dy);
+                const speed = Math.min(this.moveSpeed, distance * 30);
+                this.setVelocity(dx / distance * speed, dy / distance * speed);
+                this.play(`${this.animationPrefix}-walk-${Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up')}`, true);
+            }
         }
     }
 
@@ -360,9 +420,12 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
         else if (this.attack.config.type === "burst" && distance > 300) state = EnemyState.CHASE;
         else state = this.attack.phase === "burst" ? EnemyState.BURST : EnemyState.ATTACK_READY;
         this.setState(state);
-        if (state === EnemyState.PATROL) this.patrol(time);
-        else if (state === EnemyState.CHASE) this.chasePlayer(player.physicsSprite);
-        else if (state === EnemyState.RETREAT) this.chasePlayer({ x: this.x * 2 - player.x, y: this.y * 2 - player.y } as Phaser.GameObjects.Components.Transform);
+        if (state !== EnemyState.CHASE && state !== EnemyState.RETREAT) {
+            this.detour = []; this.detourTarget = null; this.movementSample = null;
+        }
+        if (state === EnemyState.PATROL) this.patrol(time, lineOfSight);
+        else if (state === EnemyState.CHASE) this.chasePlayer(player.physicsSprite, lineOfSight, time);
+        else if (state === EnemyState.RETREAT) this.chasePlayer({ x: this.x * 2 - player.x, y: this.y * 2 - player.y } as Phaser.GameObjects.Components.Transform, lineOfSight, time);
         else this.setVelocity(0, 0);
         this.updateAttackVisuals(time, shots);
         return shots;
